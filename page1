@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Next Page Checker</title>
+</head>
+<body>
+  <button id="nextPageBtn" style="display:none;">Next Page</button>
+
+  <script>
+    // Current page number (you can auto-detect if needed)
+    const currentPage = 1; 
+    const nextPage = currentPage + 1;
+    const nextPageUrl = `page${nextPage}.html`;
+
+    // Function to check if next page exists
+    async function checkNextPage() {
+      try {
+        const response = await fetch(nextPageUrl, { method: 'HEAD' }); 
+        if (response.ok) {
+          // File exists
+          const btn = document.getElementById("nextPageBtn");
+          btn.style.display = "inline-block";
+          btn.onclick = () => window.location.href = nextPageUrl;
+        } else {
+          console.log("Next page not found");
+        }
+      } catch (e) {
+        console.log("Error checking next page:", e);
+      }
+    }
+
+    checkNextPage();
+  </script>
+</body>
+</html>

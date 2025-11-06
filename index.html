@@ -1,93 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>We'll Be Back Soon - wedugo.com</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background: #1e1e2f;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      flex-direction: column;
-      text-align: center;
-    }
-
-    .gear {
-      font-size: 80px;
-      animation: spin 3s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 36px;
-      margin: 10px 0;
-    }
-
-    .message {
-      font-size: 18px;
-      opacity: 0;
-      transition: opacity 1s ease-in-out;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .footer {
-      position: absolute;
-      bottom: 15px;
-      width: 100%;
-      font-size: 14px;
-      color: #aaa;
-    }
-
-    .dot-loader span {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      margin: 0 3px;
-      background: #fff;
-      border-radius: 50%;
-      animation: bounce 1.2s infinite ease-in-out;
-    }
-
-    .dot-loader span:nth-child(2) { animation-delay: 0.2s; }
-    .dot-loader span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedugo Education - Learn & Practice</title>
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css'>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #fff;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+header {
+  border-bottom: 2px solid #EDEDED;
+  background: #fff;
+  text-align: center;
+  padding: 10px 0;
+}
+header img {
+  width: 150px;
+}
+.hero {
+  background: linear-gradient(135deg, #FFD500, #ffef9f);
+  text-align: center;
+  padding: 40px 20px;
+  border-bottom: 2px solid #EDEDED;
+}
+.hero h1 {
+  font-weight: bold;
+  color: #222;
+}
+.hero p {
+  font-size: 16px;
+  color: #333;
+}
+.hero .btn {
+  background: #49659c;
+  color: #fff;
+  border: 1px solid #49659c;
+  padding: 8px 20px;
+  border-radius: 5px;
+  margin-top: 15px;
+}
+.hero .btn:hover {
+  background: #2f4474;
+}
+.section-title {
+  font-size: 20px;
+  font-weight: bold;
+  border-left: 5px solid #FFD500;
+  padding-left: 10px;
+  margin-bottom: 15px;
+}
+.course-card {
+  background: #fff;
+  border: 1px solid #EDEDED;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.08);
+  transition: 0.3s;
+}
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+.course-card h4 {
+  color: #49659c;
+  margin-top: 0;
+}
+.course-card p {
+  font-size: 14px;
+  color: #555;
+}
+.course-card a {
+  background: #FFD500;
+  border: 1px solid #B79F00;
+  padding: 5px 10px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 13px;
+  color: #000;
+}
+footer {
+  background: linear-gradient(135deg, #222, #444);
+  color: #fff;
+  text-align: center;
+  padding: 10px 7px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.3);
+  margin-top: auto;
+}
+footer a {
+  color: #FFD500;
+  text-decoration: none;
+  font-weight: 500;
+}
+footer a:hover {
+  color: #fff;
+}
+.adsense-wrapper {
+  background: #f7f7f7;
+  border: 1px dashed #ddd;
+  padding: 10px;
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+}
+</style>
 </head>
 <body>
 
-  <div class="gear">⚙️</div>
-  <h1>We'll Be Back Soon</h1>
-  <div class="dot-loader">
-    <span></span><span></span><span></span>
+<header>
+  <img src="/logo.png" title='Wedugo Education' alt="Wedugo Logo">
+</header>
+
+<div class="hero">
+  <h1>Welcome to Wedugo Education</h1>
+  <p>Boost your preparation with free quizzes, notes, and mock tests designed for competitive exams.</p>
+  <a href="#" class="btn" title="Currently on hold" disabled>Start Learning <i class="fa fa-arrow-right"></i></a>
+</div>
+
+<div class="container" style="margin-top:30px;margin-bottom:30px;">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="section-title">Popular Categories</div>
+
+      <div class="course-card">
+        <h4><i class="fa fa-book"></i> General Knowledge</h4>
+        <p>Test your GK with daily updated MCQs based on current affairs and static facts.</p>
+        <a href="#" disabled>Updating..Soon</a>
+      </div>
+
+      <div class="course-card">
+        <h4><i class="fa fa-language"></i> Hindi Grammar</h4>
+        <p>Learn अलंकार, संधि, समास, and more with examples, tricks, and practice sets.</p>
+        <a href="#">Updating..Soon</a>
+      </div>
+
+      <div class="course-card">
+        <h4><i class="fa fa-flask"></i> Science & Reasoning</h4>
+        <p>Sharpen your analytical and scientific knowledge with topic-wise tests.</p>
+        <a href="#">Updating..Soon</a>
+      </div>
+
+      <div class="course-card">
+        <h4><i class="fa fa-users"></i> MPESB Group Exams</h4>
+        <p>Full-length mock tests for Group 1, 2, and 3 exams with explanations and solutions.</p>
+        <a href="#">Updating..Soon</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="section-title">Advertisement</div>
+      <div id="adsense-1" class="adsense-wrapper">Ad Space</div><br>
+      <div id="adsense-2" class="adsense-wrapper">Ad Space</div><br>
+
+      <div class="section-title">Follow Us</div>
+      <div style="text-align:center;">
+        <a href="https://facebook.com/wedugoofficial" target="_blank"><i class="fa fa-facebook fa-2x" style="color:#3b5998;margin:5px;"></i></a>
+        <a href="https://www.youtube.com/c/wedugo" target="_blank"><i class="fa fa-youtube-play fa-2x" style="color:#c4302b;margin:5px;"></i></a>
+        <a href="https://www.instagram.com/wedugo" target="_blank"><i class="fa fa-instagram fa-2x" style="color:#e4405f;margin:5px;"></i></a>
+      </div>
+    </div>
   </div>
-  <p class="message">Our site is currently undergoing maintenance.<br>Please check back later.</p>
+</div>
 
-  <div class="footer">© 2025 wedugo.com</div>
+<footer>
+  <i class='fa fa-copyright'></i> 
+  <span id="year"></span> 
+  <a href="https://www.wedugo.com" target="_blank">www.wedugo.com</a> — All Rights Reserved
+</footer>
 
-  <!-- jQuery CDN -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    $(document).ready(function(){
-      setTimeout(() => {
-        $('.message').css('opacity', '1');
-      }, 1500);
-    });
-  </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+
+$(document).ready(function(){
+ $.getScript("https://www.googletagmanager.com/gtag/js?id=UA-101011346-1");
+ window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-101011346-1');
+});
+</script>
 </body>
 </html>

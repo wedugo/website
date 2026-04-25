@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator | Wedugo Education</title>
+    
+    <meta name="description" content="Generate custom QR codes for WiFi, Links, WhatsApp, and more. Free, fast, and secure.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-blue: #0052FF;
+            --light-bg: #fbfcfd;
+            --sidebar-width: 280px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: #2d3436; }
+
+        /* Sidebar & Layout */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: #fff;
+            border-right: 1px solid #edf2f7;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1050;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand { padding: 2rem 1.5rem; }
+
+        .sidebar-link {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #4a5568;
+            text-decoration: none;
+            transition: 0.2s;
+            border-radius: 10px;
+            margin: 4px 15px;
+            font-weight: 500;
+        }
+        .sidebar-link:hover, .sidebar-link.active { background: #f0f7ff; color: var(--primary-blue); }
+        .sidebar-link i { margin-right: 12px; }
+
+        #content { margin-left: var(--sidebar-width); padding: 30px; transition: all 0.3s; min-height: 100vh; }
+
+        .mobile-header {
+            display: none;
+            background: #fff;
+            padding: 12px 20px;
+            border-bottom: 1px solid #edf2f7;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Tool Specific Styles */
+        .main-card {
+            background: #fff;
+            border-radius: 24px;
+            border: 1px solid #edf2f7;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .type-selector-wrapper {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 20px;
+            background: #fcfdfe;
+            border-bottom: 1px solid #edf2f7;
+            scrollbar-width: none;
+        }
+        .type-selector-wrapper::-webkit-scrollbar { display: none; }
+
+        .type-card {
+            min-width: 90px;
+            cursor: pointer;
+            border: 1px solid #edf2f7;
+            border-radius: 16px;
+            padding: 12px 8px;
+            text-align: center;
+            transition: 0.2s;
+            background: #fff;
+        }
+        .type-card i { font-size: 1.3rem; margin-bottom: 5px; display: block; color: #718096; }
+        .type-card span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+        .type-card.active { border-color: var(--primary-blue); background: #f0f7ff; }
+        .type-card.active i, .type-card.active span { color: var(--primary-blue); }
+
+        .generator-grid { display: grid; grid-template-columns: 1fr 340px; }
+        .input-section { padding: 30px; border-right: 1px solid #edf2f7; }
+        .preview-section { padding: 30px; background: #fafbfc; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        .qr-display-box {
+            width: 240px;
+            height: 240px;
+            background: #fff;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #edf2f7;
+            margin-bottom: 20px;
+        }
+
+        .btn-generate {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-generate:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        @media (max-width: 992px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.active { transform: translateX(0); }
+            #content { margin-left: 0; padding: 20px; }
+            .mobile-header { display: flex; }
+            .generator-grid { grid-template-columns: 1fr; }
+            .input-section { border-right: none; border-bottom: 1px solid #edf2f7; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="mobile-header">
+        <img src="images/wedugo_education.png" alt="Wedugo Logo" style="height: 30px;">
+        <button class="btn btn-light border" id="mobileSidebarToggle">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+    </header>
+
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <img src="main_images/logo.png" alt="Wedugo Logo" class="img-fluid" style="max-height: 40px;">
+        </div>
+        <div class="mt-2">
+            <a href="../index.html" class="sidebar-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Tools</div>
+            <a href="image-compressor.html" class="sidebar-link"><i class="bi bi-aspect-ratio"></i> Image Compressor</a>
+            <a href="pdf-to-jpg.html" class="sidebar-link"><i class="bi bi-file-earmark-image"></i> PDF to JPG</a>
+            <a href="word-counter.html" class="sidebar-link"><i class="bi bi-type"></i> Word Counter</a>
+            <a href="#" class="sidebar-link active"><i class="bi bi-qr-code"></i> QR Generator</a>
+        </div>
+    </nav>
+
+    <main id="content">
+        <header class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="../index.html" class="text-decoration-none">Wedugo</a></li>
+                    <li class="breadcrumb-item active">QR Generator</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mt-2">QR Code Generator</h4>
+        </header>
+
+        <div class="main-card">
+            <div class="type-selector-wrapper">
+                <div class="type-card active" data-type="text"><i class="bi bi-link-45deg"></i><span>Link</span></div>
+                <div class="type-card" data-type="wifi"><i class="bi bi-wifi"></i><span>WiFi</span></div>
+                <div class="type-card" data-type="vcard"><i class="bi bi-person-badge"></i><span>VCard</span></div>
+                <div class="type-card" data-type="whatsapp"><i class="bi bi-whatsapp"></i><span>WhatsApp</span></div>
+                <div class="type-card" data-type="email"><i class="bi bi-envelope"></i><span>Email</span></div>
+                <div class="type-card" data-type="sms"><i class="bi bi-chat-dots"></i><span>SMS</span></div>
+                <div class="type-card" data-type="location"><i class="bi bi-geo-alt"></i><span>Location</span></div>
+                <div class="type-card" data-type="crypto"><i class="bi bi-currency-bitcoin"></i><span>Crypto</span></div>
+            </div>
+
+            <div class="generator-grid">
+                <div class="input-section">
+                    <div id="dynamic-inputs">
+                        <div class="field-group" id="group-text">
+                            <label class="form-label fw-bold small">URL or Content</label>
+                            <textarea class="form-control mb-3" id="input-text" rows="4" placeholder="https://wedugo.com"></textarea>
+                        </div>
+
+                        <div class="field-group d-none" id="group-wifi">
+                            <label class="form-label fw-bold small">Network SSID</label>
+                            <input type="text" class="form-control mb-2" id="wifi-ssid" placeholder="Home_WiFi">
+                            <label class="form-label fw-bold small">Password</label>
+                            <input type="password" class="form-control mb-2" id="wifi-pass" placeholder="******">
+                            <label class="form-label fw-bold small">Security</label>
+                            <select class="form-select mb-3" id="wifi-type">
+                                <option value="WPA">WPA/WPA2</option>
+                                <option value="WEP">WEP</option>
+                                <option value="nopass">None</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group d-none" id="group-vcard">
+                            <label class="form-label fw-bold small">Full Name</label>
+                            <input type="text" class="form-control mb-2" id="vc-name" placeholder="John Doe">
+                            <label class="form-label fw-bold small">Phone</label>
+                            <input type="text" class="form-control mb-2" id="vc-phone" placeholder="+91 00000 00000">
+                            <label class="form-label fw-bold small">Email</label>
+                            <input type="email" class="form-control mb-3" id="vc-email" placeholder="john@example.com">
+                        </div>
+
+                        <div class="field-group d-none" id="group-whatsapp">
+                            <label class="form-label fw-bold small">Number (with country code)</label>
+                            <input type="text" class="form-control mb-2" id="wa-phone" placeholder="919876543210">
+                            <label class="form-label fw-bold small">Pre-filled Message</label>
+                            <textarea class="form-control mb-3" id="wa-msg" rows="2" placeholder="Hi there!"></textarea>
+                        </div>
+
+                        <div class="field-group d-none" id="group-location">
+                            <div class="row">
+                                <div class="col-6"><label class="small fw-bold">Latitude</label><input type="text" class="form-control" id="geo-lat" placeholder="23.2599"></div>
+                                <div class="col-6"><label class="small fw-bold">Longitude</label><input type="text" class="form-control" id="geo-lon" placeholder="77.4126"></div>
+                            </div>
+                        </div>
+
+                        </div>
+
+                    <div class="mt-4">
+                        <label class="form-label fw-bold small">Image Resolution</label>
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="qr-size">
+                                <option value="300x300">Standard (300px)</option>
+                                <option value="600x600">High Res (600px)</option>
+                                <option value="1000x1000">Print Quality (1000px)</option>
+                            </select>
+                            <button class="btn-generate" onclick="generateUltimateQR()">Generate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-section">
+                    <div class="qr-display-box">
+                        <span id="placeholder-text" class="text-muted small text-center px-4">Fill details and click generate to preview</span>
+                        <img src="" id="qr-image" style="display:none; width: 90%; height: 90%; object-fit: contain;" alt="QR Code">
+                    </div>
+                    <div id="action-buttons" style="display:none;" class="w-100 px-4">
+                        <button class="btn btn-primary w-100 mb-2 fw-bold" onclick="downloadQR()">
+                            <i class="bi bi-download me-2"></i>Download PNG
+                        </button>
+                        <button class="btn btn-outline-secondary w-100 btn-sm" onclick="copyQRLink()">
+                            <i class="bi bi-link-45deg me-1"></i>Copy QR URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-5 pt-4 text-center border-top">
+            <p class="text-muted small">© 2026 Wedugo Education. Browser-based generation for 100% privacy.</p>
+        </footer>
+    </main>
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('mobileSidebarToggle').addEventListener('click', () => sidebar.classList.toggle('active'));
+
+        let currentType = 'text';
+
+        // Type Switching Logic
+        document.querySelectorAll('.type-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                currentType = this.dataset.type;
+                document.querySelectorAll('.field-group').forEach(g => g.classList.add('d-none'));
+                const target = document.getElementById('group-' + currentType);
+                if(target) target.classList.remove('d-none');
+            });
+        });
+
+        function generateUltimateQR() {
+            let finalData = "";
+            const size = document.getElementById('qr-size').value;
+            const img = document.getElementById('qr-image');
+            const placeholder = document.getElementById('placeholder-text');
+
+            if (currentType === 'text') finalData = document.getElementById('input-text').value;
+            else if (currentType === 'wifi') finalData = `WIFI:T:${document.getElementById('wifi-type').value};S:${document.getElementById('wifi-ssid').value};P:${document.getElementById('wifi-pass').value};;`;
+            else if (currentType === 'vcard') finalData = `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('vc-name').value}\nTEL:${document.getElementById('vc-phone').value}\nEMAIL:${document.getElementById('vc-email').value}\nEND:VCARD`;
+            else if (currentType === 'whatsapp') finalData = `https://wa.me/${document.getElementById('wa-phone').value}?text=${encodeURIComponent(document.getElementById('wa-msg').value)}`;
+            else if (currentType === 'location') finalData = `geo:${document.getElementById('geo-lat').value},${document.getElementById('geo-lon').value}`;
+
+            if (!finalData || !finalData.trim()) { alert("Please enter some content"); return; }
+
+            placeholder.innerText = "Generating...";
+            img.style.display = 'none';
+            
+            const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${encodeURIComponent(finalData)}`;
+            img.src = apiUrl;
+            
+            img.onload = () => {
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                document.getElementById('action-buttons').style.display = 'block';
+            };
+        }
+
+        async function downloadQR() {
+            const img = document.getElementById('qr-image');
+            const response = await fetch(img.src);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Wedugo-QR-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function copyQRLink() {
+            navigator.clipboard.writeText(document.getElementById('qr-image').src);
+            alert("QR Link copied to clipboard!");
+        }
+    </script>
+</body>
+</html>

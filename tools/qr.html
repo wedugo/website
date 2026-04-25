@@ -3,9 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator | Wedugo Education</title>
+    <title>Wedugo Education | Free Professional PDF & Image Tools</title>
     
-    <meta name="description" content="Generate custom QR codes for WiFi, Links, WhatsApp, and more. Free, fast, and secure.">
+    <meta name="description" content="Access free professional tools: Image Compressor, PDF to JPG, QR Generator, and Calculators. Fast, secure, and browser-based utilities.">
+    <meta name="keywords" content="image compressor, pdf to jpg, word counter, qr generator, pdf compressor, online tools">
+    <link rel="canonical" href="https://www.wedugo.com/" />
+    
+    <meta property="og:title" content="Wedugo Education | Professional Digital Tools">
+    <meta property="og:description" content="Free, fast, and secure web tools to help you work smarter.">
+    <meta property="og:image" content="images/wedugo_education.png">
+    
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -15,11 +24,12 @@
             --primary-blue: #0052FF;
             --light-bg: #fbfcfd;
             --sidebar-width: 280px;
+            --glass-bg: rgba(255, 255, 255, 0.8);
         }
 
         body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: #2d3436; }
 
-        /* Sidebar & Layout */
+        /* Sidebar */
         #sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -32,6 +42,7 @@
         }
 
         .sidebar-brand { padding: 2rem 1.5rem; }
+        @media (max-width: 992px) { .sidebar-brand { display: none; } }
 
         .sidebar-link {
             padding: 12px 20px;
@@ -47,8 +58,16 @@
         .sidebar-link:hover, .sidebar-link.active { background: #f0f7ff; color: var(--primary-blue); }
         .sidebar-link i { margin-right: 12px; }
 
-        #content { margin-left: var(--sidebar-width); padding: 30px; transition: all 0.3s; min-height: 100vh; }
+        /* DISABLED LOGIC - Sidebar and Cards */
+        .disabled { 
+            opacity: 0.4 !important; 
+            filter: grayscale(1) !important; 
+            pointer-events: none !important; /* Makes it unclickable */
+            cursor: not-allowed !important;
+            user-select: none;
+        }
 
+        /* Mobile Header */
         .mobile-header {
             display: none;
             background: #fff;
@@ -61,84 +80,89 @@
             justify-content: space-between;
         }
 
-        /* Tool Specific Styles */
-        .main-card {
+        /* Tool Cards */
+        .tool-card-home {
             background: #fff;
-            border-radius: 24px;
             border: 1px solid #edf2f7;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .type-selector-wrapper {
-            display: flex;
-            overflow-x: auto;
-            gap: 12px;
-            padding: 20px;
-            background: #fcfdfe;
-            border-bottom: 1px solid #edf2f7;
-            scrollbar-width: none;
-        }
-        .type-selector-wrapper::-webkit-scrollbar { display: none; }
-
-        .type-card {
-            min-width: 90px;
-            cursor: pointer;
-            border: 1px solid #edf2f7;
-            border-radius: 16px;
-            padding: 12px 8px;
-            text-align: center;
-            transition: 0.2s;
-            background: #fff;
-        }
-        .type-card i { font-size: 1.3rem; margin-bottom: 5px; display: block; color: #718096; }
-        .type-card span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
-        .type-card.active { border-color: var(--primary-blue); background: #f0f7ff; }
-        .type-card.active i, .type-card.active span { color: var(--primary-blue); }
-
-        .generator-grid { display: grid; grid-template-columns: 1fr 340px; }
-        .input-section { padding: 30px; border-right: 1px solid #edf2f7; }
-        .preview-section { padding: 30px; background: #fafbfc; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-        .qr-display-box {
-            width: 240px;
-            height: 240px;
-            background: #fff;
             border-radius: 20px;
+            padding: 25px;
+            text-decoration: none;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border: 1px solid #edf2f7;
-            margin-bottom: 20px;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
         }
 
-        .btn-generate {
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-            width: 100%;
-            transition: 0.2s;
+        .tool-card-home:not(.disabled):hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary-blue);
         }
-        .btn-generate:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .tool-icon-box {
+            width: 48px; height: 48px;
+            background: #f0f7ff;
+            color: var(--primary-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 16px;
+        }
+
+        #content { margin-left: var(--sidebar-width); padding: 30px; transition: all 0.3s; min-height: 100vh; }
 
         @media (max-width: 992px) {
             #sidebar { transform: translateX(-100%); }
             #sidebar.active { transform: translateX(0); }
             #content { margin-left: 0; padding: 20px; }
             .mobile-header { display: flex; }
-            .generator-grid { grid-template-columns: 1fr; }
-            .input-section { border-right: none; border-bottom: 1px solid #edf2f7; }
         }
+
+        .hero-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+            border: 1px solid #edf2f7;
+            border-radius: 24px;
+            padding: 50px;
+        }
+
+        /* Personal Ad Custom Styles */
+        .personal-ad-sidebar {
+            background: #f8f9fa;
+            border: 1px dashed #0052FF;
+            border-radius: 12px;
+            margin: 20px 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        .personal-ad-card {
+            background: linear-gradient(135deg, #0052FF 0%, #003db3 100%);
+            color: white !important;
+        }
+
+        /* --- QR TOOL STYLES START --- */
+        .main-card { background: #fff; border-radius: 24px; border: 1px solid #edf2f7; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .type-selector-wrapper { display: flex; overflow-x: auto; gap: 12px; padding: 20px; background: #fcfdfe; border-bottom: 1px solid #edf2f7; scrollbar-width: none; }
+        .type-selector-wrapper::-webkit-scrollbar { display: none; }
+        .type-card { min-width: 90px; cursor: pointer; border: 1px solid #edf2f7; border-radius: 16px; padding: 12px 8px; text-align: center; transition: 0.2s; background: #fff; }
+        .type-card i { font-size: 1.3rem; margin-bottom: 5px; display: block; color: #718096; }
+        .type-card span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+        .type-card.active { border-color: var(--primary-blue); background: #f0f7ff; }
+        .type-card.active i, .type-card.active span { color: var(--primary-blue); }
+        .generator-grid { display: grid; grid-template-columns: 1fr 340px; }
+        .input-section { padding: 30px; border-right: 1px solid #edf2f7; }
+        .preview-section { padding: 30px; background: #fafbfc; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .qr-display-box { width: 240px; height: 240px; background: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #edf2f7; margin-bottom: 20px; }
+        .btn-generate { background: var(--primary-blue); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; width: 100%; transition: 0.2s; }
+        .btn-generate:hover { opacity: 0.9; transform: translateY(-1px); }
+        @media (max-width: 992px) { .generator-grid { grid-template-columns: 1fr; } .input-section { border-right: none; border-bottom: 1px solid #edf2f7; } }
+        /* --- QR TOOL STYLES END --- */
     </style>
 </head>
 <body>
 
     <header class="mobile-header">
-        <img src="images/wedugo_education.png" alt="Wedugo Logo" style="height: 30px;">
+        <img src="main_images/logo.png" alt="Wedugo Logo" style="height: 30px;">
         <button class="btn btn-light border" id="mobileSidebarToggle">
             <i class="bi bi-list fs-4"></i>
         </button>
@@ -148,127 +172,253 @@
         <div class="sidebar-brand">
             <img src="main_images/logo.png" alt="Wedugo Logo" class="img-fluid" style="max-height: 40px;">
         </div>
+        
         <div class="mt-2">
-            <a href="../index.html" class="sidebar-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            <a href="index.html" class="sidebar-link active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            
             <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Tools</div>
-            <a href="image-compressor.html" class="sidebar-link"><i class="bi bi-aspect-ratio"></i> Image Compressor</a>
-            <a href="pdf-to-jpg.html" class="sidebar-link"><i class="bi bi-file-earmark-image"></i> PDF to JPG</a>
-            <a href="word-counter.html" class="sidebar-link"><i class="bi bi-type"></i> Word Counter</a>
-            <a href="#" class="sidebar-link active"><i class="bi bi-qr-code"></i> QR Generator</a>
+            
+            <a href="tools/image-compressor.html" class="sidebar-link disabled"><i class="bi bi-aspect-ratio"></i> Image Compressor</a>
+            <a href="tools/pdf-to-jpg.html" class="sidebar-link disabled"><i class="bi bi-file-earmark-image"></i> PDF to JPG</a>
+            <a href="tools/word-counter.html" class="sidebar-link disabled"><i class="bi bi-type"></i> Word Counter</a>
+            
+            <div class="sidebar-link disabled"><i class="bi bi-calculator"></i> Calculator</div>
+            <div class="sidebar-link disabled"><i class="bi bi-images"></i> Image to PDF</div>
+            <div class="sidebar-link disabled"><i class="bi bi-file-zip"></i> PDF Compressor</div>
+            <div class="sidebar-link disabled"><i class="bi bi-qr-code"></i> QR Generator</div>
+
+            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Info</div>
+            <a href="#" class="sidebar-link disabled"><i class="bi bi-mortarboard"></i> Courses</a>
+            <a href="#" class="sidebar-link disabled"><i class="bi bi-shield-check"></i> Privacy</a>
+
+            <div class="personal-ad-sidebar">
+                <span class="badge bg-primary mb-2" style="font-size: 10px;">PROMO</span>
+                <p class="small fw-bold mb-1">Wedugo Mobile</p>
+                <p class="text-muted" style="font-size: 11px;">Get our tools on Android & iOS.</p>
+                <a href="#" class="btn btn-sm btn-dark w-100 py-1">Download</a>
+            </div>
         </div>
     </nav>
 
     <main id="content">
-        <header class="mb-4">
+        <header class="mb-4 py-2">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="../index.html" class="text-decoration-none">Wedugo</a></li>
-                    <li class="breadcrumb-item active">QR Generator</li>
+                    <li class="breadcrumb-item text-primary fw-medium">Wedugo Education</li>
+                    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
                 </ol>
             </nav>
-            <h4 class="fw-bold mt-2">QR Code Generator</h4>
         </header>
+      <div class="mb-5 text-center">
+            <ins class="adsbygoogle"
+                 style="display:block"
+				 data-ad-client="ca-pub-5947676189341600"
+				 data-ad-slot="1495482573"
+				 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
 
-        <div class="main-card">
-            <div class="type-selector-wrapper">
-                <div class="type-card active" data-type="text"><i class="bi bi-link-45deg"></i><span>Link</span></div>
-                <div class="type-card" data-type="wifi"><i class="bi bi-wifi"></i><span>WiFi</span></div>
-                <div class="type-card" data-type="vcard"><i class="bi bi-person-badge"></i><span>VCard</span></div>
-                <div class="type-card" data-type="whatsapp"><i class="bi bi-whatsapp"></i><span>WhatsApp</span></div>
-                <div class="type-card" data-type="email"><i class="bi bi-envelope"></i><span>Email</span></div>
-                <div class="type-card" data-type="sms"><i class="bi bi-chat-dots"></i><span>SMS</span></div>
-                <div class="type-card" data-type="location"><i class="bi bi-geo-alt"></i><span>Location</span></div>
-                <div class="type-card" data-type="crypto"><i class="bi bi-currency-bitcoin"></i><span>Crypto</span></div>
-            </div>
+        <section id="qr-generator-tool" class="mb-5">
+            <h5 class="fw-bold mb-4">Quick QR Generator</h5>
+            <div class="main-card">
+                <div class="type-selector-wrapper">
+                    <div class="type-card active" data-type="text"><i class="bi bi-link-45deg"></i><span>Link</span></div>
+                    <div class="type-card" data-type="wifi"><i class="bi bi-wifi"></i><span>WiFi</span></div>
+                    <div class="type-card" data-type="vcard"><i class="bi bi-person-badge"></i><span>VCard</span></div>
+                    <div class="type-card" data-type="whatsapp"><i class="bi bi-whatsapp"></i><span>WhatsApp</span></div>
+                    <div class="type-card" data-type="email"><i class="bi bi-envelope"></i><span>Email</span></div>
+                    <div class="type-card" data-type="sms"><i class="bi bi-chat-dots"></i><span>SMS</span></div>
+                    <div class="type-card" data-type="location"><i class="bi bi-geo-alt"></i><span>Location</span></div>
+                </div>
 
-            <div class="generator-grid">
-                <div class="input-section">
-                    <div id="dynamic-inputs">
-                        <div class="field-group" id="group-text">
-                            <label class="form-label fw-bold small">URL or Content</label>
-                            <textarea class="form-control mb-3" id="input-text" rows="4" placeholder="https://wedugo.com"></textarea>
-                        </div>
-
-                        <div class="field-group d-none" id="group-wifi">
-                            <label class="form-label fw-bold small">Network SSID</label>
-                            <input type="text" class="form-control mb-2" id="wifi-ssid" placeholder="Home_WiFi">
-                            <label class="form-label fw-bold small">Password</label>
-                            <input type="password" class="form-control mb-2" id="wifi-pass" placeholder="******">
-                            <label class="form-label fw-bold small">Security</label>
-                            <select class="form-select mb-3" id="wifi-type">
-                                <option value="WPA">WPA/WPA2</option>
-                                <option value="WEP">WEP</option>
-                                <option value="nopass">None</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group d-none" id="group-vcard">
-                            <label class="form-label fw-bold small">Full Name</label>
-                            <input type="text" class="form-control mb-2" id="vc-name" placeholder="John Doe">
-                            <label class="form-label fw-bold small">Phone</label>
-                            <input type="text" class="form-control mb-2" id="vc-phone" placeholder="+91 00000 00000">
-                            <label class="form-label fw-bold small">Email</label>
-                            <input type="email" class="form-control mb-3" id="vc-email" placeholder="john@example.com">
-                        </div>
-
-                        <div class="field-group d-none" id="group-whatsapp">
-                            <label class="form-label fw-bold small">Number (with country code)</label>
-                            <input type="text" class="form-control mb-2" id="wa-phone" placeholder="919876543210">
-                            <label class="form-label fw-bold small">Pre-filled Message</label>
-                            <textarea class="form-control mb-3" id="wa-msg" rows="2" placeholder="Hi there!"></textarea>
-                        </div>
-
-                        <div class="field-group d-none" id="group-location">
-                            <div class="row">
-                                <div class="col-6"><label class="small fw-bold">Latitude</label><input type="text" class="form-control" id="geo-lat" placeholder="23.2599"></div>
-                                <div class="col-6"><label class="small fw-bold">Longitude</label><input type="text" class="form-control" id="geo-lon" placeholder="77.4126"></div>
+                <div class="generator-grid">
+                    <div class="input-section">
+                        <div id="dynamic-inputs">
+                            <div class="field-group" id="group-text">
+                                <label class="form-label fw-bold small">URL or Content</label>
+                                <textarea class="form-control mb-3" id="input-text" rows="4" placeholder="https://wedugo.com"></textarea>
+                            </div>
+                            <div class="field-group d-none" id="group-wifi">
+                                <label class="form-label fw-bold small">Network SSID</label>
+                                <input type="text" class="form-control mb-2" id="wifi-ssid" placeholder="Home_WiFi">
+                                <label class="form-label fw-bold small">Password</label>
+                                <input type="password" class="form-control mb-2" id="wifi-pass" placeholder="******">
+                                <label class="form-label fw-bold small">Security</label>
+                                <select class="form-select mb-3" id="wifi-type">
+                                    <option value="WPA">WPA/WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">None</option>
+                                </select>
+                            </div>
+                            <div class="field-group d-none" id="group-vcard">
+                                <label class="form-label fw-bold small">Full Name</label>
+                                <input type="text" class="form-control mb-2" id="vc-name" placeholder="John Doe">
+                                <label class="form-label fw-bold small">Phone</label>
+                                <input type="text" class="form-control mb-2" id="vc-phone" placeholder="+91 00000 00000">
+                                <label class="form-label fw-bold small">Email</label>
+                                <input type="email" class="form-control mb-3" id="vc-email" placeholder="john@example.com">
+                            </div>
+                            <div class="field-group d-none" id="group-whatsapp">
+                                <label class="form-label fw-bold small">Number (with country code)</label>
+                                <input type="text" class="form-control mb-2" id="wa-phone" placeholder="919876543210">
+                                <label class="form-label fw-bold small">Pre-filled Message</label>
+                                <textarea class="form-control mb-3" id="wa-msg" rows="2" placeholder="Hi there!"></textarea>
+                            </div>
+                            <div class="field-group d-none" id="group-location">
+                                <div class="row">
+                                    <div class="col-6"><label class="small fw-bold">Latitude</label><input type="text" class="form-control" id="geo-lat" placeholder="23.2599"></div>
+                                    <div class="col-6"><label class="small fw-bold">Longitude</label><input type="text" class="form-control" id="geo-lon" placeholder="77.4126"></div>
+                                </div>
                             </div>
                         </div>
-
-                        </div>
-
-                    <div class="mt-4">
-                        <label class="form-label fw-bold small">Image Resolution</label>
-                        <div class="d-flex gap-2">
-                            <select class="form-select" id="qr-size">
-                                <option value="300x300">Standard (300px)</option>
-                                <option value="600x600">High Res (600px)</option>
-                                <option value="1000x1000">Print Quality (1000px)</option>
-                            </select>
-                            <button class="btn-generate" onclick="generateUltimateQR()">Generate</button>
+                        <div class="mt-4">
+                            <label class="form-label fw-bold small">Resolution</label>
+                            <div class="d-flex gap-2">
+                                <select class="form-select" id="qr-size">
+                                    <option value="300x300">300px</option>
+                                    <option value="600x600">600px</option>
+                                    <option value="1000x1000">1000px</option>
+                                </select>
+                                <button class="btn-generate" onclick="generateUltimateQR()">Generate</button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="preview-section">
-                    <div class="qr-display-box">
-                        <span id="placeholder-text" class="text-muted small text-center px-4">Fill details and click generate to preview</span>
-                        <img src="" id="qr-image" style="display:none; width: 90%; height: 90%; object-fit: contain;" alt="QR Code">
-                    </div>
-                    <div id="action-buttons" style="display:none;" class="w-100 px-4">
-                        <button class="btn btn-primary w-100 mb-2 fw-bold" onclick="downloadQR()">
-                            <i class="bi bi-download me-2"></i>Download PNG
-                        </button>
-                        <button class="btn btn-outline-secondary w-100 btn-sm" onclick="copyQRLink()">
-                            <i class="bi bi-link-45deg me-1"></i>Copy QR URL
-                        </button>
+                    <div class="preview-section">
+                        <div class="qr-display-box">
+                            <span id="placeholder-text" class="text-muted small text-center px-4">Click generate to preview</span>
+                            <img src="" id="qr-image" style="display:none; width: 90%; height: 90%; object-fit: contain;" alt="QR Code">
+                        </div>
+                        <div id="action-buttons" style="display:none;" class="w-100 px-4">
+                            <button class="btn btn-primary w-100 mb-2 fw-bold" onclick="downloadQR()">
+                                <i class="bi bi-download me-2"></i>Download
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+        </section>
+        <section id="tool-grid">
+            <h5 class="fw-bold mb-4">Available Utilities</h5>
+            <div class="row g-4">
+			
+				<div class="col-md-6 col-lg-4">
+                   <a href="tools/qr.html" class="tool-card-home">
+                        <div class="tool-icon-box"><i class="bi bi-qr-code-scan"></i></div>
+                        <h6 class="fw-bold text-dark">QR Code Generator</h6>
+                        <p class="text-muted small mb-0">Create custom QR codes for any link.</p>
+					</a>	
+                </div>
+
+ <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home personal-ad-card disabled">
+					<span class="badge bg-light text-dark border position-absolute top-0 end-0 m-3">Coming Soon</span>
+                        <div class="tool-icon-box text-white bg-white bg-opacity-25"><i class="bi bi-star-fill"></i></div>
+                        <h6 class="fw-bold">Advertise</h6>
+                        <p class="small mb-2 opacity-75">Want to Advertise Here</p>
+                        <a href="#" class="btn btn-sm btn-light mt-auto">Contact</a>
+                    </div>
+                </div>
+				
+                <div class="col-md-6 col-lg-4">
+                    <a href="tools/image-compressor.html" class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-file-earmark-zip"></i></div>
+                        <h6 class="fw-bold text-dark">Image Compressor</h6>
+                        <p class="text-muted small mb-0">Optimize your images for faster loading times.</p>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home border-0 bg-transparent p-0">
+                        <ins class="adsbygoogle"
+                 style="display:block"
+				 data-ad-client="ca-pub-5947676189341600"
+				 data-ad-slot="1495482573"
+				 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="tools/pdf-to-jpg.html" class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-file-pdf"></i></div>
+                        <h6 class="fw-bold text-dark">PDF to JPG</h6>
+                        <p class="text-muted small mb-0">Convert PDF pages into high-res image files.</p>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="tools/word-counter.html" class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-type"></i></div>
+                        <h6 class="fw-bold text-dark">Word Counter</h6>
+                        <p class="text-muted small mb-0">Real-time word and character counting tool.</p>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home disabled">
+                        <span class="badge bg-light text-dark border position-absolute top-0 end-0 m-3">Coming Soon</span>
+                        <div class="tool-icon-box"><i class="bi bi-calculator"></i></div>
+                        <h6 class="fw-bold text-dark">Scientific Calculator</h6>
+                        <p class="text-muted small mb-0">Advanced math calculations in your browser.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-images"></i></div>
+                        <h6 class="fw-bold text-dark">Image to PDF</h6>
+                        <p class="text-muted small mb-0">Combine JPG/PNG images into a single PDF.</p>
+                    </div>
+                </div>
+
+               
+            </div>
+        </section>
+
+        <div class="mt-5 text-center">
+             <ins class="adsbygoogle"
+                 style="display:block"
+				 data-ad-client="ca-pub-5947676189341600"
+				 data-ad-slot="1495482573"
+				 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
         </div>
-        
-        <footer class="mt-5 pt-4 text-center border-top">
-            <p class="text-muted small">© 2026 Wedugo Education. Browser-based generation for 100% privacy.</p>
+
+        <footer class="mt-5 pt-5 border-top">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <img src="main_images/logo.png" alt="Wedugo Logo" style="height: 25px;" class="mb-2">
+                    <p class="text-muted small mb-0">© 2026 Wedugo. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex justify-content-md-end gap-3">
+                        <a href="#" class="text-muted small text-decoration-none disabled">Privacy Policy</a>
+                        <a href="#" class="text-muted small text-decoration-none disabled">Terms of Use</a>
+                    </div>
+                </div>
+            </div>
         </footer>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const sidebar = document.getElementById('sidebar');
-        document.getElementById('mobileSidebarToggle').addEventListener('click', () => sidebar.classList.toggle('active'));
+        document.getElementById('mobileSidebarToggle').addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
 
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 992 && !sidebar.contains(e.target) && !e.target.closest('#mobileSidebarToggle')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        /* --- QR TOOL SCRIPT START --- */
         let currentType = 'text';
-
-        // Type Switching Logic
         document.querySelectorAll('.type-card').forEach(card => {
             card.addEventListener('click', function() {
                 document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
@@ -293,13 +443,10 @@
             else if (currentType === 'location') finalData = `geo:${document.getElementById('geo-lat').value},${document.getElementById('geo-lon').value}`;
 
             if (!finalData || !finalData.trim()) { alert("Please enter some content"); return; }
-
             placeholder.innerText = "Generating...";
             img.style.display = 'none';
-            
             const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${encodeURIComponent(finalData)}`;
             img.src = apiUrl;
-            
             img.onload = () => {
                 img.style.display = 'block';
                 placeholder.style.display = 'none';
@@ -319,11 +466,7 @@
             a.click();
             document.body.removeChild(a);
         }
-
-        function copyQRLink() {
-            navigator.clipboard.writeText(document.getElementById('qr-image').src);
-            alert("QR Link copied to clipboard!");
-        }
+        /* --- QR TOOL SCRIPT END --- */
     </script>
 </body>
 </html>

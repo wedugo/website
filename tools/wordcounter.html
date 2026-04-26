@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="oYfP26VC4AUYQHD29TFxTz9ck5XJxXD3dKNwD6I_GUY" />
+    <meta name="publisher" content="Wedugo">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="copyright" content="Copyright Wedugo, Inc. All rights reserved.">
+    
+    <title>Pro Word Counter | Online Text Analysis Tool | Wedugo</title>
+    <link rel="icon" type="image/x-icon" href="/main_images/icon.png">
+    <meta name="description" content="Free professional word counter tool by Wedugo Education. Count words, characters, sentences, paragraphs, and reading time in real-time. Fast, secure, and easy to use.">
+    <meta name="keywords" content="word counter, character count, online text analyzer, sentence counter, reading time calculator, text tools, wedugo education">
+    <link rel="canonical" href="https://www.wedugo.com/tools/word-counter.html" />
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pro Word Counter & Text Analyzer | Wedugo">
+    <meta property="og:description" content="Analyze your text instantly. Get accurate counts for words, characters, capital letters, and more. No registration required.">
+    <meta property="og:image" content="images/wedugo_education.png">
+    <meta property="og:url" content="https://www.wedugo.com/tools/word-counter.html">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pro Word Counter | Wedugo Education">
+    <meta name="twitter:description" content="Fast, secure, and free online word counter. Track your writing metrics in real-time.">
+    <meta name="twitter:image" content="images/wedugo_education.png">
+    
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-blue: #0052FF;
+            --light-bg: #fbfcfd;
+            --sidebar-width: 280px;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: #2d3436; }
+
+        /* Sidebar */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: #fff;
+            border-right: 1px solid #edf2f7;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1050;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand { padding: 2rem 1.5rem; }
+        @media (max-width: 992px) { .sidebar-brand { display: none; } }
+
+        .sidebar-link {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #4a5568;
+            text-decoration: none;
+            transition: 0.2s;
+            border-radius: 10px;
+            margin: 4px 15px;
+            font-weight: 500;
+        }
+        .sidebar-link:hover, .sidebar-link.active { background: #f0f7ff; color: var(--primary-blue); }
+        .sidebar-link i { margin-right: 12px; }
+
+        .disabled { 
+            opacity: 0.4 !important; 
+            filter: grayscale(1) !important; 
+            pointer-events: none !important; 
+            cursor: not-allowed !important;
+            user-select: none;
+        }
+
+        .mobile-header {
+            display: none;
+            background: #fff;
+            padding: 12px 20px;
+            border-bottom: 1px solid #edf2f7;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tool-card-home {
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 20px;
+            padding: 25px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
+        }
+
+        .tool-card-home:not(.disabled):hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary-blue);
+        }
+
+        .tool-icon-box {
+            width: 48px; height: 48px;
+            background: #f0f7ff;
+            color: var(--primary-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 16px;
+        }
+
+        #content { margin-left: var(--sidebar-width); padding: 30px; transition: all 0.3s; min-height: 100vh; }
+
+        @media (max-width: 992px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.active { transform: translateX(0); }
+            #content { margin-left: 0; padding: 20px; }
+            .mobile-header { display: flex; }
+        }
+
+        .personal-ad-sidebar {
+            background: #f8f9fa;
+            border: 1px dashed #0052FF;
+            border-radius: 12px;
+            margin: 20px 15px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        /* --- WORD COUNTER STYLES --- */
+        .main-card { background: #fff; border-radius: 24px; border: 1px solid #edf2f7; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .type-selector-wrapper { display: flex; overflow-x: auto; gap: 12px; padding: 20px; background: #fcfdfe; border-bottom: 1px solid #edf2f7; scrollbar-width: none; }
+        .type-selector-wrapper::-webkit-scrollbar { display: none; }
+        
+        .type-card { min-width: 100px; border: 1px solid #edf2f7; border-radius: 16px; padding: 12px 8px; text-align: center; background: #fff; }
+        .type-card i { font-size: 1.2rem; margin-bottom: 5px; display: block; color: #718096; }
+        .type-card span { font-size: 0.9rem; font-weight: 700; color: var(--primary-blue); display: block; }
+        .type-card .label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: #718096; }
+
+        .generator-grid { display: grid; grid-template-columns: 1fr 320px; }
+        .input-section { padding: 30px; border-right: 1px solid #edf2f7; }
+        .preview-section { padding: 30px; background: #fafbfc; display: flex; flex-direction: column; }
+        
+        #text-input { 
+            border: 1px solid #edf2f7; 
+            border-radius: 16px; 
+            padding: 20px; 
+            font-size: 1rem; 
+            line-height: 1.6;
+            transition: 0.2s;
+        }
+        #text-input:focus { border-color: var(--primary-blue); box-shadow: none; outline: none; background: #fff; }
+
+        @media (max-width: 992px) { .generator-grid { grid-template-columns: 1fr; } .input-section { border-right: none; border-bottom: 1px solid #edf2f7; } }
+    </style>
+</head>
+<body>
+
+    <header class="mobile-header">
+        <img src="/main_images/logo.png" alt="Wedugo Logo" style="height: 30px;">
+        <button class="btn btn-light border" id="mobileSidebarToggle">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+    </header>
+
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <img src="/main_images/logo.png" alt="Wedugo Logo" class="img-fluid" style="max-height: 40px;">
+        </div>
+        <div class="mt-2">
+            <a href="/" class="sidebar-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Tools</div>
+            <a href="/tools/qr.html" class="sidebar-link"><i class="bi bi-qr-code"></i> QR Generator</a>
+            <a href="/tools/imagecompressor.html" class="sidebar-link"><i class="bi bi-aspect-ratio"></i> Image Compressor</a>
+            <a href="/tools/pdf2jpg.html" class="sidebar-link"><i class="bi bi-file-earmark-image"></i> PDF to JPG</a>
+            <div class="sidebar-link active"><i class="bi bi-type"></i> Word Counter</div>
+            <div class="sidebar-link disabled"><i class="bi bi-calculator"></i> Calculator</div>
+            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Info</div>
+            <a href="#" class="sidebar-link disabled"><i class="bi bi-shield-check"></i> Privacy</a>
+            <div class="personal-ad-sidebar">
+                <span class="badge bg-primary mb-2" style="font-size: 10px;">Advertise</span>
+                <p class="small fw-bold mb-1">Wedugo</p>
+                <p class="text-muted" style="font-size: 11px;">Contact</p>
+            </div>
+        </div>
+    </nav>
+
+    <main id="content">
+        <header class="mb-4 py-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item text-primary fw-medium">Wedugo Education</li>
+                    <li class="breadcrumb-item active" aria-current="page">Word Counter</li>
+                </ol>
+            </nav>
+        </header>
+
+        <div class="mb-5 text-center">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-5947676189341600"
+                 data-ad-slot="1495482573"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+
+        <section id="word-counter-tool" class="mb-5">
+            <h5 class="fw-bold mb-4">Pro Word Counter</h5>
+            <div class="main-card">
+                <div class="type-selector-wrapper">
+                    <div class="type-card"><i class="bi bi-chat-left-text"></i><span id="stat-words">0</span><div class="label">Words</div></div>
+                    <div class="type-card"><i class="bi bi-fonts"></i><span id="stat-chars">0</span><div class="label">Characters</div></div>
+                    <div class="type-card"><i class="bi bi-type-h1"></i><span id="stat-caps">0</span><div class="label">Capitals</div></div>
+                    <div class="type-card"><i class="bi bi-dot"></i><span id="stat-stops">0</span><div class="label">Full Stops</div></div>
+                    <div class="type-card"><i class="bi bi-hash"></i><span id="stat-nums">0</span><div class="label">Numbers</div></div>
+                </div>
+
+                <div class="generator-grid">
+                    <div class="input-section">
+                        <label class="form-label fw-bold small text-muted mb-3">Input Text</label>
+                        <textarea class="form-control" id="text-input" rows="12" placeholder="Paste your content here..." oninput="analyzeText()"></textarea>
+                        <div class="mt-4 d-flex gap-2">
+                            <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="copyText()"><i class="bi bi-clipboard me-2"></i>Copy</button>
+                            <button class="btn btn-light border rounded-pill px-4 fw-bold" onclick="clearText()"><i class="bi bi-trash me-2"></i>Clear</button>
+                        </div>
+                    </div>
+                    <div class="preview-section">
+                        <h6 class="fw-bold mb-4">Deep Analysis</h6>
+                        <div class="analysis-item d-flex justify-content-between mb-3 pb-2 border-bottom"><span class="text-muted small">Reading Time</span><span class="fw-bold small" id="stat-reading">0 min</span></div>
+                        <div class="analysis-item d-flex justify-content-between mb-3 pb-2 border-bottom"><span class="text-muted small">Sentences</span><span class="fw-bold small" id="stat-sentences">0</span></div>
+                        <div class="analysis-item d-flex justify-content-between mb-3 pb-2 border-bottom"><span class="text-muted small">Paragraphs</span><span class="fw-bold small" id="stat-paragraphs">0</span></div>
+                        <div class="analysis-item d-flex justify-content-between mb-3 pb-2 border-bottom"><span class="text-muted small">Alphabet Count</span><span class="fw-bold small" id="stat-alpha">0</span></div>
+                        <div class="analysis-item d-flex justify-content-between mb-3 pb-2 border-bottom"><span class="text-muted small">Chars (No Space)</span><span class="fw-bold small" id="stat-nospace">0</span></div>
+                        <div class="mt-auto">
+                            <div class="alert alert-primary border-0 small py-2 px-3 mb-0" style="border-radius: 12px; background: #f0f7ff;">
+                                <i class="bi bi-info-circle-fill me-2"></i>Real-time analysis active.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tool-grid">
+            <h5 class="fw-bold mb-4">Available Utilities</h5>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                   <a href="tools/qr.html" class="tool-card-home">
+                        <div class="tool-icon-box"><i class="bi bi-qr-code-scan"></i></div>
+                        <h6 class="fw-bold text-dark">QR Code Generator</h6>
+                        <p class="text-muted small mb-0">Create custom QR codes for any link.</p>
+                    </a>	
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home border-0 bg-transparent p-0">
+                        <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-5947676189341600"
+                             data-ad-slot="1495482573"
+                             data-ad-format="auto"
+                             data-full-width-responsive="true"></ins>
+                        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="mt-5 text-center">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-5947676189341600"
+                 data-ad-slot="1495482573"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+
+        <footer class="mt-5 pt-5 border-top">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <img src="/main_images/logo.png" alt="Wedugo Logo" style="height: 25px;" class="mb-2">
+                    <p class="text-muted small mb-0">© 2026 Wedugo. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('mobileSidebarToggle').addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        function analyzeText() {
+            const text = document.getElementById('text-input').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            const noSpace = text.replace(/\s/g, '').length;
+            const caps = (text.match(/[A-Z]/g) || []).length;
+            const alpha = (text.match(/[a-z]/gi) || []).length;
+            const stops = (text.match(/\./g) || []).length;
+            const nums = (text.match(/[0-9]/g) || []).length;
+            const sentences = (text.match(/[.!?](\s|$)/g) || []).length;
+            const paragraphs = text.trim() ? text.split(/\n+/).length : 0;
+            const readingTime = Math.ceil(words / 200);
+
+            document.getElementById('stat-words').innerText = words.toLocaleString();
+            document.getElementById('stat-chars').innerText = chars.toLocaleString();
+            document.getElementById('stat-caps').innerText = caps.toLocaleString();
+            document.getElementById('stat-stops').innerText = stops.toLocaleString();
+            document.getElementById('stat-nums').innerText = nums.toLocaleString();
+            document.getElementById('stat-reading').innerText = readingTime + " min";
+            document.getElementById('stat-sentences').innerText = sentences.toLocaleString();
+            document.getElementById('stat-paragraphs').innerText = paragraphs.toLocaleString();
+            document.getElementById('stat-alpha').innerText = alpha.toLocaleString();
+            document.getElementById('stat-nospace').innerText = noSpace.toLocaleString();
+        }
+
+        function clearText() { document.getElementById('text-input').value = ""; analyzeText(); }
+        function copyText() {
+            const text = document.getElementById('text-input');
+            if (!text.value) return;
+            text.select();
+            document.execCommand('copy');
+            alert('Text copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

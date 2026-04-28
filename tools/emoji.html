@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="oYfP26VC4AUYQHD29TFxTz9ck5XJxXD3dKNwD6I_GUY" />
+    <meta name="publisher" content="Wedugo">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="copyright" content="Copyright Wedugo, Inc. All rights reserved.">
+    
+    <title>Free Emoji Generator | Wedugo Education Creative Tools</title>
+    
+    <link rel="icon" type="image/x-icon" href="/main_images/icon.png">
+    <meta name="description" content="Create unique, custom emojis instantly with the Wedugo Emoji Generator. Turn text or ideas into expressive icons for Discord, Slack, and social media. Fast and free.">
+    <meta name="keywords" content="emoji generator, create custom emojis, emoji maker, custom discord emojis, slack emoji creator, text to emoji, online creative tools">
+    <link rel="canonical" href="https://www.wedugo.com/tools/emoji.html" />
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Free Emoji Generator | Wedugo Education">
+    <meta property="og:description" content="Copy your emojis in seconds. Perfect for social media, messaging apps, and personal branding. No registration required.">
+    <meta property="og:image" content="/main_images/logo.png">
+    <meta property="og:url" content="https://www.wedugo.com/tools/emoji.html">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Free AI Emoji Generator | Wedugo Education">
+    <meta name="twitter:description" content="Fast, fun, and free emoji generation. Turn any idea into a custom emoji instantly with Wedugo.">
+    <meta name="twitter:image" content="/main_images/logo.png">
+    
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-blue: #0052FF;
+            --light-bg: #fbfcfd;
+            --sidebar-width: 280px;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: #2d3436; }
+
+        /* Sidebar */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: #fff;
+            border-right: 1px solid #edf2f7;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1050;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand { padding: 2rem 1.5rem; }
+        @media (max-width: 992px) { .sidebar-brand { display: none; } }
+
+        .sidebar-link {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #4a5568;
+            text-decoration: none;
+            transition: 0.2s;
+            border-radius: 10px;
+            margin: 4px 15px;
+            font-weight: 500;
+        }
+        .sidebar-link:hover, .sidebar-link.active { background: #f0f7ff; color: var(--primary-blue); }
+        .sidebar-link i { margin-right: 12px; }
+
+        /* DISABLED LOGIC - Sidebar and Cards */
+        .disabled { 
+            opacity: 0.4 !important; 
+            filter: grayscale(1) !important; 
+            pointer-events: none !important; /* Makes it unclickable */
+            cursor: not-allowed !important;
+            user-select: none;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            background: #fff;
+            padding: 12px 20px;
+            border-bottom: 1px solid #edf2f7;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Tool Cards */
+        .tool-card-home {
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 20px;
+            padding: 25px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
+        }
+
+        .tool-card-home:not(.disabled):hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary-blue);
+        }
+
+        .tool-icon-box {
+            width: 48px; height: 48px;
+            background: #f0f7ff;
+            color: var(--primary-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 16px;
+        }
+
+        #content { margin-left: var(--sidebar-width); padding: 30px; transition: all 0.3s; min-height: 100vh; }
+
+        @media (max-width: 992px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.active { transform: translateX(0); }
+            #content { margin-left: 0; padding: 20px; }
+            .mobile-header { display: flex; }
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+            border: 1px solid #edf2f7;
+            border-radius: 24px;
+            padding: 50px;
+        }
+
+        /* Personal Ad Custom Styles */
+        .personal-ad-sidebar {
+            background: #f8f9fa;
+            border: 1px dashed #0052FF;
+            border-radius: 12px;
+            margin: 20px 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        .personal-ad-card {
+            background: linear-gradient(135deg, #0052FF 0%, #003db3 100%);
+            color: white !important;
+        }
+
+.container-box{max-width:1200px;margin:auto;padding:30px}
+.header{text-align:center;margin-bottom:30px}
+.emoji-box{background:#fff;border-radius:15px;padding:20px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,0.05)}
+.emoji-title{font-weight:600;margin-bottom:10px}
+.emoji-list span{font-size:26px;cursor:pointer;padding:8px;border-radius:10px;transition:.2s;display:inline-block}
+.emoji-list span:hover{background:#eaf1ff}
+.big-display{font-size:60px;text-align:center;margin:20px 0}
+.search-box{max-width:400px;margin:20px auto}
+.toast-copy{position:fixed;bottom:20px;right:20px;background:#000;color:#fff;padding:10px 15px;border-radius:10px;opacity:0;transition:.3s}
+    </style>
+</head>
+<body>
+
+    <header class="mobile-header">
+        <img src="/main_images/logo.png" alt="Wedugo Logo" style="height: 30px;">
+        <button class="btn btn-light border" id="mobileSidebarToggle">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+    </header>
+
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <img src="/main_images/logo.png" alt="Wedugo Logo" class="img-fluid" style="max-height: 40px;">
+        </div>
+        
+        <div class="mt-2">
+            <a href="/" class="sidebar-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            
+            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Tools</div>
+            <div class="sidebar-link"><i class="bi bi-qr-code"></i> QR Generator</div>
+
+            <a href="/tools/imagecompressor.html" class="sidebar-link"><i class="bi bi-aspect-ratio"></i> Image Compressor</a>
+            <a href="/tools/pdf2jpg.html" class="sidebar-link"><i class="bi bi-file-earmark-image"></i> PDF to JPG</a>
+            <a href="/tools/wordcounter.html" class="sidebar-link"><i class="bi bi-type"></i> Word Counter</a>
+            
+            <div class="sidebar-link disabled"><i class="bi bi-calculator"></i> Calculator</div>
+            <div class="sidebar-link disabled"><i class="bi bi-images"></i> Image to PDF</div>
+            <div class="sidebar-link disabled"><i class="bi bi-file-zip"></i> PDF Compressor</div>
+			
+			<a href="/tools/emoji.html" class="sidebar-link active"><i class="bi bi-emoji-smile"></i>Emoji</a>
+           
+            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Info</div>
+            <a href="#" class="sidebar-link disabled"><i class="bi bi-mortarboard"></i> Courses</a>
+            <a href="#" class="sidebar-link disabled"><i class="bi bi-shield-check"></i> Privacy</a>
+
+            <div class="personal-ad-sidebar">
+                <span class="badge bg-primary mb-2" style="font-size: 10px;">Adverise</span>
+                <p class="small fw-bold mb-1">Wedugo</p>
+                <p class="text-muted" style="font-size: 11px;">Contact</p>
+                <a href="#" class="btn btn-sm btn-dark w-100 py-1">-</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="content">
+        <header class="mb-4 py-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item text-primary fw-medium">Wedugo Education</li>
+                    <li class="breadcrumb-item active" aria-current="page">Emoji</li>
+                </ol>
+            </nav>
+        </header>
+      
+
+<section id="emoji-generator-tool" class="mb-5">
+<div class="container-box">
+
+<div class="header">
+<h1>😀 Emoji Copy/Paste</h1>
+<p>Categorized Emojis • Click to Copy</p>
+</div>
+
+
+<div class="big-display" id="display">😊</div>
+
+<div id="emojiSections"></div>
+
+<div class="mb-5 text-center">
+            <ins class="adsbygoogle"
+                 style="display:block"
+				 data-ad-client="ca-pub-5947676189341600"
+				 data-ad-slot="1495482573"
+				 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+
+</div>
+
+<div id="toast" class="toast-copy">Copied!</div>
+        </section>
+        <section id="tool-grid">
+            <h5 class="fw-bold mb-4">Available Utilities</h5>
+            <div class="row g-4">
+			
+				<div class="col-md-6 col-lg-4">
+                   <a href="tools/qr.html" class="tool-card-home">
+                        <div class="tool-icon-box"><i class="bi bi-qr-code-scan"></i></div>
+                        <h6 class="fw-bold text-dark">QR Code Generator</h6>
+                        <p class="text-muted small mb-0">Create custom QR codes for any link.</p>
+					</a>	
+                </div>
+
+ <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home personal-ad-card disabled">
+					<span class="badge bg-light text-dark border position-absolute top-0 end-0 m-3">Coming Soon</span>
+                        <div class="tool-icon-box text-white bg-white bg-opacity-25"><i class="bi bi-star-fill"></i></div>
+                        <h6 class="fw-bold">Advertise</h6>
+                        <p class="small mb-2 opacity-75">Want to Advertise Here</p>
+                        <a href="#" class="btn btn-sm btn-light mt-auto">Contact</a>
+                    </div>
+                </div>
+				
+                <div class="col-md-6 col-lg-4">
+                    <a href="tools/image-compressor.html" class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-file-earmark-zip"></i></div>
+                        <h6 class="fw-bold text-dark">Image Compressor</h6>
+                        <p class="text-muted small mb-0">Optimize your images for faster loading times.</p>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home border-0 bg-transparent p-0">
+                        <ins class="adsbygoogle"
+                 style="display:block"
+				 data-ad-client="ca-pub-5947676189341600"
+				 data-ad-slot="1495482573"
+				 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="tools/pdf-to-jpg.html" class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-file-pdf"></i></div>
+                        <h6 class="fw-bold text-dark">PDF to JPG</h6>
+                        <p class="text-muted small mb-0">Convert PDF pages into high-res image files.</p>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="tools/word-counter.html" class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-type"></i></div>
+                        <h6 class="fw-bold text-dark">Word Counter</h6>
+                        <p class="text-muted small mb-0">Real-time word and character counting tool.</p>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home disabled">
+                        <span class="badge bg-light text-dark border position-absolute top-0 end-0 m-3">Coming Soon</span>
+                        <div class="tool-icon-box"><i class="bi bi-calculator"></i></div>
+                        <h6 class="fw-bold text-dark">Scientific Calculator</h6>
+                        <p class="text-muted small mb-0">Advanced math calculations in your browser.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="tool-card-home disabled">
+                        <div class="tool-icon-box"><i class="bi bi-images"></i></div>
+                        <h6 class="fw-bold text-dark">Image to PDF</h6>
+                        <p class="text-muted small mb-0">Combine JPG/PNG images into a single PDF.</p>
+                    </div>
+                </div>
+
+               
+            </div>
+        </section>
+
+        <div class="mt-5 text-center">
+             <ins class="adsbygoogle"
+                 style="display:block"
+				 data-ad-client="ca-pub-5947676189341600"
+				 data-ad-slot="1495482573"
+				 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+
+        <footer class="mt-5 pt-5 border-top">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <img src="/main_images/logo.png" alt="Wedugo Logo" style="height: 25px;" class="mb-2">
+                    <p class="text-muted small mb-0">© 2026 Wedugo. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex justify-content-md-end gap-3">
+                        <a href="#" class="text-muted small text-decoration-none disabled">Privacy Policy</a>
+                        <a href="#" class="text-muted small text-decoration-none disabled">Terms of Use</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('mobileSidebarToggle').addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 992 && !sidebar.contains(e.target) && !e.target.closest('#mobileSidebarToggle')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+const sections = {
+"😀 Smileys & Emotion": [0x1F600,0x1F64F],
+"🐶 Animals & Nature": [0x1F400,0x1F4D3],
+"🍔 Food & Drink": [0x1F34F,0x1F37F],
+"⚽ Activities": [0x1F3A0,0x1F3FF],
+"🚗 Travel & Places": [0x1F680,0x1F6FF],
+"💡 Objects": [0x1F4A0,0x1F4FF],
+"❤️ Symbols": [0x2600,0x26FF],
+"🔤 Others": [0x2700,0x27BF]
+};
+
+const display = document.getElementById('display');
+const container = document.getElementById('emojiSections');
+const search = document.getElementById('search');
+const toast = document.getElementById('toast');
+
+function showToast(){
+ toast.style.opacity=1;
+ setTimeout(()=>toast.style.opacity=0,1000);
+}
+
+function createEmojiSpan(emoji){
+ const span=document.createElement('span');
+ span.textContent=emoji;
+ span.onclick=()=>{
+  display.textContent=emoji;
+  navigator.clipboard.writeText(emoji);
+  showToast();
+ };
+ return span;
+}
+
+function renderSections(filter=""){
+ container.innerHTML="";
+ Object.keys(sections).forEach(title=>{
+  const [start,end]=sections[title];
+  const box=document.createElement('div');
+  box.className='emoji-box';
+
+  const heading=document.createElement('div');
+  heading.className='emoji-title';
+  heading.textContent=title;
+
+  const list=document.createElement('div');
+  list.className='emoji-list';
+
+  for(let i=start;i<=end;i++){
+    const emoji=String.fromCodePoint(i);
+    if(!emoji.trim()) continue;
+    if(filter && !emoji.includes(filter)) continue;
+    list.appendChild(createEmojiSpan(emoji));
+  }
+
+  if(list.children.length>0){
+    box.appendChild(heading);
+    box.appendChild(list);
+    container.appendChild(box);
+  }
+ });
+}
+renderSections();
+</script>
+</body>
+</html>

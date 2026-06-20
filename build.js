@@ -4,7 +4,7 @@ const path = require('path');
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6ImRuS24j_tOTKA_i1QG_K-DKutrWxjjSbi4WszrZxR90g_1uNaXQqOjnxR2tX9flEFXy7qfY/pub?gid=0&single=true&output=csv";
 
 // IMPORTANT: Put your custom domain here to completely hide GitHub Pages
-const SITE_BASE_URL = "https://wedugo.com"; 
+const SITE_BASE_URL = "https://yourwebsite.com"; 
 
 // Helper for Navigation
 function getNavbar(depth) {
@@ -118,72 +118,78 @@ async function buildWedugoQuizSite() {
             const langBadge = q.language ? `<span class="badge bg-info text-dark ms-2">${q.language}</span>` : '';
 
             const quizContent = `
-                <div class="card shadow-sm mx-auto mb-4" style="max-width: 700px;">
-                    <div class="card-body p-4 p-md-5">
-                        
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <span class="badge bg-secondary">${category}</span>
-                                ${langBadge}
+                <div class="row g-4 justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm p-4 p-md-5 mb-4 bg-white">
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div><span class="badge bg-primary px-3 py-2 fs-7">${category}</span>${langBadge}</div>
+                                <small class="text-muted fw-bold">Question ID: ${q.que_id || quizId}</small>
                             </div>
-                            <small class="text-muted">ID: ${q.que_id || quizId}</small>
+                            
+                            ${imageHtml}
+                            
+                            <h1 class="h3 mb-3 fw-bold text-dark lh-base">${q.question}</h1>
+                            <p class="text-muted small border-bottom pb-3 mb-4">Uploaded by expert: <span class="text-dark fw-semibold">${q.postby || 'Wedugo Admin'}</span></p>
+
+                            <div class="d-grid gap-3 mb-2" id="options-container">
+                                <button class="btn option-btn shadow-sm" onclick="checkAnswer(this, 'A')">A) ${q.answer1}</button>
+                                <button class="btn option-btn shadow-sm" onclick="checkAnswer(this, 'B')">B) ${q.answer2}</button>
+                                <button class="btn option-btn shadow-sm" onclick="checkAnswer(this, 'C')">C) ${q.answer3}</button>
+                                <button class="btn option-btn shadow-sm" onclick="checkAnswer(this, 'D')">D) ${q.answer4}</button>
+                            </div>
+
+                            <div id="explanation-box" class="alert mt-4 d-none border-2">
+                                <h4 class="alert-heading fw-bold mb-2" id="result-title"></h4>
+                                <div class="fs-6 py-2 border-top">
+                                    <p class="mb-0 text-dark"><strong>Explanation:</strong> ${q.answerdetail || 'No further reference explanation needed for this problem.'}</p>
+                                </div>
+                            </div>
                         </div>
-                        
-                        ${imageHtml}
-                        
-                        <h1 class="card-title h3 mb-2 fw-bold text-dark">${q.question}</h1>
-                        <p class="text-muted small mb-4">Posted by: <strong>${q.postby || 'Admin'}</strong></p>
 
-                        <!-- Answers are escaped safely using .replace to prevent breaking JS if questions have apostrophes -->
-                        <div class="d-grid gap-3" id="options-container">
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer1.replace(/'/g, "\\'")}')">A) ${q.answer1}</button>
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer2.replace(/'/g, "\\'")}')">B) ${q.answer2}</button>
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer3.replace(/'/g, "\\'")}')">C) ${q.answer3}</button>
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer4.replace(/'/g, "\\'")}')">D) ${q.answer4}</button>
-                        </div>
-
-                        <div id="explanation-box" class="alert mt-4 d-none">
-                            <h5 class="alert-heading" id="result-title"></h5>
-                            <hr>
-                            <p class="mb-0"><strong>Explanation:</strong> ${q.answerdetail || 'No explanation provided.'}</p>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Facebook Comments Integration -->
-                <div class="card shadow-sm mx-auto" style="max-width: 700px;">
-                    <div class="card-body p-4">
-                        <h4 class="fw-bold mb-3">Comments & Discussion</h4>
-                        <div class="fb-comments" 
-                             data-href="${uniquePageUrl}" 
-                             data-width="100%" 
-                             data-numposts="5">
+                        <div class="card shadow-sm p-4 bg-white">
+                            <h3 class="h5 fw-bold text-dark mb-3 border-bottom pb-2">Community Discussion</h3>
+                            <div class="fb-comments" 
+                                 data-href="${uniquePageUrl}" 
+                                 data-width="100%" 
+                                 data-numposts="5"
+                                 data-order-by="time">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <script>
-                    function checkAnswer(btnElement, selectedOption) {
-                        const correct = "${q.mainanswer.replace(/'/g, "\\'")}";
+                    function checkAnswer(btnElement, selectedLetter) {
+                        // Safely grab the A/B/C/D answer from your sheet, force it to uppercase, and remove accidental spaces
+                        const correctLetter = "${(q.mainanswer || '').toString().trim().toUpperCase()}";
+                        
+                        // Create a map of the text answers so we can show the user the right text if they fail
+                        const answerTexts = {
+                            'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",
+                            'B': "${(q.answer2 || '').replace(/'/g, "\\'")}",
+                            'C': "${(q.answer3 || '').replace(/'/g, "\\'")}",
+                            'D': "${(q.answer4 || '').replace(/'/g, "\\'")}"
+                        };
+
                         const explanationBox = document.getElementById('explanation-box');
                         const resultTitle = document.getElementById('result-title');
-                        const allButtons = document.querySelectorAll('.option-btn');
                         
-                        // Disable all buttons after clicking
-                        allButtons.forEach(btn => btn.disabled = true);
-
-                        // Show Explanation Box
+                        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
                         explanationBox.classList.remove('d-none');
-
-                        if(selectedOption === correct) {
-                            btnElement.classList.replace('btn-outline-primary', 'btn-success');
-                            explanationBox.classList.add('alert-success');
-                            resultTitle.innerText = "Correct! 🎉";
+                        
+                        if(selectedLetter === correctLetter) {
+                            btnElement.style.borderColor = "#198754";
+                            btnElement.style.backgroundColor = "#e8f5e9";
+                            explanationBox.classList.add('alert-success', 'border-success');
+                            resultTitle.innerHTML = "✨ Correct Answer!";
                         } else {
-                            btnElement.classList.replace('btn-outline-primary', 'btn-danger');
-                            explanationBox.classList.add('alert-danger');
-                            resultTitle.innerText = "Incorrect! ❌ The correct answer was: " + correct;
+                            btnElement.style.borderColor = "#dc3545";
+                            btnElement.style.backgroundColor = "#fde8e8";
+                            explanationBox.classList.add('alert-danger', 'border-danger');
+                            
+                            // Dynamically prints out the letter AND the text of the correct answer
+                            resultTitle.innerHTML = "❌ Incorrect! The right answer was: " + correctLetter + ") " + answerTexts[correctLetter];
                         }
                     }
                 </script>

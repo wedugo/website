@@ -6,6 +6,17 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6Im
 // IMPORTANT: Put your custom domain here
 const SITE_BASE_URL = "https://www.wedugo.com"; 
 
+// Your specific category hierarchy
+const CATEGORY_LIST = [
+    "General Knowledge & Science", "Indian Geography", "World Geography", "Indian Economy",
+    "General Science", "Physics", "Chemistry", "Biology", "Solar System",
+    "Madhya Pradesh GK", "Famous Personalities", "Honours and Awards", "Inventions",
+    "Days and Years", "Aptitude & Reasoning", "Reasoning", "Aptitude", "Average",
+    "Series", "Sets", "Percentage", "Simple Interest", "Surds and Indices",
+    "Ratio and Proportion", "Technical & Language", "Computer", "Technology",
+    "Civil Engineering", "English", "Hindi", "Sports"
+];
+
 // Helper for Navigation (Now includes your custom icon)
 function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
@@ -96,7 +107,17 @@ async function buildWedugoQuizSite() {
             if (row.length < headers.length) return; 
             
             const q = {};
-            headers.forEach((header, i) => { q[header] = row[i]?.trim(); });
+            
+			headers.forEach((header, i) => { q[header] = row[i]?.trim(); });
+
+            // --- NEW: CORRUPT DATA FILTER ---
+            // This regex checks for the specific garbled characters common in your Hindi export
+            const isCorrupted = /[\u0080-\uFFFF]/.test(JSON.stringify(q));
+            if (isCorrupted && q.question && q.question.includes('à¤')) {
+                console.log("Skipping corrupted row:", q.id);
+                return; // Skips this row and goes to the next one
+            }
+			
 
             const quizId = q.id || (rows.length - index);
             const category = q.qcategory || 'Uncategorized';
@@ -213,47 +234,31 @@ async function buildWedugoQuizSite() {
         });
         allQuizzesListHtml += '</div>';
 
+        // Generate Category Pages based on YOUR list
         const catMainDir = path.join(distDir, 'category');
         fs.mkdirSync(catMainDir, { recursive: true });
         
         let categoryCardsHtml = '<div class="row g-4">';
-
-        for (const [categoryName, quizzes] of Object.entries(categoriesMap)) {
-            const safeCatName = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        
+        // Loop through your PRE-DEFINED list
+        CATEGORY_LIST.forEach(cat => {
+            const quizzes = categoriesMap[cat] || [];
+            const safeCatName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const specificCatDir = path.join(catMainDir, safeCatName);
             fs.mkdirSync(specificCatDir, { recursive: true });
 
-            let catQuizzesHtml = `
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold">${categoryName} Quizzes</h2>
-                    <span class="badge bg-secondary fs-6">${quizzes.length} Questions</span>
-                </div>
-                <div class="list-group shadow-sm">`;
-            
-            quizzes.forEach(q => {
-                catQuizzesHtml += `<a href="../../quiz/${q.quizId}/index.html" class="list-group-item list-group-item-action py-3">${q.question}</a>`;
-            });
+            let catQuizzesHtml = `<h2 class="mb-4">${cat}</h2><div class="list-group">`;
+            quizzes.forEach(q => catQuizzesHtml += `<a href="../../quiz/${q.quizId}/index.html" class="list-group-item">${q.question}</a>`);
             catQuizzesHtml += '</div>';
-
-            fs.writeFileSync(path.join(specificCatDir, 'index.html'), getHtmlShell(`${categoryName} Quizzes`, catQuizzesHtml, 2, `Explore ${quizzes.length} practice questions in the ${categoryName} category.`));
+            fs.writeFileSync(path.join(specificCatDir, 'index.html'), getHtmlShell(cat, catQuizzesHtml, 2));
 
             categoryCardsHtml += `
-                <div class="col-md-6 col-lg-4">
-                    <div class="card shadow-sm h-100 border-0">
-                        <div class="card-body text-center p-4">
-                            <h3 class="card-title h5 fw-bold mb-3">${categoryName}</h3>
-                            <p class="text-muted mb-4">${quizzes.length} Quizzes Available</p>
-                            <a href="../category/${safeCatName}/index.html" class="btn btn-outline-primary w-100">Browse Category</a>
-                        </div>
-                    </div>
-                </div>
+                <div class="col-md-4"><div class="card p-3 mb-3"><h5 class="card-title">${cat}</h5><a href="../category/${safeCatName}/index.html" class="btn btn-primary btn-sm">View (${quizzes.length})</a></div></div>
             `;
-        }
+        });
         categoryCardsHtml += '</div>';
 
-        const categoriesDir = path.join(distDir, 'categories');
-        fs.mkdirSync(categoriesDir, { recursive: true });
-        fs.writeFileSync(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories', `<h2 class="mb-4 fw-bold">Explore Categories</h2>${categoryCardsHtml}`, 1, "Browse all quiz and test categories available on Wedugo Education."));
+        fs.writeFileSync(path.join(distDir, 'categories', 'index.html'), getHtmlShell('Categories', `<h2>Explore Categories</h2>${categoryCardsHtml}`, 1));
 
         const aboutDir = path.join(distDir, 'about');
         fs.mkdirSync(aboutDir, { recursive: true });
@@ -266,6 +271,8 @@ async function buildWedugoQuizSite() {
             </div>
         `;
         fs.writeFileSync(path.join(aboutDir, 'index.html'), getHtmlShell('About Us', aboutContent, 1, "Learn more about Wedugo Education and our mission to provide high-quality practice exams."));
+		
+		const latestQuizzesHtml = allQuizzesListHtml.split('</a>').slice(0, 20).join('</a>') + '</a>';
 
         const homeContent = `
             <div class="text-center py-5 mb-5 bg-white rounded shadow-sm">

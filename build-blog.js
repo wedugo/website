@@ -2,23 +2,49 @@ const fs = require('fs');
 const path = require('path');
 
 // REPLACE THIS WITH YOUR NEW BLOG GOOGLE SHEET CSV URL
-const BLOG_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrpdugY1OXmb7Pzer-sjOixONsm2wix3Xg29fl6WGVEaNmvL_U0aKv21RKpZRtedHHpqp4l7C-Mk7m/pub?output=csv";
+const BLOG_SHEET_CSV_URL = "YOUR_NEW_BLOG_CSV_URL_HERE";
 const SITE_BASE_URL = "https://www.wedugo.com/blog"; 
 
-const POSTS_PER_PAGE = 10; // Number of articles per paginated page
+const POSTS_PER_PAGE = 10;
 
-// ROBUST CSV PARSER
-function parseCSVLine(text) {
-    const result = [];
-    let cur = '', inQuotes = false;
+// UPGRADED ADVANCED CSV PARSER (Handles multi-line HTML cells perfectly)
+function parseFullCSV(text) {
+    const rows = [];
+    let curRow = [];
+    let curCell = '';
+    let inQuotes = false;
+
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
-        if (char === '"') inQuotes = !inQuotes;
-        else if (char === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
-        else cur += char;
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                curCell += '"'; // Escaped quote
+                i++; // Skip the next quote
+            } else {
+                inQuotes = !inQuotes; // Toggle quote state
+            }
+        } else if (char === ',' && !inQuotes) {
+            curRow.push(curCell.trim());
+            curCell = '';
+        } else if ((char === '\n' || char === '\r') && !inQuotes) {
+            // End of row
+            if (char === '\r' && nextChar === '\n') i++; // Handle Windows newlines
+            curRow.push(curCell.trim());
+            if (curRow.join('').length > 0) rows.push(curRow);
+            curRow = [];
+            curCell = '';
+        } else {
+            curCell += char;
+        }
     }
-    result.push(cur.trim());
-    return result;
+    // Push the very last cell/row if it didn't end with a newline
+    if (curCell || curRow.length > 0) {
+        curRow.push(curCell.trim());
+        if (curRow.join('').length > 0) rows.push(curRow);
+    }
+    return rows;
 }
 
 // HELPER: Blog Navbar
@@ -96,12 +122,13 @@ async function buildBlogSite() {
         console.log("Fetching Blog Data...");
         const response = await fetch(BLOG_SHEET_CSV_URL);
         const csvText = await response.text();
-        const lines = csvText.trim().split(/\r?\n/);
         
-        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
-        const rows = lines.slice(1).reverse(); // Latest first
+        // Use the new parser
+        const allParsedRows = parseFullCSV(csvText);
+        
+        const headers = allParsedRows[0].map(h => h.toLowerCase());
+        const rowsToProcess = allParsedRows.slice(1).reverse(); // Latest first
 
-        // Create a separate 'blog' folder inside 'public' so it merges with your quiz site deployment
         const distDir = path.join(__dirname, 'public', 'blog');
         if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
 
@@ -109,8 +136,7 @@ async function buildBlogSite() {
         const categoriesMap = {};
 
         // 1. Process Data
-        rows.forEach((line, index) => {
-            const values = parseCSVLine(line);
+        rowsToProcess.forEach((values, index) => {
             if (values.length < headers.length) return; 
 
             const post = {};
@@ -118,12 +144,10 @@ async function buildBlogSite() {
             
             if (!post.title || !post.content) return; // Skip empty rows
 
-            post.postId = post.id || String(rows.length - index);
+            post.postId = post.id || String(rowsToProcess.length - index);
             post.cat = post.category || 'General';
 
-            // Custom URL Logic: Check for 'url' or 'slug' column, fallback to Title, then ID
             let rawUrl = post.url || post.slug || post.title || post.postId;
-            // Clean the string to ensure it's a valid folder name (lowercase, no spaces, no special chars)
             post.urlSlug = rawUrl.toString().trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             
             if (!categoriesMap[post.cat]) categoriesMap[post.cat] = [];
@@ -196,7 +220,6 @@ async function buildBlogSite() {
             });
             pageContent += `</div>`;
 
-            // Pagination Controls
             pageContent += `<nav><ul class="pagination justify-content-center">`;
             if (i > 1) pageContent += `<li class="page-item"><a class="page-link" href="../${i - 1}/index.html">Previous</a></li>`;
             for (let p = 1; p <= totalPages; p++) {

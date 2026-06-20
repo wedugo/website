@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // REPLACE THIS WITH YOUR NEW BLOG GOOGLE SHEET CSV URL
-const BLOG_SHEET_CSV_URL = "YOUR_NEW_BLOG_CSV_URL_HERE";
+const BLOG_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrpdugY1OXmb7Pzer-sjOixONsm2wix3Xg29fl6WGVEaNmvL_U0aKv21RKpZRtedHHpqp4l7C-Mk7m/pub?output=csv";
 const SITE_BASE_URL = "https://www.wedugo.com/blog"; 
 
 const POSTS_PER_PAGE = 10; // Number of articles per paginated page

@@ -6,13 +6,16 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6Im
 // IMPORTANT: Put your custom domain here
 const SITE_BASE_URL = "https://www.wedugo.com"; 
 
-// Helper for Navigation
+// Helper for Navigation (Now includes your custom icon)
 function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     return `
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="${prefix}/index.html">Wedugo Education</a>
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="${prefix}/index.html">
+                <img src="http://www.wedugo.com/main_images/icon.png" alt="Wedugo Logo" width="30" height="30" class="d-inline-block align-text-top me-2 rounded">
+                Wedugo Education
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -27,7 +30,7 @@ function getNavbar(depth) {
     </nav>`;
 }
 
-// Helper for HTML Shell (THIS FIXES ISSUE #1 - ADSENSE & SEO IN HEAD)
+// Helper for HTML Shell (Added Favicon and ShareThis, Removed Facebook)
 function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") {
     const cleanDescription = (seoDescription || 'Practice high-quality exam preparation questions and mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
 
@@ -47,9 +50,13 @@ function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") 
     <meta property="og:type" content="website">
     ${pageUrl ? `<meta property="og:url" content="${pageUrl}">` : ''}
 
+    <link rel="icon" href="http://www.wedugo.com/main_images/icon.png" type="image/png">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
+
+    <script type='text/javascript' src='https://platform-api.sharethis.com/js/sharethis.js#property=5c5059d8c9830d001319b017&product=inline-share-buttons' async='async'></script>
 
     <style>
         body { background-color: #f8f9fa; }
@@ -60,9 +67,6 @@ function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") 
     </style>
 </head>
 <body>
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v17.0"></script>
-
     ${getNavbar(depth)}
     <div class="container pb-5">
         ${content}
@@ -77,7 +81,6 @@ async function buildWedugoQuizSite() {
         const response = await fetch(SHEET_CSV_URL);
         const csvText = await response.text();
         
-        // THIS FIXES ISSUE #2 PART A (Removes hidden \r characters during CSV parsing)
         const lines = csvText.trim().split(/\r?\n/).map(line => line.split(','));
         const headers = lines[0].map(h => h.trim());
         const rows = lines.slice(1).reverse(); 
@@ -158,22 +161,18 @@ async function buildWedugoQuizSite() {
                             <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                         </div>
 
-                        <div class="card shadow-sm p-4 bg-white">
-                            <h3 class="h5 fw-bold text-dark mb-3 border-bottom pb-2">Community Discussion</h3>
-                            <div class="fb-comments" 
-                                 data-href="${uniquePageUrl}" 
-                                 data-width="100%" 
-                                 data-numposts="5"
-                                 data-order-by="time">
+                        <div class="card shadow-sm p-4 bg-white text-center">
+                            <h3 class="h5 fw-bold text-dark mb-3 border-bottom pb-2">Share your reaction</h3>
+                            <div class="sharethis-inline-reaction-buttons"></div>
                             </div>
-                        </div>
                     </div>
                 </div>
 
                 <script>
                     function checkAnswer(btnElement, selectedLetter) {
-                        // THIS FIXES ISSUE #2 PART B: Strips out absolutely everything except A, B, C, or D
                         const correctLetter = "${(q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase()}";
+						
+						
                         
                         const answerTexts = {
                             'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",

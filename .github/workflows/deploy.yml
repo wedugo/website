@@ -10,9 +10,12 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
-    # THIS IS THE NEW FIX: It tells GitHub Pages it has permission to deploy
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -25,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24' # Updated to 24 to remove the yellow warning
+          node-version: '24'
 
       - name: Generate Pages from Google Sheet
         run: node build.js
@@ -36,5 +39,5 @@ jobs:
           path: './public'
 
       - name: Deploy to GitHub Pages
-        id: deployment # Added this ID so the environment URL knows where to look
+        id: deployment
         uses: actions/deploy-pages@v4

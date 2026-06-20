@@ -19,7 +19,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -31,7 +30,7 @@ jobs:
           node-version: '24'
 
       - name: Generate Pages from Google Sheet
-       run: node build.js && node build-blog.js
+        run: node build.js && node build-blog.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

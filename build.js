@@ -4,7 +4,7 @@ const path = require('path');
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6ImRuS24j_tOTKA_i1QG_K-DKutrWxjjSbi4WszrZxR90g_1uNaXQqOjnxR2tX9flEFXy7qfY/pub?gid=0&single=true&output=csv";
 
 // IMPORTANT: Put your custom domain here to completely hide GitHub Pages
-const SITE_BASE_URL = "https://yourwebsite.com"; 
+const SITE_BASE_URL = "https://wedugo.com"; 
 
 // Helper for Navigation
 function getNavbar(depth) {

@@ -13,7 +13,8 @@ function getNavbar(depth) {
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center" href="${prefix}/index.html">
-               Wedugo Education
+                <img src="http://www.wedugo.com/main_images/icon.png" alt="Wedugo Logo" width="30" height="30" class="d-inline-block align-text-top me-2 rounded">
+                Wedugo Education
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -49,7 +50,7 @@ function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") 
     <meta property="og:type" content="website">
     ${pageUrl ? `<meta property="og:url" content="${pageUrl}">` : ''}
 
-    <link rel="icon" href="https://www.wedugo.com/main_images/icon.png" type="image/png">
+    <link rel="icon" href="http://www.wedugo.com/main_images/icon.png" type="image/png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -97,7 +98,15 @@ async function buildWedugoQuizSite() {
             const q = {};
             headers.forEach((header, i) => { q[header] = row[i]?.trim(); });
 
+            const isCorrupted = /[\u0080-\uFFFF]/.test(JSON.stringify(q));
+            if (isCorrupted && q.question && q.question.includes('à¤')) {
+                console.log("Skipping corrupted row:", q.id);
+                return; // Skips this row and goes to the next one
+            }
+
+
             const quizId = q.id || (rows.length - index);
+			
             const category = q.qcategory || 'Uncategorized';
             const uniquePageUrl = `${SITE_BASE_URL}/quiz/${quizId}/index.html`;
 
@@ -130,7 +139,7 @@ async function buildWedugoQuizSite() {
                                 <small class="text-muted fw-bold">Question ID: ${q.que_id || quizId}</small>
                             </div>
                             
-                        
+                            ${imageHtml}
                             
                             <h1 class="h3 mb-3 fw-bold text-dark lh-base">${q.question}</h1>
                             <p class="text-muted small border-bottom pb-3 mb-4">Uploaded by expert: <span class="text-dark fw-semibold">${q.postby || 'Wedugo Admin'}</span></p>
@@ -268,19 +277,32 @@ async function buildWedugoQuizSite() {
         `;
         fs.writeFileSync(path.join(aboutDir, 'index.html'), getHtmlShell('About Us', aboutContent, 1, "Learn more about Wedugo Education and our mission to provide high-quality practice exams."));
 
+        
+		// 5. Generate Home Page
+        // Use slice(0, 20) to only grab the most recent 20 items from the reversed list
+        const latestQuizzesHtml = allQuizzesListHtml.split('</a>').slice(0, 20).join('</a>') + '</a>';
+
         const homeContent = `
             <div class="text-center py-5 mb-5 bg-white rounded shadow-sm">
                 <h1 class="display-4 fw-bold text-primary mb-3">Welcome to Wedugo</h1>
                 <p class="col-md-8 mx-auto lead text-muted mb-4">Test your knowledge across various categories. Find mock tests, practice sets, and detailed explanations.</p>
-                <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 shadow">Browse Categories</a>
+                <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 shadow">Browse All Categories</a>
             </div>
+            
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold mb-0">Latest Quizzes</h3>
+                <h3 class="fw-bold mb-0">Latest 20 Quizzes</h3>
+                <a href="./categories/index.html" class="text-decoration-none">View All</a>
             </div>
+            
             <div class="shadow-sm rounded bg-white">
-                ${allQuizzesListHtml}
+                ${latestQuizzesHtml}
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="./categories/index.html" class="btn btn-outline-secondary">See More Quizzes in Categories</a>
             </div>
         `;
+		
         fs.writeFileSync(path.join(distDir, 'index.html'), getHtmlShell('Home', homeContent, 0, "Welcome to Wedugo Education. Find mock tests, practice sets, and detailed explanations across various technical subjects."));
 
         console.log(`Success! Site built with exact schema mappings.`);

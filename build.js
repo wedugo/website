@@ -85,7 +85,7 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
         .option-btn:hover:not(:disabled) { background-color: #f8f9fa; border-color: #dee2e6; transform: translateX(4px); }
         .option-btn:disabled { opacity: 1; cursor: default; }
         .badge-cat { font-size: 0.85rem; padding: 0.5em 0.9em; letter-spacing: 0.5px; }
-        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 24px; border-radius: 8px; display: block; width: 100%; overflow: hidden; text-align: center; }
         .list-group-item { border-left: none; border-right: none; padding: 1rem 1.25rem; transition: background-color 0.2s; }
         .list-group-item:first-child { border-top: none; }
         .list-group-item:hover { background-color: #f8f9fa; }
@@ -187,7 +187,7 @@ async function buildWedugoQuizSite() {
                     <div class="row justify-content-center">
                         <div class="col-lg-8">
                             <div class="ad-container text-center text-muted small">
-                                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                                <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
                                 <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                             </div>
 

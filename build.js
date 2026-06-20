@@ -51,8 +51,8 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-	
-	<!-- Google tag (gtag.js) -->
+    
+    <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-23NQJXPC86"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -61,7 +61,7 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
 
   gtag('config', 'G-23NQJXPC86');
 </script>
-	
+    
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title} | Wedugo Education</title>
@@ -122,7 +122,7 @@ async function buildWedugoQuizSite() {
 
         const validQuizzes = [];
 
-        // 3. Process Rows
+        // 3. Process Rows and Sort Data
         rows.forEach((line, index) => {
             const values = parseCSVLine(line);
             if (values.length < headers.length) return; 
@@ -150,130 +150,154 @@ async function buildWedugoQuizSite() {
 
             categoriesMap[matchedCat].push(q);
             validQuizzes.push(q);
-
-            // Generate Individual Quiz Page
-            const quizDir = path.join(distDir, 'quiz', String(quizId));
-            fs.mkdirSync(quizDir, { recursive: true });
-
-            const quizContent = `
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="ad-container text-center text-muted small">
-                            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-                        </div>
-
-                        <div class="card shadow-sm p-4 p-md-5 mb-4 bg-white">
-                            <div class="mb-4">
-                                <span class="badge bg-primary badge-cat">${matchedCat}</span>
-                                ${q.language ? `<span class="badge bg-light text-dark border ms-2">${q.language}</span>` : ''}
-                            </div>
-                            
-                            <h1 class="h4 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
-
-                            <div class="d-grid gap-3 mb-2" id="options-container">
-                                <button class="btn option-btn" onclick="checkAnswer(this, 'A')">A) ${q.answer1 || ''}</button>
-                                <button class="btn option-btn" onclick="checkAnswer(this, 'B')">B) ${q.answer2 || ''}</button>
-                                <button class="btn option-btn" onclick="checkAnswer(this, 'C')">C) ${q.answer3 || ''}</button>
-                                <button class="btn option-btn" onclick="checkAnswer(this, 'D')">D) ${q.answer4 || ''}</button>
-                            </div>
-
-                            <div id="explanation-box" class="alert mt-4 d-none">
-                                <h5 class="alert-heading fw-bold mb-2" id="result-title"></h5>
-                                <hr>
-                                <p class="mb-0 text-dark"><strong>Explanation:</strong> ${q.answerdetail || 'No detailed explanation provided for this question.'}</p>
-                            </div>
-                        </div>
-
-                        <div class="card shadow-sm p-4 bg-white text-center mb-4">
-                            <h3 class="h6 fw-bold text-secondary text-uppercase mb-3">Share this Question</h3>
-                            <div class="sharethis-inline-reaction-buttons"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <script>
-                    function checkAnswer(btnElement, selectedLetter) {
-                        const correctLetter = "${(q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase()}";
-                        const answerTexts = {
-                            'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",
-                            'B': "${(q.answer2 || '').replace(/'/g, "\\'")}",
-                            'C': "${(q.answer3 || '').replace(/'/g, "\\'")}",
-                            'D': "${(q.answer4 || '').replace(/'/g, "\\'")}"
-                        };
-
-                        const explanationBox = document.getElementById('explanation-box');
-                        const resultTitle = document.getElementById('result-title');
-                        
-                        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
-                        explanationBox.classList.remove('d-none', 'alert-success', 'alert-danger');
-                        
-                        if(selectedLetter === correctLetter) {
-                            btnElement.style.borderColor = "#198754";
-                            btnElement.style.backgroundColor = "#d1e7dd";
-                            btnElement.style.color = "#0f5132";
-                            explanationBox.classList.add('alert-success');
-                            resultTitle.innerHTML = "✨ Correct Answer!";
-                        } else {
-                            btnElement.style.borderColor = "#dc3545";
-                            btnElement.style.backgroundColor = "#f8d7da";
-                            btnElement.style.color = "#842029";
-                            explanationBox.classList.add('alert-danger');
-                            resultTitle.innerHTML = "❌ Incorrect! The correct answer was: " + correctLetter + ") " + answerTexts[correctLetter];
-                        }
-                    }
-                </script>
-            `;
-            fs.writeFileSync(path.join(quizDir, 'index.html'), getHtmlShell(q.question.substring(0,40) + '...', quizContent, 2, q.question));
         });
 
-        // 4. Generate Specific Category Pages (Only for populated categories)
+        // 4. Generate Specific Category Pages AND Individual Quiz Pages (With Prev/Next buttons)
         const catMainDir = path.join(distDir, 'category');
         fs.mkdirSync(catMainDir, { recursive: true });
         
         let categoriesGridHtml = '<div class="row g-4">';
 
-        CATEGORY_LIST.forEach(cat => {
-            const quizzes = categoriesMap[cat];
-            if (!quizzes || quizzes.length === 0) return; // Skip empty categories
+        for (const [cat, quizzes] of Object.entries(categoriesMap)) {
+            if (!quizzes || quizzes.length === 0) continue; // Skip empty categories
 
-            const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const specificCatDir = path.join(catMainDir, safeName);
-            fs.mkdirSync(specificCatDir, { recursive: true });
+            // --- GENERATE INDIVIDUAL QUIZ PAGES FOR THIS CATEGORY ---
+            quizzes.forEach((q, i) => {
+                const quizDir = path.join(distDir, 'quiz', String(q.quizId));
+                fs.mkdirSync(quizDir, { recursive: true });
 
-            let catPageContent = `
-                <div class="d-flex justify-content-between align-items-end mb-4">
-                    <h2 class="fw-bold mb-0">${cat}</h2>
-                    <span class="text-muted fw-medium">${quizzes.length} Questions</span>
-                </div>
-                <div class="card shadow-sm mb-5">
-                    <div class="list-group list-group-flush">
-            `;
-            
-            quizzes.forEach(q => {
-                catPageContent += `
-                    <a href="../../quiz/${q.quizId}/index.html" class="list-group-item list-group-item-action d-flex align-items-center">
-                        <span class="text-dark">${q.question}</span>
-                    </a>
+                // Find Previous and Next quizzes inside the SAME category
+                const prevQuiz = quizzes[i - 1];
+                const nextQuiz = quizzes[i + 1];
+
+                // Build the Next/Previous Button Row
+                const navButtonsHtml = `
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                        ${prevQuiz 
+                            ? `<a href="../${prevQuiz.quizId}/index.html" class="btn btn-outline-secondary fw-medium px-3 px-md-4">&larr; Previous</a>` 
+                            : `<button class="btn btn-outline-secondary fw-medium px-3 px-md-4" disabled>&larr; Previous</button>`}
+                        
+                        ${nextQuiz 
+                            ? `<a href="../${nextQuiz.quizId}/index.html" class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm">Next &rarr;</a>` 
+                            : `<button class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm" disabled>Next &rarr;</button>`}
+                    </div>
                 `;
-            });
-            catPageContent += `</div></div>`;
 
-            fs.writeFileSync(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} Quizzes`, catPageContent, 2));
+                const quizContent = `
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="ad-container text-center text-muted small">
+                                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                            </div>
 
-            // Build grid card for All Categories page
-            categoriesGridHtml += `
-                <div class="col-md-6 col-lg-4">
-                    <div class="card shadow-sm h-100 card-hover border-0">
-                        <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
-                            <h3 class="h5 fw-bold mb-2 text-dark">${cat}</h3>
-                            <p class="text-muted small mb-4">${quizzes.length} Quizzes Available</p>
-                            <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-medium">Browse Topic</a>
+                            <div class="card shadow-sm p-4 p-md-5 mb-4 bg-white">
+                                <div class="mb-4">
+                                    <span class="badge bg-primary badge-cat">${q.matchedCategory}</span>
+                                    ${q.language ? `<span class="badge bg-light text-dark border ms-2">${q.language}</span>` : ''}
+                                </div>
+                                
+                                <h1 class="h4 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
+
+                                <div class="d-grid gap-3 mb-2" id="options-container">
+                                    <button class="btn option-btn" onclick="checkAnswer(this, 'A')">A) ${q.answer1 || ''}</button>
+                                    <button class="btn option-btn" onclick="checkAnswer(this, 'B')">B) ${q.answer2 || ''}</button>
+                                    <button class="btn option-btn" onclick="checkAnswer(this, 'C')">C) ${q.answer3 || ''}</button>
+                                    <button class="btn option-btn" onclick="checkAnswer(this, 'D')">D) ${q.answer4 || ''}</button>
+                                </div>
+
+                                <div id="explanation-box" class="alert mt-4 d-none">
+                                    <h5 class="alert-heading fw-bold mb-2" id="result-title"></h5>
+                                    <hr>
+                                    <p class="mb-0 text-dark"><strong>Explanation:</strong> ${q.answerdetail || 'No detailed explanation provided for this question.'}</p>
+                                </div>
+                                
+                                <!-- NEXT & PREVIOUS BUTTONS INJECTED HERE -->
+                                ${navButtonsHtml}
+                            </div>
+
+                            <div class="card shadow-sm p-4 bg-white text-center mb-4">
+                                <h3 class="h6 fw-bold text-secondary text-uppercase mb-3">Share this Question</h3>
+                                <div class="sharethis-inline-reaction-buttons"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        });
+
+                    <script>
+                        function checkAnswer(btnElement, selectedLetter) {
+                            const correctLetter = "${(q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase()}";
+                            const answerTexts = {
+                                'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",
+                                'B': "${(q.answer2 || '').replace(/'/g, "\\'")}",
+                                'C': "${(q.answer3 || '').replace(/'/g, "\\'")}",
+                                'D': "${(q.answer4 || '').replace(/'/g, "\\'")}"
+                            };
+
+                            const explanationBox = document.getElementById('explanation-box');
+                            const resultTitle = document.getElementById('result-title');
+                            
+                            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                            explanationBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+                            
+                            if(selectedLetter === correctLetter) {
+                                btnElement.style.borderColor = "#198754";
+                                btnElement.style.backgroundColor = "#d1e7dd";
+                                btnElement.style.color = "#0f5132";
+                                explanationBox.classList.add('alert-success');
+                                resultTitle.innerHTML = "✨ Correct Answer!";
+                            } else {
+                                btnElement.style.borderColor = "#dc3545";
+                                btnElement.style.backgroundColor = "#f8d7da";
+                                btnElement.style.color = "#842029";
+                                explanationBox.classList.add('alert-danger');
+                                resultTitle.innerHTML = "❌ Incorrect! The correct answer was: " + correctLetter + ") " + answerTexts[correctLetter];
+                            }
+                        }
+                    </script>
+                `;
+                fs.writeFileSync(path.join(quizDir, 'index.html'), getHtmlShell(q.question.substring(0,40) + '...', quizContent, 2, q.question));
+            });
+
+            // --- GENERATE CATEGORY MASTER PAGES ---
+            if (CATEGORY_LIST.includes(cat)) {
+                const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const specificCatDir = path.join(catMainDir, safeName);
+                fs.mkdirSync(specificCatDir, { recursive: true });
+
+                let catPageContent = `
+                    <div class="d-flex justify-content-between align-items-end mb-4">
+                        <h2 class="fw-bold mb-0">${cat}</h2>
+                        <span class="text-muted fw-medium">${quizzes.length} Questions</span>
+                    </div>
+                    <div class="card shadow-sm mb-5">
+                        <div class="list-group list-group-flush">
+                `;
+                
+                quizzes.forEach(q => {
+                    catPageContent += `
+                        <a href="../../quiz/${q.quizId}/index.html" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <span class="text-dark">${q.question}</span>
+                        </a>
+                    `;
+                });
+                catPageContent += `</div></div>`;
+
+                fs.writeFileSync(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} Quizzes`, catPageContent, 2));
+
+                // Build grid card for All Categories page
+                categoriesGridHtml += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm h-100 card-hover border-0">
+                            <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+                                <h3 class="h5 fw-bold mb-2 text-dark">${cat}</h3>
+                                <p class="text-muted small mb-4">${quizzes.length} Quizzes Available</p>
+                                <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-medium">Browse Topic</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
         categoriesGridHtml += '</div>';
 
         // 5. Generate All Categories Master Page
@@ -322,7 +346,7 @@ async function buildWedugoQuizSite() {
         `;
         fs.writeFileSync(path.join(distDir, 'index.html'), getHtmlShell('Home', homeContent, 0));
 
-        console.log("Success! Cleaned UI, Strict Categories, and 20-Item Homepage Built Perfectly.");
+        console.log("Success! Cleaned UI, Strict Categories, Next/Prev Buttons, and 20-Item Homepage Built Perfectly.");
     } catch (error) {
         console.error("Build failed:", error);
     }

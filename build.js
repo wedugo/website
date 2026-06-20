@@ -27,9 +27,8 @@ function getNavbar(depth) {
     </nav>`;
 }
 
-// Helper for HTML Shell (Upgraded with SEO, AdSense, and Facebook SDK)
+// Helper for HTML Shell 
 function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") {
-    // Clean description to prevent HTML breakage
     const cleanDescription = (seoDescription || 'Practice high-quality exam preparation questions and mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
 
     return `
@@ -39,21 +38,17 @@ function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- SEO Meta Tags -->
     <title>${title} | Wedugo Education</title>
     <meta name="description" content="${cleanDescription}">
     <meta name="robots" content="index, follow">
     
-    <!-- Open Graph (Social Media Sharing) -->
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${cleanDescription}">
     <meta property="og:type" content="website">
     ${pageUrl ? `<meta property="og:url" content="${pageUrl}">` : ''}
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Google AdSense Script (Loads on EVERY page) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
 
     <style>
@@ -61,10 +56,10 @@ function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") 
         .option-btn { text-align: left; padding: 15px 20px; font-weight: 500; transition: 0.2s; }
         .option-btn:hover:not(:disabled) { transform: translateX(5px); background-color: #f0f8ff; }
         .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
+        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #dee2e6; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 12px; margin-bottom: 20px; border-radius: 8px;}
     </style>
 </head>
 <body>
-    <!-- Facebook SDK (Must be immediately after opening body tag) -->
     <div id="fb-root"></div>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v17.0"></script>
 
@@ -96,11 +91,9 @@ async function buildWedugoQuizSite() {
         rows.forEach((row, index) => {
             if (row.length < headers.length) return; 
             
-            // Map row data to YOUR exact headers
             const q = {};
             headers.forEach((header, i) => { q[header] = row[i]?.trim(); });
 
-            // Using your specific column names
             const quizId = q.id || (rows.length - index);
             const category = q.qcategory || 'Uncategorized';
             const uniquePageUrl = `${SITE_BASE_URL}/quiz/${quizId}/index.html`;
@@ -111,17 +104,24 @@ async function buildWedugoQuizSite() {
             const quizDir = path.join(distDir, 'quiz', String(quizId));
             fs.mkdirSync(quizDir, { recursive: true });
 
-            // Handle optional image (questionurl)
             const imageHtml = q.questionurl ? `<img src="${q.questionurl}" class="img-fluid rounded mb-4 shadow-sm" alt="Question Resource">` : '';
-
-            // Handle optional language tag
             const langBadge = q.language ? `<span class="badge bg-info text-dark ms-2">${q.language}</span>` : '';
 
             const quizContent = `
                 <div class="row g-4 justify-content-center">
                     <div class="col-lg-8">
+                        
+                        <div class="ad-container text-center mb-4">
+                            <ins class="adsbygoogle"
+                                 style="display:block"
+                                 data-ad-client="ca-pub-5947676189341600"
+                                 data-ad-slot="YOUR_TOP_AD_SLOT_ID"
+                                 data-ad-format="auto"
+                                 data-full-width-responsive="true"></ins>
+                            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                        </div>
+
                         <div class="card shadow-sm p-4 p-md-5 mb-4 bg-white">
-                            
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div><span class="badge bg-primary px-3 py-2 fs-7">${category}</span>${langBadge}</div>
                                 <small class="text-muted fw-bold">Question ID: ${q.que_id || quizId}</small>
@@ -147,6 +147,16 @@ async function buildWedugoQuizSite() {
                             </div>
                         </div>
 
+                        <div class="ad-container text-center mb-4">
+                            <ins class="adsbygoogle"
+                                 style="display:block"
+                                 data-ad-client="ca-pub-5947676189341600"
+                                 data-ad-slot="YOUR_BOTTOM_AD_SLOT_ID"
+                                 data-ad-format="auto"
+                                 data-full-width-responsive="true"></ins>
+                            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                        </div>
+
                         <div class="card shadow-sm p-4 bg-white">
                             <h3 class="h5 fw-bold text-dark mb-3 border-bottom pb-2">Community Discussion</h3>
                             <div class="fb-comments" 
@@ -161,10 +171,7 @@ async function buildWedugoQuizSite() {
 
                 <script>
                     function checkAnswer(btnElement, selectedLetter) {
-                        // Safely grab the A/B/C/D answer from your sheet, force it to uppercase, and remove accidental spaces
                         const correctLetter = "${(q.mainanswer || '').toString().trim().toUpperCase()}";
-                        
-                        // Create a map of the text answers so we can show the user the right text if they fail
                         const answerTexts = {
                             'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",
                             'B': "${(q.answer2 || '').replace(/'/g, "\\'")}",
@@ -187,15 +194,12 @@ async function buildWedugoQuizSite() {
                             btnElement.style.borderColor = "#dc3545";
                             btnElement.style.backgroundColor = "#fde8e8";
                             explanationBox.classList.add('alert-danger', 'border-danger');
-                            
-                            // Dynamically prints out the letter AND the text of the correct answer
                             resultTitle.innerHTML = "❌ Incorrect! The right answer was: " + correctLetter + ") " + answerTexts[correctLetter];
                         }
                     }
                 </script>
             `;
             
-            // Unique SEO Meta Description based on the question
             const metaDescription = `${q.question} Check the correct answer and detailed explanation on Wedugo Education.`;
             fs.writeFileSync(path.join(quizDir, 'index.html'), getHtmlShell(`Quiz: ${q.question.substring(0,40)}...`, quizContent, 2, metaDescription, uniquePageUrl));
 
@@ -209,7 +213,6 @@ async function buildWedugoQuizSite() {
         });
         allQuizzesListHtml += '</div>';
 
-        // 2. Generate Category Specific Pages
         const catMainDir = path.join(distDir, 'category');
         fs.mkdirSync(catMainDir, { recursive: true });
         
@@ -248,12 +251,10 @@ async function buildWedugoQuizSite() {
         }
         categoryCardsHtml += '</div>';
 
-        // 3. Generate "All Categories" Page
         const categoriesDir = path.join(distDir, 'categories');
         fs.mkdirSync(categoriesDir, { recursive: true });
         fs.writeFileSync(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories', `<h2 class="mb-4 fw-bold">Explore Categories</h2>${categoryCardsHtml}`, 1, "Browse all quiz and test categories available on Wedugo Education."));
 
-        // 4. Generate About Page
         const aboutDir = path.join(distDir, 'about');
         fs.mkdirSync(aboutDir, { recursive: true });
         const aboutContent = `
@@ -266,7 +267,6 @@ async function buildWedugoQuizSite() {
         `;
         fs.writeFileSync(path.join(aboutDir, 'index.html'), getHtmlShell('About Us', aboutContent, 1, "Learn more about Wedugo Education and our mission to provide high-quality practice exams."));
 
-        // 5. Generate Home Page
         const homeContent = `
             <div class="text-center py-5 mb-5 bg-white rounded shadow-sm">
                 <h1 class="display-4 fw-bold text-primary mb-3">Welcome to Wedugo</h1>

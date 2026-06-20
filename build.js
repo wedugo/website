@@ -13,7 +13,7 @@ function getNavbar(depth) {
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center" href="${prefix}/index.html">
-                <img src="http://www.wedugo.com/main_images/icon.png" alt="Wedugo Logo" width="30" height="30" class="d-inline-block align-text-top me-2 rounded">
+                
                 Wedugo Education
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -50,7 +50,7 @@ function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") 
     <meta property="og:type" content="website">
     ${pageUrl ? `<meta property="og:url" content="${pageUrl}">` : ''}
 
-    <link rel="icon" href="http://www.wedugo.com/main_images/icon.png" type="image/png">
+    <link rel="icon" href="https://www.wedugo.com/main_images/icon.png" type="image/png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     

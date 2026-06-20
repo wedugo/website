@@ -103,7 +103,7 @@ function getBlogHtmlShell(title, content, depth, seoDescription = "") {
         .blog-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
         .article-content { font-size: 1.1rem; color: #444; }
         .article-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
-        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 24px; border-radius: 8px; display: block; width: 100%; overflow: hidden; text-align: center; }
         .badge-cat { font-size: 0.85rem; padding: 0.5em 0.9em; letter-spacing: 0.5px; }
     </style>
 </head>
@@ -173,7 +173,7 @@ async function buildBlogSite() {
                         </div>
                         
                         <div class="ad-container text-muted small">
-                            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                            <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
                             <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                         </div>
 

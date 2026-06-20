@@ -116,7 +116,7 @@ async function buildWedugoQuizSite() {
             const quizDir = path.join(distDir, 'quiz', String(quizId));
             fs.mkdirSync(quizDir, { recursive: true });
 
-            const imageHtml = q.questionurl ? `<img src="${q.questionurl}" class="img-fluid rounded mb-4 shadow-sm" alt="Question Resource">` : '';
+            const imageHtml = q.questionurl ? `` : '';
             const langBadge = q.language ? `<span class="badge bg-info text-dark ms-2">${q.language}</span>` : '';
 
             const quizContent = `
@@ -139,7 +139,7 @@ async function buildWedugoQuizSite() {
                                 <small class="text-muted fw-bold">Question ID: ${q.que_id || quizId}</small>
                             </div>
                             
-                            ${imageHtml}
+                          
                             
                             <h1 class="h3 mb-3 fw-bold text-dark lh-base">${q.question}</h1>
                             <p class="text-muted small border-bottom pb-3 mb-4">Uploaded by expert: <span class="text-dark fw-semibold">${q.postby || 'Wedugo Admin'}</span></p>

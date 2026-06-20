@@ -3,6 +3,9 @@ const path = require('path');
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6ImRuS24j_tOTKA_i1QG_K-DKutrWxjjSbi4WszrZxR90g_1uNaXQqOjnxR2tX9flEFXy7qfY/pub?gid=0&single=true&output=csv";
 
+// IMPORTANT: Put your custom domain here to completely hide GitHub Pages
+const SITE_BASE_URL = "https://yourwebsite.com"; 
+
 // Helper for Navigation
 function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
@@ -24,23 +27,47 @@ function getNavbar(depth) {
     </nav>`;
 }
 
-// Helper for HTML Shell
-function getHtmlShell(title, content, depth) {
+// Helper for HTML Shell (Upgraded with SEO, AdSense, and Facebook SDK)
+function getHtmlShell(title, content, depth, seoDescription = "", pageUrl = "") {
+    // Clean description to prevent HTML breakage
+    const cleanDescription = (seoDescription || 'Practice high-quality exam preparation questions and mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
+
     return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
     <title>${title} | Wedugo Education</title>
+    <meta name="description" content="${cleanDescription}">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph (Social Media Sharing) -->
+    <meta property="og:title" content="${title}">
+    <meta property="og:description" content="${cleanDescription}">
+    <meta property="og:type" content="website">
+    ${pageUrl ? `<meta property="og:url" content="${pageUrl}">` : ''}
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Google AdSense Script (Loads on EVERY page) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
+
     <style>
         body { background-color: #f8f9fa; }
         .option-btn { text-align: left; padding: 15px 20px; font-weight: 500; transition: 0.2s; }
-        .option-btn:hover { transform: translateX(5px); }
+        .option-btn:hover:not(:disabled) { transform: translateX(5px); background-color: #f0f8ff; }
+        .option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
     </style>
 </head>
 <body>
+    <!-- Facebook SDK (Must be immediately after opening body tag) -->
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v17.0"></script>
+
     ${getNavbar(depth)}
     <div class="container pb-5">
         ${content}
@@ -76,6 +103,7 @@ async function buildWedugoQuizSite() {
             // Using your specific column names
             const quizId = q.id || (rows.length - index);
             const category = q.qcategory || 'Uncategorized';
+            const uniquePageUrl = `${SITE_BASE_URL}/quiz/${quizId}/index.html`;
 
             if (!categoriesMap[category]) categoriesMap[category] = [];
             categoriesMap[category].push({ ...q, quizId });
@@ -90,7 +118,7 @@ async function buildWedugoQuizSite() {
             const langBadge = q.language ? `<span class="badge bg-info text-dark ms-2">${q.language}</span>` : '';
 
             const quizContent = `
-                <div class="card shadow-sm mx-auto" style="max-width: 700px;">
+                <div class="card shadow-sm mx-auto mb-4" style="max-width: 700px;">
                     <div class="card-body p-4 p-md-5">
                         
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -101,16 +129,17 @@ async function buildWedugoQuizSite() {
                             <small class="text-muted">ID: ${q.que_id || quizId}</small>
                         </div>
                         
+                        ${imageHtml}
                         
-                        
-                        <h3 class="card-title mb-2 fw-bold text-dark">${q.question}</h3>
+                        <h1 class="card-title h3 mb-2 fw-bold text-dark">${q.question}</h1>
                         <p class="text-muted small mb-4">Posted by: <strong>${q.postby || 'Admin'}</strong></p>
 
+                        <!-- Answers are escaped safely using .replace to prevent breaking JS if questions have apostrophes -->
                         <div class="d-grid gap-3" id="options-container">
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer1}')">A) ${q.answer1}</button>
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer2}')">B) ${q.answer2}</button>
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer3}')">C) ${q.answer3}</button>
-                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer4}')">D) ${q.answer4}</button>
+                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer1.replace(/'/g, "\\'")}')">A) ${q.answer1}</button>
+                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer2.replace(/'/g, "\\'")}')">B) ${q.answer2}</button>
+                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer3.replace(/'/g, "\\'")}')">C) ${q.answer3}</button>
+                            <button class="btn btn-outline-primary option-btn" onclick="checkAnswer(this, '${q.answer4.replace(/'/g, "\\'")}')">D) ${q.answer4}</button>
                         </div>
 
                         <div id="explanation-box" class="alert mt-4 d-none">
@@ -122,9 +151,21 @@ async function buildWedugoQuizSite() {
                     </div>
                 </div>
 
+                <!-- Facebook Comments Integration -->
+                <div class="card shadow-sm mx-auto" style="max-width: 700px;">
+                    <div class="card-body p-4">
+                        <h4 class="fw-bold mb-3">Comments & Discussion</h4>
+                        <div class="fb-comments" 
+                             data-href="${uniquePageUrl}" 
+                             data-width="100%" 
+                             data-numposts="5">
+                        </div>
+                    </div>
+                </div>
+
                 <script>
                     function checkAnswer(btnElement, selectedOption) {
-                        const correct = "${q.mainanswer}";
+                        const correct = "${q.mainanswer.replace(/'/g, "\\'")}";
                         const explanationBox = document.getElementById('explanation-box');
                         const resultTitle = document.getElementById('result-title');
                         const allButtons = document.querySelectorAll('.option-btn');
@@ -147,7 +188,10 @@ async function buildWedugoQuizSite() {
                     }
                 </script>
             `;
-            fs.writeFileSync(path.join(quizDir, 'index.html'), getHtmlShell(`Quiz: ${q.question.substring(0,20)}...`, quizContent, 2));
+            
+            // Unique SEO Meta Description based on the question
+            const metaDescription = `${q.question} Check the correct answer and detailed explanation on Wedugo Education.`;
+            fs.writeFileSync(path.join(quizDir, 'index.html'), getHtmlShell(`Quiz: ${q.question.substring(0,40)}...`, quizContent, 2, metaDescription, uniquePageUrl));
 
             allQuizzesListHtml += `<a href="./quiz/${quizId}/index.html" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                 <div>
@@ -182,7 +226,7 @@ async function buildWedugoQuizSite() {
             });
             catQuizzesHtml += '</div>';
 
-            fs.writeFileSync(path.join(specificCatDir, 'index.html'), getHtmlShell(`${categoryName} Quizzes`, catQuizzesHtml, 2));
+            fs.writeFileSync(path.join(specificCatDir, 'index.html'), getHtmlShell(`${categoryName} Quizzes`, catQuizzesHtml, 2, `Explore ${quizzes.length} practice questions in the ${categoryName} category.`));
 
             categoryCardsHtml += `
                 <div class="col-md-6 col-lg-4">
@@ -201,7 +245,7 @@ async function buildWedugoQuizSite() {
         // 3. Generate "All Categories" Page
         const categoriesDir = path.join(distDir, 'categories');
         fs.mkdirSync(categoriesDir, { recursive: true });
-        fs.writeFileSync(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories', `<h2 class="mb-4 fw-bold">Explore Categories</h2>${categoryCardsHtml}`, 1));
+        fs.writeFileSync(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories', `<h2 class="mb-4 fw-bold">Explore Categories</h2>${categoryCardsHtml}`, 1, "Browse all quiz and test categories available on Wedugo Education."));
 
         // 4. Generate About Page
         const aboutDir = path.join(distDir, 'about');
@@ -214,7 +258,7 @@ async function buildWedugoQuizSite() {
                 <p>This platform provides high-quality, interactive quiz formats to help students and professionals prepare for technical exams and general knowledge assessments.</p>
             </div>
         `;
-        fs.writeFileSync(path.join(aboutDir, 'index.html'), getHtmlShell('About Us', aboutContent, 1));
+        fs.writeFileSync(path.join(aboutDir, 'index.html'), getHtmlShell('About Us', aboutContent, 1, "Learn more about Wedugo Education and our mission to provide high-quality practice exams."));
 
         // 5. Generate Home Page
         const homeContent = `
@@ -230,7 +274,7 @@ async function buildWedugoQuizSite() {
                 ${allQuizzesListHtml}
             </div>
         `;
-        fs.writeFileSync(path.join(distDir, 'index.html'), getHtmlShell('Home', homeContent, 0));
+        fs.writeFileSync(path.join(distDir, 'index.html'), getHtmlShell('Home', homeContent, 0, "Welcome to Wedugo Education. Find mock tests, practice sets, and detailed explanations across various technical subjects."));
 
         console.log(`Success! Site built with exact schema mappings.`);
     } catch (error) {

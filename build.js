@@ -344,7 +344,19 @@ async function buildWedugoQuizSite() {
             
             ${latest20Html}
         `;
+       
         fs.writeFileSync(path.join(distDir, 'index.html'), getHtmlShell('Home', homeContent, 0));
+
+        // --- COPY STATIC TOOLS FOLDER ---
+        // This grabs your existing 'tools' folder and copies it into the live 'public' folder
+        const sourceToolsDir = path.join(__dirname, 'tools');
+        const destToolsDir = path.join(distDir, 'tools');
+
+        if (fs.existsSync(sourceToolsDir)) {
+            fs.cpSync(sourceToolsDir, destToolsDir, { recursive: true });
+            console.log("Copied tools folder successfully.");
+        }
+        // --------------------------------
 
         console.log("Success! Cleaned UI, Strict Categories, Next/Prev Buttons, and 20-Item Homepage Built Perfectly.");
     } catch (error) {

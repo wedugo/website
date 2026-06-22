@@ -358,6 +358,22 @@ async function buildWedugoQuizSite() {
         }
         // --------------------------------
 
+        // --- COPY STATIC FILES (ads.txt, CNAME, 404.html) ---
+        const staticFiles = ['Ads.txt', 'CNAME', '404.html'];
+        
+        staticFiles.forEach(file => {
+            const sourcePath = path.join(__dirname, file);
+            // AdSense strictly looks for lowercase ads.txt, so we force rename it here
+            const targetName = file === 'Ads.txt' ? 'ads.txt' : file; 
+            const destPath = path.join(distDir, targetName);
+            
+            if (fs.existsSync(sourcePath)) {
+                fs.copyFileSync(sourcePath, destPath);
+                console.log(`Copied ${file} to public/${targetName}`);
+            }
+        });
+        // ---------------------------------------------------
+
         console.log("Success! Cleaned UI, Strict Categories, Next/Prev Buttons, and 20-Item Homepage Built Perfectly.");
     } catch (error) {
         console.error("Build failed:", error);

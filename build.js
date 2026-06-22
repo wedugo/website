@@ -359,7 +359,7 @@ async function buildWedugoQuizSite() {
         // --------------------------------
 
         // --- COPY STATIC FILES (ads.txt, CNAME, 404.html) ---
-        const staticFiles = ['Ads.txt', 'CNAME', '404.html'];
+        const staticFiles = ['Ads.txt','robots.txt', 'CNAME', '404.html'];
         
         staticFiles.forEach(file => {
             const sourcePath = path.join(__dirname, file);

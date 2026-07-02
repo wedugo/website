@@ -221,10 +221,8 @@ async function buildWedugoQuizSite() {
                 const setNumber = setIndex + 1;
                 const setFileName = `set-${setNumber}.html`;
                 
-                // Add to our global list for the homepage
-                if(setNumber === 1) {
-                    allLatestSets.push({ cat, safeName, setNumber, questionCount: setQuizzes.length });
-                }
+                // Add ALL sets to our global list for the homepage
+allLatestSets.push({ cat, safeName, setNumber, questionCount: setQuizzes.length });
 
                 // Build the HTML for the 10 questions in this set
                 let questionsHtml = '';

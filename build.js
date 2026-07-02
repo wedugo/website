@@ -39,7 +39,10 @@ function getNavbar(depth) {
     return `
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4" href="${prefix}/index.html">Wedugo Education</a>
+            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center" href="${prefix}/index.html">
+                <img src="${prefix}/main_images/logo.png" alt="Wedugo Logo" height="30" class="me-2 d-inline-block align-text-top" onerror="this.style.display='none'">
+                Wedugo Education
+            </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -57,6 +60,8 @@ function getNavbar(depth) {
 // HELPER: Main HTML Shell
 function getHtmlShell(title, content, depth, seoDescription = "") {
     const cleanDesc = (seoDescription || 'Practice high-quality exam preparation questions and mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
+    const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
+    
     return `<!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -72,7 +77,7 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title} | Wedugo Education</title>
     <meta name="description" content="${cleanDesc}">
-    <link rel="icon" href="https://www.wedugo.com/main_images/icon.png" type="image/png">
+    <link rel="icon" href="${prefix}/main_images/icon.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
     <script type='text/javascript' src='https://platform-api.sharethis.com/js/sharethis.js#property=5c5059d8c9830d001319b017&product=inline-share-buttons' async='async'></script>
@@ -102,7 +107,6 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
 }
 
 // BATCH EXECUTION ENGINE (The Speed Fix)
-// This writes 200 files simultaneously to max out SSD speed without crashing Node
 async function executeTasksInBatches(tasks, batchSize = 200) {
     console.log(`Starting generation of ${tasks.length} files in batches of ${batchSize}...`);
     for (let i = 0; i < tasks.length; i += batchSize) {
@@ -130,7 +134,7 @@ async function buildWedugoQuizSite() {
         CATEGORY_LIST.forEach(cat => categoriesMap[cat] = []);
         categoriesMap['Uncategorized'] = [];
         const validQuizzes = [];
-        const fileTasks = []; // All file writing tasks will be pushed here
+        const fileTasks = []; 
 
         console.log("Processing Data...");
         rows.forEach((line, index) => {
@@ -175,7 +179,6 @@ async function buildWedugoQuizSite() {
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(distDir, 'quiz', String(q.quizId));
                 
-                // Push the file creation task to our high-speed queue
                 fileTasks.push(async () => {
                     await fsAsync.mkdir(quizDir, { recursive: true });
 
@@ -439,19 +442,25 @@ async function buildWedugoQuizSite() {
         // Run the High-Speed Queue
         await executeTasksInBatches(fileTasks, 200);
 
-        // --- COPY STATIC FILES ---
-        const sourceToolsDir = path.join(__dirname, 'tools');
-        const destToolsDir = path.join(distDir, 'tools');
-        if (fs.existsSync(sourceToolsDir)) {
-            fs.cpSync(sourceToolsDir, destToolsDir, { recursive: true });
-        }
+        // --- COPY DIRECTORIES (tools, main_images) ---
+        const directoriesToCopy = ['tools', 'main_images'];
+        directoriesToCopy.forEach(dirName => {
+            const srcDir = path.join(__dirname, dirName);
+            const destDir = path.join(distDir, dirName);
+            if (fs.existsSync(srcDir)) {
+                fs.cpSync(srcDir, destDir, { recursive: true });
+                console.log(`Copied /${dirName}/ folder successfully.`);
+            }
+        });
 
+        // --- COPY STATIC FILES (ads.txt, CNAME, 404.html) ---
         const staticFiles = ['Ads.txt','robots.txt', 'CNAME', '404.html'];
         staticFiles.forEach(file => {
             const sourcePath = path.join(__dirname, file);
             const targetName = file === 'Ads.txt' ? 'ads.txt' : file; 
             if (fs.existsSync(sourcePath)) {
                 fs.copyFileSync(sourcePath, path.join(distDir, targetName));
+                console.log(`Copied ${file} successfully.`);
             }
         });
 

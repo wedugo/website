@@ -5,12 +5,11 @@ const path = require('path');
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6ImRuS24j_tOTKA_i1QG_K-DKutrWxjjSbi4WszrZxR90g_1uNaXQqOjnxR2tX9flEFXy7qfY/pub?gid=0&single=true&output=csv";
 const SITE_BASE_URL = "https://www.wedugo.com"; 
 
-// OFFICIAL CATEGORY LIST (Strictly Enforced)
+// OFFICIAL CATEGORY LIST
 const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
-// ROBUST CSV PARSER
 function parseCSVLine(text) {
     const result = [];
     let cur = '', inQuotes = false;
@@ -24,7 +23,6 @@ function parseCSVLine(text) {
     return result;
 }
 
-// HELPER: Chunk array into smaller arrays (for Practice Sets)
 function chunkArray(array, size) {
     const chunked = [];
     for (let i = 0; i < array.length; i += size) {
@@ -33,7 +31,6 @@ function chunkArray(array, size) {
     return chunked;
 }
 
-// HELPER: Dynamic Navbar
 function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     return `
@@ -57,7 +54,6 @@ function getNavbar(depth) {
     </nav>`;
 }
 
-// HELPER: Main HTML Shell
 function getHtmlShell(title, content, depth, seoDescription = "") {
     const cleanDesc = (seoDescription || 'Practice high-quality exam preparation questions and mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
@@ -106,19 +102,17 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
 </html>`;
 }
 
-// BATCH EXECUTION ENGINE (The Speed Fix)
-async function executeTasksInBatches(tasks, batchSize = 200) {
-    console.log(`Starting generation of ${tasks.length} files in batches of ${batchSize}...`);
+// MEMORY-SAFE BATCH ENGINE
+async function executeTasksInBatches(tasks, batchSize = 100) {
     for (let i = 0; i < tasks.length; i += batchSize) {
         const batch = tasks.slice(i, i + batchSize);
         await Promise.all(batch.map(task => task()));
-        if (i % 1000 === 0 && i > 0) console.log(`Finished writing ${i} files...`);
     }
 }
 
 async function buildWedugoQuizSite() {
     try {
-        console.log("Fetching Data from Google Sheets...");
+        console.log("1. Fetching Data from Google Sheets...");
         const response = await fetch(SHEET_CSV_URL);
         const csvText = await response.text();
         const lines = csvText.trim().split(/\r?\n/);
@@ -134,9 +128,8 @@ async function buildWedugoQuizSite() {
         CATEGORY_LIST.forEach(cat => categoriesMap[cat] = []);
         categoriesMap['Uncategorized'] = [];
         const validQuizzes = [];
-        const fileTasks = []; 
 
-        console.log("Processing Data...");
+        console.log("2. Processing Data...");
         rows.forEach((line, index) => {
             const values = parseCSVLine(line);
             if (values.length < headers.length) return; 
@@ -167,19 +160,27 @@ async function buildWedugoQuizSite() {
         const catMainDir = path.join(distDir, 'category');
         fs.mkdirSync(catMainDir, { recursive: true });
         let categoriesGridHtml = '<div class="row g-4">';
+        
+        // Array to collect master pages to build at the very end
+        const masterPageTasks = [];
 
+        console.log("3. Generating Files Category by Category (Memory Safe Mode)...");
         for (const [cat, quizzes] of Object.entries(categoriesMap)) {
             if (!quizzes || quizzes.length === 0) continue; 
-
+            
+            console.log(` -> Building ${cat} (${quizzes.length} questions)...`);
             const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const specificCatDir = path.join(catMainDir, safeName);
             fs.mkdirSync(specificCatDir, { recursive: true });
 
-            // --- QUEUE INDIVIDUAL QUIZ PAGES ---
+            // We will store tasks ONLY for the current category to save RAM
+            let currentCategoryTasks = [];
+
+            // INDIVIDUAL QUIZ PAGES
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(distDir, 'quiz', String(q.quizId));
                 
-                fileTasks.push(async () => {
+                currentCategoryTasks.push(async () => {
                     await fsAsync.mkdir(quizDir, { recursive: true });
 
                     const prevQuiz = quizzes[i - 1];
@@ -218,10 +219,6 @@ async function buildWedugoQuizSite() {
                                     </div>
                                     ${navButtonsHtml}
                                 </div>
-                                <div class="card shadow-sm p-4 bg-white text-center mb-4">
-                                    <h3 class="h6 fw-bold text-secondary text-uppercase mb-3">Share this Question</h3>
-                                    <div class="sharethis-inline-reaction-buttons"></div>
-                                </div>
                             </div>
                         </div>
                         <script>
@@ -257,7 +254,7 @@ async function buildWedugoQuizSite() {
                 });
             });
 
-            // --- QUEUE MULTI-QUESTION PRACTICE SETS ---
+            // MULTI-QUESTION PRACTICE SETS
             const QUESTIONS_PER_PAGE = 10;
             const sets = chunkArray(quizzes, QUESTIONS_PER_PAGE);
             let practiceSetsHtml = '<div class="row g-3 mb-4">';
@@ -266,7 +263,7 @@ async function buildWedugoQuizSite() {
                 const setNumber = setIndex + 1;
                 const setFileName = `set-${setNumber}.html`;
 
-                fileTasks.push(async () => {
+                currentCategoryTasks.push(async () => {
                     let setQuestionsHtml = '';
                     setQuizzes.forEach((q, qIndex) => {
                         const correctLetter = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
@@ -352,9 +349,9 @@ async function buildWedugoQuizSite() {
             });
             practiceSetsHtml += '</div>';
 
-            // --- QUEUE CATEGORY MASTER PAGES ---
+            // CATEGORY MASTER PAGE
             if (CATEGORY_LIST.includes(cat)) {
-                fileTasks.push(async () => {
+                currentCategoryTasks.push(async () => {
                     let catPageContent = `
                         <div class="d-flex justify-content-between align-items-end mb-4">
                             <h2 class="fw-bold mb-0">${cat}</h2>
@@ -389,19 +386,22 @@ async function buildWedugoQuizSite() {
                     </div>
                 `;
             }
-        }
-        categoriesGridHtml += '</div>';
 
-        // --- QUEUE MASTER PAGES (Categories, Home, About) ---
+            // --- EXECUTE & FREE MEMORY BEFORE NEXT CATEGORY ---
+            await executeTasksInBatches(currentCategoryTasks, 100);
+            currentCategoryTasks = null; // Forces garbage collection of those heavy HTML strings
+        }
+
+        console.log("4. Building Core Pages...");
         const categoriesDir = path.join(distDir, 'categories');
         fs.mkdirSync(categoriesDir, { recursive: true });
-        fileTasks.push(async () => {
+        masterPageTasks.push(async () => {
             await fsAsync.writeFile(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories', `<div class="mb-5"><h2 class="fw-bold mb-4">Explore Knowledge Topics</h2>${categoriesGridHtml}</div>`, 1));
         });
 
         const aboutDir = path.join(distDir, 'about');
         fs.mkdirSync(aboutDir, { recursive: true });
-        fileTasks.push(async () => {
+        masterPageTasks.push(async () => {
             const aboutContent = `
                 <div class="card shadow-sm p-5 border-0">
                     <h2 class="fw-bold text-primary mb-4">About Wedugo Education</h2>
@@ -423,7 +423,7 @@ async function buildWedugoQuizSite() {
         });
         latest20Html += '</div></div>';
 
-        fileTasks.push(async () => {
+        masterPageTasks.push(async () => {
             const homeContent = `
                 <div class="text-center py-5 mb-5 bg-white rounded-4 shadow-sm border-0 px-3">
                     <h1 class="display-5 fw-bold text-dark mb-3">Welcome to Wedugo Education</h1>
@@ -439,32 +439,28 @@ async function buildWedugoQuizSite() {
             await fsAsync.writeFile(path.join(distDir, 'index.html'), getHtmlShell('Home', homeContent, 0));
         });
 
-        // Run the High-Speed Queue
-        await executeTasksInBatches(fileTasks, 200);
+        await executeTasksInBatches(masterPageTasks, 10);
 
-        // --- COPY DIRECTORIES (tools, main_images) ---
+        console.log("5. Copying Static Assets...");
         const directoriesToCopy = ['tools', 'main_images'];
         directoriesToCopy.forEach(dirName => {
             const srcDir = path.join(__dirname, dirName);
             const destDir = path.join(distDir, dirName);
             if (fs.existsSync(srcDir)) {
                 fs.cpSync(srcDir, destDir, { recursive: true });
-                console.log(`Copied /${dirName}/ folder successfully.`);
             }
         });
 
-        // --- COPY STATIC FILES (ads.txt, CNAME, 404.html) ---
         const staticFiles = ['Ads.txt','robots.txt', 'CNAME', '404.html'];
         staticFiles.forEach(file => {
             const sourcePath = path.join(__dirname, file);
             const targetName = file === 'Ads.txt' ? 'ads.txt' : file; 
             if (fs.existsSync(sourcePath)) {
                 fs.copyFileSync(sourcePath, path.join(distDir, targetName));
-                console.log(`Copied ${file} successfully.`);
             }
         });
 
-        console.log("✅ Success! Lightning Fast Build Complete.");
+        console.log("✅ Build Complete (Memory Safe + High Speed)");
     } catch (error) {
         console.error("Build failed:", error);
     }

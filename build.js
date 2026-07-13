@@ -31,21 +31,19 @@ function chunkArray(array, size) {
     return chunked;
 }
 
-// --- NEW SEO ENRICHMENT FUNCTIONS ---
+// --- SEO ENRICHMENT FUNCTIONS ---
 
-// Generates dynamic, keyword-rich introductory text for Category pages
 function getCategorySEOText(category, totalQuestions) {
     return `
         <div class="card bg-light border-0 shadow-sm p-4 mb-4 rounded-3">
             <h2 class="h5 fw-bold text-dark mb-2">Comprehensive Guide to ${category}</h2>
             <p class="text-muted mb-0">
-                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for competitive exams, academic excellence, and general knowledge enhancement. Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Work through our structured 10-question practice sets, review the detailed explanations, and track your progress to ensure complete mastery of the topic.
+                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for competitive exams, academic excellence, and general knowledge enhancement. Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Work through our structured practice sets, review the detailed explanations, and track your progress.
             </p>
         </div>
     `;
 }
 
-// Generates semantic breadcrumbs for better crawling and UX
 function getBreadcrumbs(depth, category, safeName, currentTitle) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     return `
@@ -121,6 +119,9 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
         .list-group-item { border-left: none; border-right: none; padding: 1rem 1.25rem; transition: background-color 0.2s; }
         .list-group-item:first-child { border-top: none; }
         .list-group-item:hover { background-color: #f8f9fa; }
+        
+        /* New styles for the preview cards */
+        .preview-option { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem; color: #495057; }
     </style>
 </head>
 <body>
@@ -504,17 +505,47 @@ async function buildWedugoQuizSite() {
             await fsAsync.writeFile(path.join(aboutDir, 'index.html'), getHtmlShell('About Wedugo Education', aboutContent, 1));
         });
 
-        let latest20Html = '<div class="card shadow-sm border-0 mb-5 rounded-4 overflow-hidden"><div class="list-group list-group-flush">';
-        validQuizzes.slice(0, 20).forEach(q => {
-            let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill me-3 px-3" style="min-width: max-content;">${q.matchedCategory}</span>` : '';
-            latest20Html += `
+        // --- NEW HOMEPAGE LAYOUT ---
+        // 1. Top 5 Questions (Expanded View)
+        let top5Html = '<div class="row g-4 mb-5">';
+        validQuizzes.slice(0, 5).forEach(q => {
+            let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill me-2 px-3">${q.matchedCategory}</span>` : '';
+            top5Html += `
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 card-hover">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="mb-3">${badge}</div>
+                            <h3 class="h6 fw-bold text-dark mb-4 lh-base">${q.question}</h3>
+                            
+                            <div class="d-grid gap-2 mb-4">
+                                <div class="preview-option">A) ${q.answer1 || ''}</div>
+                                <div class="preview-option">B) ${q.answer2 || ''}</div>
+                                <div class="preview-option">C) ${q.answer3 || ''}</div>
+                                <div class="preview-option">D) ${q.answer4 || ''}</div>
+                            </div>
+                            
+                            <a href="./quiz/${q.quizId}/index.html" class="btn btn-outline-primary mt-auto fw-bold w-100 rounded-pill py-2">
+                                View Answer & Explanation
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        top5Html += '</div>';
+
+        // 2. Next 15 Questions (List View)
+        let next15Html = '<div class="card shadow-sm border-0 mb-5 rounded-4 overflow-hidden"><div class="list-group list-group-flush">';
+        validQuizzes.slice(5, 20).forEach(q => {
+            let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill me-3 px-3" style="min-width: max-content;">${q.matchedCategory}</span>` : '';
+            next15Html += `
                 <a href="./quiz/${q.quizId}/index.html" class="list-group-item list-group-item-action d-flex align-items-center py-3">
                     ${badge}
                     <span class="text-dark fw-medium text-truncate">${q.question}</span>
                 </a>
             `;
         });
-        latest20Html += '</div></div>';
+        next15Html += '</div></div>';
 
         masterPageTasks.push(async () => {
             const homeContent = `
@@ -536,11 +567,17 @@ async function buildWedugoQuizSite() {
                 <div id="latest" class="d-flex justify-content-between align-items-end mb-4 pt-4 border-top">
                     <div>
                         <h2 class="fw-bold mb-2 text-dark">Recently Added Questions</h2>
-                        <p class="text-muted mb-0">Jump right into our newest educational material.</p>
+                        <p class="text-muted mb-0">Test your knowledge immediately with these fresh additions.</p>
                     </div>
                     <a href="./categories/index.html" class="btn btn-outline-primary fw-medium rounded-pill px-4">View All Hubs &rarr;</a>
                 </div>
-                ${latest20Html}
+                
+                <!-- Expanded Preview for Top 5 Questions -->
+                ${top5Html}
+                
+                <!-- More Recent Questions (List View) -->
+                <h4 class="h5 fw-bold mb-3 text-dark">More Recent Updates</h4>
+                ${next15Html}
             `;
             await fsAsync.writeFile(path.join(distDir, 'index.html'), getHtmlShell('Free MCQ Mock Tests & Study Guides', homeContent, 0));
         });
@@ -566,7 +603,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Optimized + Memory Safe)");
+        console.log("✅ Build Complete (AdSense Optimized + Previews + Memory Safe)");
     } catch (error) {
         console.error("Build failed:", error);
     }

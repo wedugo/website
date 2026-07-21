@@ -119,9 +119,8 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
         .list-group-item { border-left: none; border-right: none; padding: 1rem 1.25rem; transition: background-color 0.2s; }
         .list-group-item:first-child { border-top: none; }
         .list-group-item:hover { background-color: #f8f9fa; }
-        
-        /* New styles for the preview cards */
         .preview-option { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem; color: #495057; }
+        .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 3px solid #0d6efd; }
     </style>
 </head>
 <body>
@@ -206,10 +205,15 @@ async function buildWedugoQuizSite() {
 
             let currentCategoryTasks = [];
 
-            // INDIVIDUAL QUIZ PAGES
+            // INDIVIDUAL QUIZ PAGES (Retains immediate reveal for single-question studying)
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(distDir, 'quiz', String(q.quizId));
                 
+                // DYNAMIC FALLBACK EXPLANATION LOGIC
+                const explanationText = (q.answerdetail && q.answerdetail.trim() !== "") 
+                    ? q.answerdetail 
+                    : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. The correct option highlights a fundamental fact frequently tested in examinations. Consistent practice and studying related foundational materials is the key to mastering these patterns.`;
+
                 currentCategoryTasks.push(async () => {
                     await fsAsync.mkdir(quizDir, { recursive: true });
 
@@ -218,7 +222,7 @@ async function buildWedugoQuizSite() {
 
                     const navButtonsHtml = `
                         <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                            ${prevQuiz ? `<a href="../${prevQuiz.quizId}/index.html" class="btn btn-outline-secondary fw-medium px-3 px-md-4">&larr; Previous Question</a>` : `<button class="btn btn-outline-secondary fw-medium px-3 px-md-4" disabled>&larr; Previous Question</button>`}
+                            ${prevQuiz ? `<a href="../${prevQuiz.quizId}/index.html" class="btn btn-outline-secondary fw-medium px-3 px-md-4">&larr; Previous</a>` : `<button class="btn btn-outline-secondary fw-medium px-3 px-md-4" disabled>&larr; Previous</button>`}
                             ${nextQuiz ? `<a href="../${nextQuiz.quizId}/index.html" class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm">Next Question &rarr;</a>` : `<button class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm" disabled>Next Question &rarr;</button>`}
                         </div>
                     `;
@@ -241,7 +245,7 @@ async function buildWedugoQuizSite() {
                                             <span class="badge bg-light text-secondary border ms-auto">ID: ${q.quizId}</span>
                                         </div>
                                         <h1 class="h3 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
-                                        <p class="text-muted small border-start border-3 border-primary ps-3">Test your knowledge on this concept from <strong>${q.matchedCategory}</strong> by selecting the correct option below. Detailed explanations are provided to help you learn.</p>
+                                        <p class="text-muted small border-start border-3 border-primary ps-3">Select the correct option below. Detailed explanations are provided instantly.</p>
                                     </header>
 
                                     <div class="d-grid gap-3 mb-4" id="options-container">
@@ -256,10 +260,7 @@ async function buildWedugoQuizSite() {
                                         <hr class="opacity-25">
                                         <div class="mt-3">
                                             <h6 class="fw-bold text-dark mb-2">Detailed Explanation:</h6>
-                                            <p class="mb-3 text-dark lh-lg" style="font-size: 1.05rem;">${q.answerdetail || 'No detailed explanation has been provided for this specific question. However, analyzing the core concepts of ' + q.matchedCategory + ' will help you understand why this is the correct answer.'}</p>
-                                        </div>
-                                        <div class="bg-white p-3 rounded-2 border mt-3">
-                                            <p class="mb-0 small text-muted"><strong>Study Tip:</strong> Consistent practice is key. Explore more questions and structured sets in our <a href="../../category/${safeName}/index.html" class="fw-bold text-primary">${q.matchedCategory} Hub</a> to strengthen your exam preparation.</p>
+                                            <p class="mb-3 text-dark lh-lg" style="font-size: 1.05rem;">${explanationText}</p>
                                         </div>
                                     </div>
                                     
@@ -285,7 +286,7 @@ async function buildWedugoQuizSite() {
                                     btnElement.style.backgroundColor = "#d1e7dd";
                                     btnElement.style.color = "#0f5132";
                                     explanationBox.classList.add('alert-success', 'border-success', 'border-opacity-25');
-                                    resultTitle.innerHTML = "✨ Correct Answer! Well done.";
+                                    resultTitle.innerHTML = "✨ Correct Answer!";
                                 } else {
                                     btnElement.style.borderColor = "#dc3545";
                                     btnElement.style.backgroundColor = "#f8d7da";
@@ -300,7 +301,7 @@ async function buildWedugoQuizSite() {
                 });
             });
 
-            // MULTI-QUESTION PRACTICE SETS
+            // MULTI-QUESTION PRACTICE SETS (NOW WITH TIMER & SUBMIT BUTTON)
             const QUESTIONS_PER_PAGE = 10;
             const sets = chunkArray(quizzes, QUESTIONS_PER_PAGE);
             let practiceSetsHtml = '<div class="row g-3 mb-4">';
@@ -311,33 +312,41 @@ async function buildWedugoQuizSite() {
 
                 currentCategoryTasks.push(async () => {
                     let setQuestionsHtml = '';
+                    let answersMapScript = [];
+
                     setQuizzes.forEach((q, qIndex) => {
                         const correctLetter = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
-                        const escape = str => (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        
+                        // DYNAMIC FALLBACK FOR MOCK TESTS
+                        const explanationText = (q.answerdetail && q.answerdetail.trim() !== "") 
+                            ? q.answerdetail 
+                            : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. Consistent practice is the key to mastering these patterns.`;
+
+                        answersMapScript.push(`'${q.quizId}': '${correctLetter}'`);
                         
                         setQuestionsHtml += `
                             <article class="card shadow-sm p-4 p-md-5 mb-5 bg-white border-0 rounded-4" id="quiz-block-${q.quizId}">
                                 <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                                    <span class="badge bg-secondary rounded-pill me-3 px-3 py-2 fs-6">Question ${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
-                                    <h3 class="h4 fw-bold text-dark mb-0 lh-base">${q.question}</h3>
+                                    <span class="badge bg-secondary rounded-pill me-3 px-3 py-2 fs-6">Q${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
+                                    <h3 class="h5 fw-bold text-dark mb-0 lh-base">${q.question}</h3>
                                 </div>
                                 <div class="d-grid gap-3 ps-md-4 mb-4">
-                                    <button class="btn option-btn py-3 fs-6" onclick="checkSetAnswer(this, 'A', '${q.quizId}', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}')">A) ${q.answer1}</button>
-                                    <button class="btn option-btn py-3 fs-6" onclick="checkSetAnswer(this, 'B', '${q.quizId}', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}')">B) ${q.answer2}</button>
-                                    <button class="btn option-btn py-3 fs-6" onclick="checkSetAnswer(this, 'C', '${q.quizId}', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}')">C) ${q.answer3}</button>
-                                    <button class="btn option-btn py-3 fs-6" onclick="checkSetAnswer(this, 'D', '${q.quizId}', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}')">D) ${q.answer4}</button>
+                                    <button class="btn option-btn py-3 fs-6" data-letter="A" onclick="selectOption('${q.quizId}', 'A', this)">A) ${q.answer1}</button>
+                                    <button class="btn option-btn py-3 fs-6" data-letter="B" onclick="selectOption('${q.quizId}', 'B', this)">B) ${q.answer2}</button>
+                                    <button class="btn option-btn py-3 fs-6" data-letter="C" onclick="selectOption('${q.quizId}', 'C', this)">C) ${q.answer3}</button>
+                                    <button class="btn option-btn py-3 fs-6" data-letter="D" onclick="selectOption('${q.quizId}', 'D', this)">D) ${q.answer4}</button>
                                 </div>
                                 <div id="explanation-${q.quizId}" class="alert mt-3 d-none ms-md-4 p-4 border rounded-3">
                                     <h6 class="alert-heading fw-bold fs-5 mb-3" id="result-title-${q.quizId}"></h6>
                                     <hr class="opacity-25 mb-3">
                                     <h6 class="fw-bold text-dark mb-2">Solution Breakdown:</h6>
-                                    <p class="mb-0 text-dark lh-lg"> ${q.answerdetail || 'Practicing these concepts consistently will yield the best results for your upcoming tests.'}</p>
+                                    <p class="mb-0 text-dark lh-lg">${explanationText}</p>
                                 </div>
                             </article>
                         `;
                     });
 
-                    const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-2">&larr; Previous Practice Set</a>` : '';
+                    const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-2">&larr; Previous Set</a>` : '';
                     const nextSetBtn = setIndex < sets.length - 1 ? `<a href="set-${setNumber + 1}.html" class="btn btn-primary px-4 py-2 shadow">Next Practice Set &rarr;</a>` : '';
 
                     const setPageContent = `
@@ -345,12 +354,24 @@ async function buildWedugoQuizSite() {
                             <div class="col-lg-10">
                                 ${getBreadcrumbs(2, cat, safeName, `Practice Set ${setNumber}`)}
                                 
-                                <div class="mb-4 bg-white p-4 rounded-4 shadow-sm border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <!-- TIMER HEADER -->
+                                <div class="timer-header bg-white p-3 shadow-sm d-flex justify-content-between align-items-center mb-4 rounded-3">
                                     <div>
-                                        <h1 class="h3 fw-bold text-dark mb-2">${cat} - Detailed Practice Set ${setNumber}</h1>
-                                        <p class="text-muted mb-0">Evaluate your preparation with these 10 carefully selected mock questions. Review explanations instantly to learn from your mistakes.</p>
+                                        <h1 class="h4 fw-bold text-dark mb-1">${cat} - Mock Test ${setNumber}</h1>
+                                        <p class="text-muted mb-0 small">Answer all questions, then click submit to view your score.</p>
                                     </div>
-                                    <a href="index.html" class="btn btn-outline-primary text-nowrap flex-shrink-0">&larr; Back to ${cat} Hub</a>
+                                    <div class="text-center">
+                                        <span class="d-block text-muted small fw-bold text-uppercase mb-1">Time Remaining</span>
+                                        <div class="fs-3 fw-bold font-monospace bg-light px-3 py-1 rounded text-danger border" id="timer-display">10:00</div>
+                                    </div>
+                                </div>
+
+                                <!-- SCORE BOARD (Hidden initially) -->
+                                <div id="score-board" class="card shadow border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10">
+                                    <h2 class="text-success fw-bold mb-3">Test Completed!</h2>
+                                    <p class="fs-5 text-dark mb-2">Your Final Score:</p>
+                                    <div class="display-3 fw-bold text-success mb-3" id="final-score">0 / 10</div>
+                                    <p class="text-muted">Review your correct and incorrect answers below.</p>
                                 </div>
                                 
                                 <div class="ad-container text-center text-muted small mb-5">
@@ -362,34 +383,108 @@ async function buildWedugoQuizSite() {
                                     ${setQuestionsHtml}
                                 </div>
                                 
+                                <!-- SUBMIT BUTTON -->
+                                <div class="text-center mt-5 mb-5" id="submit-container">
+                                    <button class="btn btn-success btn-lg px-5 py-3 fw-bold shadow-lg rounded-pill fs-5" onclick="submitTest()">
+                                        📝 Submit Results & View Explanations
+                                    </button>
+                                </div>
+                                
                                 <div class="d-flex justify-content-between mt-5 pt-4 border-top">
                                     <div>${prevSetBtn}</div>
                                     <div>${nextSetBtn}</div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- MOCK TEST JAVASCRIPT LOGIC -->
                         <script>
-                            function checkSetAnswer(btnElement, selectedLetter, quizId, correctLetter, aText, bText, cText, dText) {
-                                const answerTexts = { 'A': aText, 'B': bText, 'C': cText, 'D': dText };
-                                const container = document.getElementById('quiz-block-' + quizId);
-                                const explanationBox = document.getElementById('explanation-' + quizId);
-                                const resultTitle = document.getElementById('result-title-' + quizId);
-                                container.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
-                                explanationBox.classList.remove('d-none', 'alert-success', 'alert-danger');
-                                if(selectedLetter === correctLetter) {
-                                    btnElement.style.borderColor = "#198754";
-                                    btnElement.style.backgroundColor = "#d1e7dd";
-                                    btnElement.style.color = "#0f5132";
-                                    explanationBox.classList.add('alert-success');
-                                    resultTitle.innerHTML = "✨ Excellent! Correct Answer.";
-                                } else {
-                                    btnElement.style.borderColor = "#dc3545";
-                                    btnElement.style.backgroundColor = "#f8d7da";
-                                    btnElement.style.color = "#842029";
-                                    explanationBox.classList.add('alert-danger');
-                                    resultTitle.innerHTML = "❌ Incorrect! Answer: " + correctLetter + ") " + answerTexts[correctLetter];
-                                }
+                            const correctAnswers = { ${answersMapScript.join(', ')} };
+                            const userAnswers = {};
+                            let timeLeft = 600; // 10 minutes in seconds
+                            let timerInterval;
+                            let testSubmitted = false;
+
+                            function startTimer() {
+                                const display = document.getElementById('timer-display');
+                                timerInterval = setInterval(() => {
+                                    if(testSubmitted) return;
+                                    timeLeft--;
+                                    let m = Math.floor(timeLeft / 60);
+                                    let s = timeLeft % 60;
+                                    display.innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                                    if (timeLeft <= 0) {
+                                        clearInterval(timerInterval);
+                                        submitTest();
+                                    }
+                                }, 1000);
                             }
+
+                            function selectOption(quizId, letter, btn) {
+                                if(testSubmitted) return; 
+                                
+                                const container = document.getElementById('quiz-block-' + quizId);
+                                container.querySelectorAll('.option-btn').forEach(b => {
+                                    b.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+                                });
+                                
+                                btn.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+                                userAnswers[quizId] = letter;
+                            }
+
+                            function submitTest() {
+                                if(testSubmitted) return;
+                                testSubmitted = true;
+                                clearInterval(timerInterval);
+                                document.getElementById('submit-container').style.display = 'none';
+                                
+                                let score = 0;
+                                let total = Object.keys(correctAnswers).length;
+
+                                for (let quizId in correctAnswers) {
+                                    const correct = correctAnswers[quizId];
+                                    const user = userAnswers[quizId];
+                                    const container = document.getElementById('quiz-block-' + quizId);
+                                    const explanation = document.getElementById('explanation-' + quizId);
+                                    const title = document.getElementById('result-title-' + quizId);
+                                    
+                                    container.querySelectorAll('.option-btn').forEach(btn => {
+                                        btn.disabled = true;
+                                        btn.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+                                        
+                                        const btnLetter = btn.getAttribute('data-letter');
+                                        if (btnLetter === correct) {
+                                            btn.style.borderColor = "#198754";
+                                            btn.style.backgroundColor = "#d1e7dd";
+                                            btn.style.color = "#0f5132";
+                                        } else if (btnLetter === user && user !== correct) {
+                                            btn.style.borderColor = "#dc3545";
+                                            btn.style.backgroundColor = "#f8d7da";
+                                            btn.style.color = "#842029";
+                                        }
+                                    });
+
+                                    explanation.classList.remove('d-none');
+                                    if (user === correct) {
+                                        score++;
+                                        explanation.classList.add('alert-success', 'border-success', 'border-opacity-25');
+                                        title.innerHTML = "✨ Correct!";
+                                    } else if (!user) {
+                                        explanation.classList.add('alert-warning', 'border-warning', 'border-opacity-25');
+                                        title.innerHTML = "⚠️ Unanswered. Correct Option: " + correct;
+                                    } else {
+                                        explanation.classList.add('alert-danger', 'border-danger', 'border-opacity-25');
+                                        title.innerHTML = "❌ Incorrect. Correct Option: " + correct;
+                                    }
+                                }
+                                
+                                const scoreBoard = document.getElementById('score-board');
+                                scoreBoard.classList.remove('d-none');
+                                document.getElementById('final-score').innerText = score + " / " + total;
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+
+                            window.onload = startTimer;
                         </script>
                     `;
                     await fsAsync.writeFile(path.join(specificCatDir, setFileName), getHtmlShell(`${cat} Practice Set ${setNumber}`, setPageContent, 2));
@@ -398,9 +493,9 @@ async function buildWedugoQuizSite() {
                 practiceSetsHtml += `
                     <div class="col-6 col-md-4 col-lg-3">
                         <a href="${setFileName}" class="card shadow-sm text-decoration-none card-hover h-100 text-center p-4 border-0 rounded-4">
-                            <div class="fs-1 mb-2">📝</div>
+                            <div class="fs-1 mb-2">⏱️</div>
                             <h6 class="fw-bold text-dark mb-1">Mock Set ${setNumber}</h6>
-                            <span class="badge bg-primary bg-opacity-10 text-primary mt-2">${setQuizzes.length} Questions</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mt-2">${setQuizzes.length} Questions (10m)</span>
                         </a>
                     </div>
                 `;
@@ -422,9 +517,9 @@ async function buildWedugoQuizSite() {
                         
                         <div class="mt-5 mb-4">
                             <h3 class="h4 fw-bold mb-3 text-dark d-flex align-items-center">
-                                <span class="me-2">🎯</span> Structured Practice Sets
+                                <span class="me-2">⏱️</span> Timed Practice Sets
                             </h3>
-                            <p class="text-muted mb-4">Take these 10-question mock exams to evaluate your readiness. Immediate feedback and solutions are provided.</p>
+                            <p class="text-muted mb-4">Take these 10-minute mock exams to evaluate your readiness. Immediate feedback and solutions are provided upon submission.</p>
                             ${practiceSetsHtml}
                         </div>
                         
@@ -476,7 +571,7 @@ async function buildWedugoQuizSite() {
                 ${getBreadcrumbs(1, '', '', 'All Categories')}
                 <div class="mb-5 text-center py-4">
                     <h1 class="display-5 fw-bold mb-3 text-dark">Explore Knowledge Topics</h1>
-                    <p class="lead text-muted col-lg-8 mx-auto">Select a subject below to dive into thousands of practice questions, mock sets, and detailed educational explanations designed to help you succeed.</p>
+                    <p class="lead text-muted col-lg-8 mx-auto">Select a subject below to dive into thousands of practice questions, timed mock sets, and detailed educational explanations designed to help you succeed.</p>
                 </div>
                 ${categoriesGridHtml}
             `;
@@ -498,15 +593,14 @@ async function buildWedugoQuizSite() {
                     <ul class="text-muted mb-0 lh-lg">
                         <li><strong>Massive Question Bank:</strong> Over 50,000 carefully curated questions.</li>
                         <li><strong>Detailed Explanations:</strong> Learn the 'why' behind the correct answers.</li>
-                        <li><strong>Structured Practice:</strong> Topic-wise categorization and 10-question mock sets to track progress.</li>
+                        <li><strong>Timed Practice:</strong> Topic-wise categorization and 10-question mock sets with built-in timers to track speed and progress.</li>
                     </ul>
                 </div>
             `;
             await fsAsync.writeFile(path.join(aboutDir, 'index.html'), getHtmlShell('About Wedugo Education', aboutContent, 1));
         });
 
-        // --- NEW HOMEPAGE LAYOUT ---
-        // 1. Top 5 Questions (Expanded View)
+        // --- HOMEPAGE LAYOUT ---
         let top5Html = '<div class="row g-4 mb-5">';
         validQuizzes.slice(0, 5).forEach(q => {
             let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill me-2 px-3">${q.matchedCategory}</span>` : '';
@@ -534,7 +628,6 @@ async function buildWedugoQuizSite() {
         });
         top5Html += '</div>';
 
-        // 2. Next 15 Questions (List View)
         let next15Html = '<div class="card shadow-sm border-0 mb-5 rounded-4 overflow-hidden"><div class="list-group list-group-flush">';
         validQuizzes.slice(5, 20).forEach(q => {
             let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill me-3 px-3" style="min-width: max-content;">${q.matchedCategory}</span>` : '';
@@ -552,7 +645,7 @@ async function buildWedugoQuizSite() {
                 <header class="text-center py-5 mb-5 bg-white rounded-4 shadow-sm border-0 px-4 mt-3">
                     <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 rounded-pill fs-6">Over 50,000 Questions Available</span>
                     <h1 class="display-4 fw-bold text-dark mb-4">Master Your Exams with Wedugo Education</h1>
-                    <p class="col-md-8 mx-auto fs-5 text-muted mb-5 lh-base">Challenge yourself with high-quality practice sets, subject-specific mock tests, and detailed conceptual explanations designed for competitive success.</p>
+                    <p class="col-md-8 mx-auto fs-5 text-muted mb-5 lh-base">Challenge yourself with high-quality practice sets, timed mock tests, and detailed conceptual explanations designed for competitive success.</p>
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
                         <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill">Explore All Topics</a>
                         <a href="#latest" class="btn btn-outline-dark btn-lg px-5 shadow-sm fw-bold rounded-pill">Try Latest MCQs</a>
@@ -572,10 +665,8 @@ async function buildWedugoQuizSite() {
                     <a href="./categories/index.html" class="btn btn-outline-primary fw-medium rounded-pill px-4">View All Hubs &rarr;</a>
                 </div>
                 
-                <!-- Expanded Preview for Top 5 Questions -->
                 ${top5Html}
                 
-                <!-- More Recent Questions (List View) -->
                 <h4 class="h5 fw-bold mb-3 text-dark">More Recent Updates</h4>
                 ${next15Html}
             `;
@@ -603,7 +694,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Optimized + Previews + Memory Safe)");
+        console.log("✅ Build Complete (AdSense Optimized + Timers + Dynamic Fallbacks)");
     } catch (error) {
         console.error("Build failed:", error);
     }

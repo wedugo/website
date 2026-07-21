@@ -99,10 +99,8 @@ function getDisqusEmbed(quizId) {
             };
             (function() {
                 var d = document, s = d.createElement('script');
-                
-                // 🔴 REPLACE THIS LINE WITH YOUR DISQUS SHORTNAME URL:
+                // Updated with the wedugo disqus shortname
                 s.src = 'https://wedugo.disqus.com/embed.js'; 
-                
                 s.setAttribute('data-timestamp', +new Date());
                 (d.head || d.body).appendChild(s);
             })();
@@ -259,7 +257,7 @@ async function buildWedugoQuizSite() {
 
             let currentCategoryTasks = [];
 
-            // INDIVIDUAL QUIZ PAGES (Immediate Reveal + Thick Content Integrations)
+            // INDIVIDUAL QUIZ PAGES (Live Stopwatch + Immediate Reveal + Thick Content)
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(distDir, 'quiz', String(q.quizId));
                 
@@ -314,7 +312,7 @@ async function buildWedugoQuizSite() {
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                                             <a href="../../category/${safeName}/index.html" class="badge bg-primary badge-cat text-decoration-none">${q.matchedCategory}</a>
                                             <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle">Difficulty: ${diffData.label}</span>
-                                            <span class="badge bg-light text-secondary border ms-auto">⏱️ Est. Time: ${diffData.time}</span>
+                                            <span class="badge bg-light text-secondary border ms-auto fs-6 font-monospace" id="single-timer">⏱️ 00:00</span>
                                         </div>
                                         <h1 class="h3 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
                                         <div class="bg-light p-3 rounded-2 border-start border-3 border-primary mb-4">
@@ -352,7 +350,27 @@ async function buildWedugoQuizSite() {
                             </div>
                         </div>
                         <script>
+                            let seconds = 0;
+                            let singleTimerInterval;
+                            let hasAnswered = false;
+
+                            function updateSingleTimer() {
+                                seconds++;
+                                let m = Math.floor(seconds / 60);
+                                let s = seconds % 60;
+                                document.getElementById('single-timer').innerHTML = '⏱️ ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                            }
+                            
+                            // Start timer on page load
+                            window.addEventListener('load', function() {
+                                singleTimerInterval = setInterval(updateSingleTimer, 1000);
+                            });
+
                             function checkAnswer(btnElement, selectedLetter) {
+                                if(hasAnswered) return;
+                                hasAnswered = true;
+                                clearInterval(singleTimerInterval); // Freeze stopwatch
+
                                 const correctLetter = "${(q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase()}";
                                 const answerTexts = {
                                     'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",
@@ -369,7 +387,7 @@ async function buildWedugoQuizSite() {
                                     btnElement.style.backgroundColor = "#d1e7dd";
                                     btnElement.style.color = "#0f5132";
                                     explanationBox.classList.add('alert-success', 'border-success', 'border-opacity-25');
-                                    resultTitle.innerHTML = "✨ Correct Answer!";
+                                    resultTitle.innerHTML = "✨ Correct Answer! Time taken: " + document.getElementById('single-timer').innerText.replace('⏱️ ', '');
                                 } else {
                                     btnElement.style.borderColor = "#dc3545";
                                     btnElement.style.backgroundColor = "#f8d7da";
@@ -779,7 +797,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Thick Content Framework + Disqus Active)");
+        console.log("✅ Build Complete (AdSense Thick Content Framework + Disqus Active + Live Timer)");
     } catch (error) {
         console.error("Build failed:", error);
     }

@@ -86,6 +86,31 @@ function getBreadcrumbs(depth, category, safeName, currentTitle) {
     `;
 }
 
+function getDisqusEmbed(quizId) {
+    const pageUrl = `${SITE_BASE_URL}/quiz/${quizId}/index.html`;
+    const pageIdentifier = `quiz_${quizId}`;
+
+    return `
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_config = function () {
+                this.page.url = '${pageUrl}';
+                this.page.identifier = '${pageIdentifier}';
+            };
+            (function() {
+                var d = document, s = d.createElement('script');
+                
+                // 🔴 REPLACE THIS LINE WITH YOUR DISQUS SHORTNAME URL:
+                s.src = 'https://wedugo.disqus.com/embed.js'; 
+                
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    `;
+}
+
 // ------------------------------------
 
 function getNavbar(depth) {
@@ -316,13 +341,11 @@ async function buildWedugoQuizSite() {
                                     ${navButtonsHtml}
                                     ${relatedHtml}
                                     
-                                    <!-- Disqus Comments Placeholder for UGC thick content -->
+                                    <!-- Dynamic Disqus Comments Integration -->
                                     <div class="mt-5 pt-4 border-top">
-                                        <h4 class="h5 fw-bold mb-3">Community Discussion</h4>
-                                        <p class="small text-muted mb-4">Have a doubt about this question? Discuss with other students below.</p>
-                                        <div id="disqus_thread" class="bg-light p-4 rounded text-center text-muted border border-dashed">
-                                            <em>[Disqus Comments Widget loads here]</em>
-                                        </div>
+                                        <h4 class="h5 fw-bold mb-3 text-dark">Community Discussion</h4>
+                                        <p class="small text-muted mb-4">Have a doubt or an alternative solution for this question? Discuss with the community below.</p>
+                                        ${getDisqusEmbed(q.quizId)}
                                     </div>
                                     
                                 </article>
@@ -756,7 +779,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Thick Content Framework Active)");
+        console.log("✅ Build Complete (AdSense Thick Content Framework + Disqus Active)");
     } catch (error) {
         console.error("Build failed:", error);
     }

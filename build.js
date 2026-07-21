@@ -31,14 +31,42 @@ function chunkArray(array, size) {
     return chunked;
 }
 
-// --- SEO ENRICHMENT FUNCTIONS ---
+// --- ADSENSE "THICK CONTENT" ENRICHMENT FUNCTIONS ---
+
+function getDifficultyData(questionStr) {
+    const len = (questionStr || "").length;
+    if (len < 50) return { label: 'Easy', time: '30 sec', color: 'success' };
+    if (len > 120) return { label: 'Hard', time: '90 sec', color: 'danger' };
+    return { label: 'Medium', time: '60 sec', color: 'warning' };
+}
+
+function getExamTarget(category) {
+    const techExams = ['Computer', 'Technology', 'Civil Engineering', 'Solid Mechanics'];
+    const medicalExams = ['Biology', 'Anatomy', 'Biochemistry', 'Microbiology', 'Pharmacology', 'Virus'];
+    const govtExams = ['Indian Geography', 'Indian Polity and Constitution', 'Indian History', 'General Knowledge', 'Reasoning', 'Aptitude'];
+
+    if (techExams.includes(category)) return "GATE, SSC JE, State Engineering Services, and PSU recruitment exams";
+    if (medicalExams.includes(category)) return "NEET, AIIMS, Nursing Boards, Hospital Assistant Exams, and Medical Entrance tests";
+    if (govtExams.includes(category)) return "UPSC, SSC CGL, Banking (PO/Clerk), Railways (RRB), and State PSC examinations";
+    
+    return "various competitive assessments, university entrance exams, and professional certification tests";
+}
+
+function getRandomRelated(quizzes, currentId, count = 3) {
+    const filtered = quizzes.filter(q => q.quizId !== currentId);
+    const shuffled = filtered.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+}
 
 function getCategorySEOText(category, totalQuestions) {
     return `
         <div class="card bg-light border-0 shadow-sm p-4 mb-4 rounded-3">
             <h2 class="h5 fw-bold text-dark mb-2">Comprehensive Guide to ${category}</h2>
+            <p class="text-muted mb-3">
+                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for academic excellence and general knowledge enhancement. This topic is frequently tested in <strong>${getExamTarget(category)}</strong>. 
+            </p>
             <p class="text-muted mb-0">
-                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for competitive exams, academic excellence, and general knowledge enhancement. Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Work through our structured practice sets, review the detailed explanations, and track your progress.
+                Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Work through our timed structured practice sets, review the detailed explanations, and track your progress.
             </p>
         </div>
     `;
@@ -121,6 +149,7 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
         .list-group-item:hover { background-color: #f8f9fa; }
         .preview-option { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem; color: #495057; }
         .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 3px solid #0d6efd; }
+        .related-q-card { border-left: 4px solid #0d6efd; }
     </style>
 </head>
 <body>
@@ -205,14 +234,32 @@ async function buildWedugoQuizSite() {
 
             let currentCategoryTasks = [];
 
-            // INDIVIDUAL QUIZ PAGES (Retains immediate reveal for single-question studying)
+            // INDIVIDUAL QUIZ PAGES (Immediate Reveal + Thick Content Integrations)
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(distDir, 'quiz', String(q.quizId));
                 
-                // DYNAMIC FALLBACK EXPLANATION LOGIC
+                const diffData = getDifficultyData(q.question);
                 const explanationText = (q.answerdetail && q.answerdetail.trim() !== "") 
                     ? q.answerdetail 
-                    : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. The correct option highlights a fundamental fact frequently tested in examinations. Consistent practice and studying related foundational materials is the key to mastering these patterns.`;
+                    : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. The correct option highlights a fundamental fact frequently tested in ${getExamTarget(q.matchedCategory)}. Consistent practice and studying related foundational materials is the key to mastering these patterns.`;
+
+                // Generate Related Questions Html
+                const relatedQuizzes = getRandomRelated(quizzes, q.quizId, 3);
+                let relatedHtml = '';
+                if(relatedQuizzes.length > 0) {
+                    relatedHtml = `<div class="mt-5"><h4 class="h5 fw-bold mb-4 text-dark border-bottom pb-2">Related Questions in ${q.matchedCategory}</h4><div class="row g-3">`;
+                    relatedQuizzes.forEach(rq => {
+                        relatedHtml += `
+                            <div class="col-md-4">
+                                <a href="../${rq.quizId}/index.html" class="card related-q-card h-100 shadow-sm text-decoration-none card-hover bg-light p-3 border-0">
+                                    <span class="badge bg-secondary mb-2" style="width:fit-content">Q${rq.quizId}</span>
+                                    <p class="text-dark fw-medium small mb-0 lh-base">${rq.question.substring(0, 80)}...</p>
+                                </a>
+                            </div>
+                        `;
+                    });
+                    relatedHtml += `</div></div>`;
+                }
 
                 currentCategoryTasks.push(async () => {
                     await fsAsync.mkdir(quizDir, { recursive: true });
@@ -241,11 +288,13 @@ async function buildWedugoQuizSite() {
                                     <header class="mb-4">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                                             <a href="../../category/${safeName}/index.html" class="badge bg-primary badge-cat text-decoration-none">${q.matchedCategory}</a>
-                                            ${q.language ? `<span class="badge bg-light text-dark border">${q.language}</span>` : ''}
-                                            <span class="badge bg-light text-secondary border ms-auto">ID: ${q.quizId}</span>
+                                            <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle">Difficulty: ${diffData.label}</span>
+                                            <span class="badge bg-light text-secondary border ms-auto">⏱️ Est. Time: ${diffData.time}</span>
                                         </div>
                                         <h1 class="h3 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
-                                        <p class="text-muted small border-start border-3 border-primary ps-3">Select the correct option below. Detailed explanations are provided instantly.</p>
+                                        <div class="bg-light p-3 rounded-2 border-start border-3 border-primary mb-4">
+                                            <p class="text-muted small mb-0"><strong>Exam Relevance:</strong> This question type is highly relevant for candidates preparing for <em>${getExamTarget(q.matchedCategory)}</em>. Select the correct option below to instantly reveal the detailed explanation and solution breakdown.</p>
+                                        </div>
                                     </header>
 
                                     <div class="d-grid gap-3 mb-4" id="options-container">
@@ -259,12 +308,23 @@ async function buildWedugoQuizSite() {
                                         <h5 class="alert-heading fw-bold mb-3 d-flex align-items-center" id="result-title"></h5>
                                         <hr class="opacity-25">
                                         <div class="mt-3">
-                                            <h6 class="fw-bold text-dark mb-2">Detailed Explanation:</h6>
+                                            <h6 class="fw-bold text-dark mb-2">Detailed Solution & Learning Notes:</h6>
                                             <p class="mb-3 text-dark lh-lg" style="font-size: 1.05rem;">${explanationText}</p>
                                         </div>
                                     </div>
                                     
                                     ${navButtonsHtml}
+                                    ${relatedHtml}
+                                    
+                                    <!-- Disqus Comments Placeholder for UGC thick content -->
+                                    <div class="mt-5 pt-4 border-top">
+                                        <h4 class="h5 fw-bold mb-3">Community Discussion</h4>
+                                        <p class="small text-muted mb-4">Have a doubt about this question? Discuss with other students below.</p>
+                                        <div id="disqus_thread" class="bg-light p-4 rounded text-center text-muted border border-dashed">
+                                            <em>[Disqus Comments Widget loads here]</em>
+                                        </div>
+                                    </div>
+                                    
                                 </article>
                             </div>
                         </div>
@@ -301,7 +361,7 @@ async function buildWedugoQuizSite() {
                 });
             });
 
-            // MULTI-QUESTION PRACTICE SETS (NOW WITH TIMER & SUBMIT BUTTON)
+            // MULTI-QUESTION PRACTICE SETS (TIMER + SUBMIT + THICK CONTENT)
             const QUESTIONS_PER_PAGE = 10;
             const sets = chunkArray(quizzes, QUESTIONS_PER_PAGE);
             let practiceSetsHtml = '<div class="row g-3 mb-4">';
@@ -316,20 +376,22 @@ async function buildWedugoQuizSite() {
 
                     setQuizzes.forEach((q, qIndex) => {
                         const correctLetter = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
+                        const diffData = getDifficultyData(q.question);
                         
-                        // DYNAMIC FALLBACK FOR MOCK TESTS
                         const explanationText = (q.answerdetail && q.answerdetail.trim() !== "") 
                             ? q.answerdetail 
-                            : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. Consistent practice is the key to mastering these patterns.`;
+                            : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. This principle is vital for ${getExamTarget(q.matchedCategory)}. Consistent practice is the key to mastering these patterns.`;
 
                         answersMapScript.push(`'${q.quizId}': '${correctLetter}'`);
                         
                         setQuestionsHtml += `
                             <article class="card shadow-sm p-4 p-md-5 mb-5 bg-white border-0 rounded-4" id="quiz-block-${q.quizId}">
-                                <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                                    <span class="badge bg-secondary rounded-pill me-3 px-3 py-2 fs-6">Q${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
-                                    <h3 class="h5 fw-bold text-dark mb-0 lh-base">${q.question}</h3>
+                                <div class="d-flex align-items-center flex-wrap gap-2 mb-4 pb-3 border-bottom">
+                                    <span class="badge bg-secondary rounded-pill me-2 px-3 py-2 fs-6">Q${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
+                                    <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle px-2 py-1">${diffData.label}</span>
                                 </div>
+                                <h3 class="h5 fw-bold text-dark mb-4 lh-base">${q.question}</h3>
+                                
                                 <div class="d-grid gap-3 ps-md-4 mb-4">
                                     <button class="btn option-btn py-3 fs-6" data-letter="A" onclick="selectOption('${q.quizId}', 'A', this)">A) ${q.answer1}</button>
                                     <button class="btn option-btn py-3 fs-6" data-letter="B" onclick="selectOption('${q.quizId}', 'B', this)">B) ${q.answer2}</button>
@@ -355,23 +417,23 @@ async function buildWedugoQuizSite() {
                                 ${getBreadcrumbs(2, cat, safeName, `Practice Set ${setNumber}`)}
                                 
                                 <!-- TIMER HEADER -->
-                                <div class="timer-header bg-white p-3 shadow-sm d-flex justify-content-between align-items-center mb-4 rounded-3">
+                                <div class="timer-header bg-white p-3 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4 rounded-3">
                                     <div>
                                         <h1 class="h4 fw-bold text-dark mb-1">${cat} - Mock Test ${setNumber}</h1>
-                                        <p class="text-muted mb-0 small">Answer all questions, then click submit to view your score.</p>
+                                        <p class="text-muted mb-0 small">Answer all questions, then click submit to view your detailed academic score and answer analysis.</p>
                                     </div>
-                                    <div class="text-center">
+                                    <div class="text-center ms-auto">
                                         <span class="d-block text-muted small fw-bold text-uppercase mb-1">Time Remaining</span>
                                         <div class="fs-3 fw-bold font-monospace bg-light px-3 py-1 rounded text-danger border" id="timer-display">10:00</div>
                                     </div>
                                 </div>
 
-                                <!-- SCORE BOARD (Hidden initially) -->
+                                <!-- SCORE BOARD -->
                                 <div id="score-board" class="card shadow border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10">
                                     <h2 class="text-success fw-bold mb-3">Test Completed!</h2>
-                                    <p class="fs-5 text-dark mb-2">Your Final Score:</p>
+                                    <p class="fs-5 text-dark mb-2">Your Final Academic Score:</p>
                                     <div class="display-3 fw-bold text-success mb-3" id="final-score">0 / 10</div>
-                                    <p class="text-muted">Review your correct and incorrect answers below.</p>
+                                    <p class="text-muted">Review your correct and incorrect answers below. Taking multiple timed sets dramatically increases retention for competitive exams.</p>
                                 </div>
                                 
                                 <div class="ad-container text-center text-muted small mb-5">
@@ -694,7 +756,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Optimized + Timers + Dynamic Fallbacks)");
+        console.log("✅ Build Complete (AdSense Thick Content Framework Active)");
     } catch (error) {
         console.error("Build failed:", error);
     }

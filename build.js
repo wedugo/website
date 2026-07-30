@@ -31,13 +31,13 @@ function chunkArray(array, size) {
     return chunked;
 }
 
-// --- ADSENSE "THICK CONTENT" ENRICHMENT FUNCTIONS ---
+// --- ADSENSE SEO ENRICHMENT FUNCTIONS ---
 
 function getDifficultyData(questionStr) {
     const len = (questionStr || "").length;
-    if (len < 50) return { label: 'Easy', time: '30 sec', color: 'success' };
-    if (len > 120) return { label: 'Hard', time: '90 sec', color: 'danger' };
-    return { label: 'Medium', time: '60 sec', color: 'warning' };
+    if (len < 50) return { label: 'Easy', color: 'success' };
+    if (len > 120) return { label: 'Hard', color: 'danger' };
+    return { label: 'Medium', color: 'warning' };
 }
 
 function getExamTarget(category) {
@@ -52,21 +52,15 @@ function getExamTarget(category) {
     return "various competitive assessments, university entrance exams, and professional certification tests";
 }
 
-function getRandomRelated(quizzes, currentId, count = 3) {
-    const filtered = quizzes.filter(q => q.quizId !== currentId);
-    const shuffled = filtered.sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
-}
-
 function getCategorySEOText(category, totalQuestions) {
     return `
-        <div class="card bg-light border-0 shadow-sm p-4 mb-4 rounded-3">
-            <h2 class="h5 fw-bold text-dark mb-2">Comprehensive Guide to ${category}</h2>
-            <p class="text-muted mb-3">
+        <div class="card bg-white border border-light shadow-sm p-4 p-md-5 mb-5 rounded-4">
+            <h2 class="h4 fw-bold text-dark mb-3">Comprehensive Guide to ${category}</h2>
+            <p class="text-muted mb-3 lh-lg" style="font-size: 1.05rem;">
                 Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for academic excellence and general knowledge enhancement. This topic is frequently tested in <strong>${getExamTarget(category)}</strong>. 
             </p>
-            <p class="text-muted mb-0">
-                Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Work through our timed structured practice sets, review the detailed explanations, and track your progress.
+            <p class="text-muted mb-0 lh-lg" style="font-size: 1.05rem;">
+                Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. To maximize your study efficiency, we have consolidated these questions into timed, 10-question practice sets. Work through them, review the detailed explanations upon submission, and track your progress.
             </p>
         </div>
     `;
@@ -76,19 +70,19 @@ function getBreadcrumbs(depth, category, safeName, currentTitle) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     return `
         <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb bg-white p-3 rounded-3 shadow-sm mb-0">
-                <li class="breadcrumb-item"><a href="${prefix}/index.html" class="text-decoration-none text-primary">Home</a></li>
-                <li class="breadcrumb-item"><a href="${prefix}/categories/index.html" class="text-decoration-none text-primary">Categories</a></li>
-                ${category ? `<li class="breadcrumb-item"><a href="${prefix}/category/${safeName}/index.html" class="text-decoration-none text-primary">${category}</a></li>` : ''}
+            <ol class="breadcrumb bg-white p-3 rounded-4 shadow-sm mb-0 border">
+                <li class="breadcrumb-item"><a href="${prefix}/index.html" class="text-decoration-none text-primary fw-medium">Home</a></li>
+                <li class="breadcrumb-item"><a href="${prefix}/categories/index.html" class="text-decoration-none text-primary fw-medium">All Topics</a></li>
+                ${category ? `<li class="breadcrumb-item"><a href="${prefix}/category/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>` : ''}
                 ${currentTitle ? `<li class="breadcrumb-item active text-truncate" aria-current="page" style="max-width: 250px;">${currentTitle}</li>` : ''}
             </ol>
         </nav>
     `;
 }
 
-function getDisqusEmbed(quizId) {
-    const pageUrl = `${SITE_BASE_URL}/quiz/${quizId}/index.html`;
-    const pageIdentifier = `quiz_${quizId}`;
+function getDisqusEmbed(identifierId, prefix) {
+    const pageUrl = `${SITE_BASE_URL}/${prefix}`;
+    const pageIdentifier = `set_${identifierId}`;
 
     return `
         <div id="disqus_thread"></div>
@@ -99,7 +93,6 @@ function getDisqusEmbed(quizId) {
             };
             (function() {
                 var d = document, s = d.createElement('script');
-                // Updated with the wedugo disqus shortname
                 s.src = 'https://wedugo.disqus.com/embed.js'; 
                 s.setAttribute('data-timestamp', +new Date());
                 (d.head || d.body).appendChild(s);
@@ -109,22 +102,21 @@ function getDisqusEmbed(quizId) {
     `;
 }
 
-// ------------------------------------
-
 function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
+    const cacheBuster = new Date().getTime(); // Fixes the logo cache issue
     return `
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm py-3">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4 d-flex align-items-center" href="${prefix}/index.html">
-                <img src="${prefix}/main_images/logo.png" alt="Wedugo Logo" height="30" class="me-2 d-inline-block align-text-top" onerror="this.style.display='none'">
+                <img src="${prefix}/main_images/logo.png?v=${cacheBuster}" alt="Wedugo Logo" height="35" class="me-2 d-inline-block align-text-top" onerror="this.style.display='none'">
                 Wedugo Education
             </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto fw-medium">
+                <ul class="navbar-nav ms-auto fw-medium fs-5 gap-2">
                     <li class="nav-item"><a class="nav-link px-3" href="${prefix}/index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="${prefix}/categories/index.html">Categories</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="${prefix}/about/index.html">About</a></li>
@@ -135,7 +127,7 @@ function getNavbar(depth) {
 }
 
 function getHtmlShell(title, content, depth, seoDescription = "") {
-    const cleanDesc = (seoDescription || 'Practice high-quality exam preparation questions and mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
+    const cleanDesc = (seoDescription || 'Practice high-quality exam preparation sets and timed mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     
     return `<!DOCTYPE html>
@@ -159,20 +151,15 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
     <script type='text/javascript' src='https://platform-api.sharethis.com/js/sharethis.js#property=5c5059d8c9830d001319b017&product=inline-share-buttons' async='async'></script>
     
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
-        .card { border: none; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; }
-        .option-btn { text-align: left; padding: 16px 20px; font-weight: 500; font-size: 1.05rem; border-radius: 8px; border: 2px solid #e9ecef; background: #fff; transition: all 0.2s ease; color: #495057; }
-        .option-btn:hover:not(:disabled) { background-color: #f8f9fa; border-color: #dee2e6; transform: translateX(4px); }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #212529; }
+        .card { border: 1px solid #e9ecef; border-radius: 16px; transition: transform 0.2s, box-shadow 0.2s; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
+        .option-btn { text-align: left; padding: 18px 24px; font-weight: 500; font-size: 1.1rem; border-radius: 12px; border: 2px solid #dee2e6; background: #fff; transition: all 0.2s ease; color: #495057; }
+        .option-btn:hover:not(:disabled) { background-color: #f8f9fa; border-color: #adb5bd; transform: translateX(6px); }
         .option-btn:disabled { opacity: 1; cursor: default; }
-        .badge-cat { font-size: 0.85rem; padding: 0.5em 0.9em; letter-spacing: 0.5px; }
-        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 24px; border-radius: 8px; display: block; width: 100%; overflow: hidden; text-align: center; }
-        .list-group-item { border-left: none; border-right: none; padding: 1rem 1.25rem; transition: background-color 0.2s; }
-        .list-group-item:first-child { border-top: none; }
-        .list-group-item:hover { background-color: #f8f9fa; }
-        .preview-option { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem; color: #495057; }
-        .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 3px solid #0d6efd; }
-        .related-q-card { border-left: 4px solid #0d6efd; }
+        .badge-cat { font-size: 0.9rem; padding: 0.6em 1em; letter-spacing: 0.5px; }
+        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 30px; border-radius: 12px; display: block; width: 100%; overflow: hidden; text-align: center; }
+        .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 4px solid #0d6efd; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); }
     </style>
 </head>
 <body>
@@ -185,8 +172,7 @@ function getHtmlShell(title, content, depth, seoDescription = "") {
 </html>`;
 }
 
-// MEMORY-SAFE BATCH ENGINE
-async function executeTasksInBatches(tasks, batchSize = 100) {
+async function executeTasksInBatches(tasks, batchSize = 50) {
     for (let i = 0; i < tasks.length; i += batchSize) {
         const batch = tasks.slice(i, i + batchSize);
         await Promise.all(batch.map(task => task()));
@@ -210,7 +196,6 @@ async function buildWedugoQuizSite() {
         const categoriesMap = {};
         CATEGORY_LIST.forEach(cat => categoriesMap[cat] = []);
         categoriesMap['Uncategorized'] = [];
-        const validQuizzes = [];
 
         console.log("2. Processing Data...");
         rows.forEach((line, index) => {
@@ -237,7 +222,6 @@ async function buildWedugoQuizSite() {
             q.matchedCategory = matchedCat;
 
             categoriesMap[matchedCat].push(q);
-            validQuizzes.push(q);
         });
 
         const catMainDir = path.join(distDir, 'category');
@@ -245,171 +229,38 @@ async function buildWedugoQuizSite() {
         let categoriesGridHtml = '<div class="row g-4">';
         
         const masterPageTasks = [];
+        const globallyGeneratedSets = []; // For the homepage Latest sets
 
-        console.log("3. Generating Files Category by Category (Memory Safe Mode)...");
+        console.log("3. Generating THICK CONTENT Category Hubs & Practice Sets...");
+        
         for (const [cat, quizzes] of Object.entries(categoriesMap)) {
             if (!quizzes || quizzes.length === 0) continue; 
             
-            console.log(` -> Building ${cat} (${quizzes.length} questions)...`);
             const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const specificCatDir = path.join(catMainDir, safeName);
             fs.mkdirSync(specificCatDir, { recursive: true });
 
             let currentCategoryTasks = [];
 
-            // INDIVIDUAL QUIZ PAGES (Live Stopwatch + Immediate Reveal + Thick Content)
-            quizzes.forEach((q, i) => {
-                const quizDir = path.join(distDir, 'quiz', String(q.quizId));
-                
-                const diffData = getDifficultyData(q.question);
-                const explanationText = (q.answerdetail && q.answerdetail.trim() !== "") 
-                    ? q.answerdetail 
-                    : `While a specific detailed explanation is not available for this query, reviewing the core principles of <strong>${q.matchedCategory}</strong> will help clarify the concept. The correct option highlights a fundamental fact frequently tested in ${getExamTarget(q.matchedCategory)}. Consistent practice and studying related foundational materials is the key to mastering these patterns.`;
+            // SINGLE QUESTION PAGES ARE DELETED HERE. We ONLY build thick 10-Question sets.
 
-                // Generate Related Questions Html
-                const relatedQuizzes = getRandomRelated(quizzes, q.quizId, 3);
-                let relatedHtml = '';
-                if(relatedQuizzes.length > 0) {
-                    relatedHtml = `<div class="mt-5"><h4 class="h5 fw-bold mb-4 text-dark border-bottom pb-2">Related Questions in ${q.matchedCategory}</h4><div class="row g-3">`;
-                    relatedQuizzes.forEach(rq => {
-                        relatedHtml += `
-                            <div class="col-md-4">
-                                <a href="../${rq.quizId}/index.html" class="card related-q-card h-100 shadow-sm text-decoration-none card-hover bg-light p-3 border-0">
-                                    <span class="badge bg-secondary mb-2" style="width:fit-content">Q${rq.quizId}</span>
-                                    <p class="text-dark fw-medium small mb-0 lh-base">${rq.question.substring(0, 80)}...</p>
-                                </a>
-                            </div>
-                        `;
-                    });
-                    relatedHtml += `</div></div>`;
-                }
-
-                currentCategoryTasks.push(async () => {
-                    await fsAsync.mkdir(quizDir, { recursive: true });
-
-                    const prevQuiz = quizzes[i - 1];
-                    const nextQuiz = quizzes[i + 1];
-
-                    const navButtonsHtml = `
-                        <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                            ${prevQuiz ? `<a href="../${prevQuiz.quizId}/index.html" class="btn btn-outline-secondary fw-medium px-3 px-md-4">&larr; Previous</a>` : `<button class="btn btn-outline-secondary fw-medium px-3 px-md-4" disabled>&larr; Previous</button>`}
-                            ${nextQuiz ? `<a href="../${nextQuiz.quizId}/index.html" class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm">Next Question &rarr;</a>` : `<button class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm" disabled>Next Question &rarr;</button>`}
-                        </div>
-                    `;
-
-                    const quizContent = `
-                        <div class="row justify-content-center">
-                            <div class="col-lg-9">
-                                ${getBreadcrumbs(2, q.matchedCategory, safeName, 'Question ' + q.quizId)}
-                                
-                                <div class="ad-container text-center text-muted small">
-                                    <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-                                </div>
-                                
-                                <article class="card shadow-sm p-4 p-md-5 mb-4 bg-white">
-                                    <header class="mb-4">
-                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                                            <a href="../../category/${safeName}/index.html" class="badge bg-primary badge-cat text-decoration-none">${q.matchedCategory}</a>
-                                            <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle">Difficulty: ${diffData.label}</span>
-                                            <span class="badge bg-light text-secondary border ms-auto fs-6 font-monospace" id="single-timer">⏱️ 00:00</span>
-                                        </div>
-                                        <h1 class="h3 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
-                                        <div class="bg-light p-3 rounded-2 border-start border-3 border-primary mb-4">
-                                            <p class="text-muted small mb-0"><strong>Exam Relevance:</strong> This question type is highly relevant for candidates preparing for <em>${getExamTarget(q.matchedCategory)}</em>. Select the correct option below to instantly reveal the detailed explanation and solution breakdown.</p>
-                                        </div>
-                                    </header>
-
-                                    <div class="d-grid gap-3 mb-4" id="options-container">
-                                        <button class="btn option-btn" onclick="checkAnswer(this, 'A')">A) ${q.answer1 || ''}</button>
-                                        <button class="btn option-btn" onclick="checkAnswer(this, 'B')">B) ${q.answer2 || ''}</button>
-                                        <button class="btn option-btn" onclick="checkAnswer(this, 'C')">C) ${q.answer3 || ''}</button>
-                                        <button class="btn option-btn" onclick="checkAnswer(this, 'D')">D) ${q.answer4 || ''}</button>
-                                    </div>
-                                    
-                                    <div id="explanation-box" class="alert mt-4 d-none p-4 rounded-3 border">
-                                        <h5 class="alert-heading fw-bold mb-3 d-flex align-items-center" id="result-title"></h5>
-                                        <hr class="opacity-25">
-                                        <div class="mt-3">
-                                            <h6 class="fw-bold text-dark mb-2">Detailed Solution & Learning Notes:</h6>
-                                            <p class="mb-3 text-dark lh-lg" style="font-size: 1.05rem;">${explanationText}</p>
-                                        </div>
-                                    </div>
-                                    
-                                    ${navButtonsHtml}
-                                    ${relatedHtml}
-                                    
-                                    <!-- Dynamic Disqus Comments Integration -->
-                                    <div class="mt-5 pt-4 border-top">
-                                        <h4 class="h5 fw-bold mb-3 text-dark">Community Discussion</h4>
-                                        <p class="small text-muted mb-4">Have a doubt or an alternative solution for this question? Discuss with the community below.</p>
-                                        ${getDisqusEmbed(q.quizId)}
-                                    </div>
-                                    
-                                </article>
-                            </div>
-                        </div>
-                        <script>
-                            let seconds = 0;
-                            let singleTimerInterval;
-                            let hasAnswered = false;
-
-                            function updateSingleTimer() {
-                                seconds++;
-                                let m = Math.floor(seconds / 60);
-                                let s = seconds % 60;
-                                document.getElementById('single-timer').innerHTML = '⏱️ ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-                            }
-                            
-                            // Start timer on page load
-                            window.addEventListener('load', function() {
-                                singleTimerInterval = setInterval(updateSingleTimer, 1000);
-                            });
-
-                            function checkAnswer(btnElement, selectedLetter) {
-                                if(hasAnswered) return;
-                                hasAnswered = true;
-                                clearInterval(singleTimerInterval); // Freeze stopwatch
-
-                                const correctLetter = "${(q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase()}";
-                                const answerTexts = {
-                                    'A': "${(q.answer1 || '').replace(/'/g, "\\'")}",
-                                    'B': "${(q.answer2 || '').replace(/'/g, "\\'")}",
-                                    'C': "${(q.answer3 || '').replace(/'/g, "\\'")}",
-                                    'D': "${(q.answer4 || '').replace(/'/g, "\\'")}"
-                                };
-                                const explanationBox = document.getElementById('explanation-box');
-                                const resultTitle = document.getElementById('result-title');
-                                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
-                                explanationBox.classList.remove('d-none', 'alert-success', 'alert-danger');
-                                if(selectedLetter === correctLetter) {
-                                    btnElement.style.borderColor = "#198754";
-                                    btnElement.style.backgroundColor = "#d1e7dd";
-                                    btnElement.style.color = "#0f5132";
-                                    explanationBox.classList.add('alert-success', 'border-success', 'border-opacity-25');
-                                    resultTitle.innerHTML = "✨ Correct Answer! Time taken: " + document.getElementById('single-timer').innerText.replace('⏱️ ', '');
-                                } else {
-                                    btnElement.style.borderColor = "#dc3545";
-                                    btnElement.style.backgroundColor = "#f8d7da";
-                                    btnElement.style.color = "#842029";
-                                    explanationBox.classList.add('alert-danger', 'border-danger', 'border-opacity-25');
-                                    resultTitle.innerHTML = "❌ Incorrect. The right answer is " + correctLetter + ") " + answerTexts[correctLetter];
-                                }
-                            }
-                        </script>
-                    `;
-                    await fsAsync.writeFile(path.join(quizDir, 'index.html'), getHtmlShell(q.question.substring(0,40) + '...', quizContent, 2, q.question));
-                });
-            });
-
-            // MULTI-QUESTION PRACTICE SETS (TIMER + SUBMIT + THICK CONTENT)
             const QUESTIONS_PER_PAGE = 10;
             const sets = chunkArray(quizzes, QUESTIONS_PER_PAGE);
-            let practiceSetsHtml = '<div class="row g-3 mb-4">';
+            let practiceSetsHtml = '<div class="row g-4 mb-4">';
 
             sets.forEach((setQuizzes, setIndex) => {
                 const setNumber = setIndex + 1;
                 const setFileName = `set-${setNumber}.html`;
+                
+                // Track for homepage
+                if (globallyGeneratedSets.length < 20) {
+                    globallyGeneratedSets.push({
+                        category: cat,
+                        safeName: safeName,
+                        setNumber: setNumber,
+                        link: `./category/${safeName}/${setFileName}`
+                    });
+                }
 
                 currentCategoryTasks.push(async () => {
                     let setQuestionsHtml = '';
@@ -426,55 +277,57 @@ async function buildWedugoQuizSite() {
                         answersMapScript.push(`'${q.quizId}': '${correctLetter}'`);
                         
                         setQuestionsHtml += `
-                            <article class="card shadow-sm p-4 p-md-5 mb-5 bg-white border-0 rounded-4" id="quiz-block-${q.quizId}">
-                                <div class="d-flex align-items-center flex-wrap gap-2 mb-4 pb-3 border-bottom">
-                                    <span class="badge bg-secondary rounded-pill me-2 px-3 py-2 fs-6">Q${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
-                                    <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle px-2 py-1">${diffData.label}</span>
+                            <article class="card shadow-sm p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-${q.quizId}">
+                                <div class="d-flex align-items-center flex-wrap gap-2 mb-4 pb-4 border-bottom">
+                                    <span class="badge bg-primary rounded-pill me-2 px-3 py-2 fs-6">Question ${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
+                                    <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle px-3 py-2 rounded-pill fs-6">${diffData.label}</span>
                                 </div>
-                                <h3 class="h5 fw-bold text-dark mb-4 lh-base">${q.question}</h3>
+                                <h3 class="h4 fw-bold text-dark mb-4 lh-base" style="line-height: 1.6 !important;">${q.question}</h3>
                                 
-                                <div class="d-grid gap-3 ps-md-4 mb-4">
-                                    <button class="btn option-btn py-3 fs-6" data-letter="A" onclick="selectOption('${q.quizId}', 'A', this)">A) ${q.answer1}</button>
-                                    <button class="btn option-btn py-3 fs-6" data-letter="B" onclick="selectOption('${q.quizId}', 'B', this)">B) ${q.answer2}</button>
-                                    <button class="btn option-btn py-3 fs-6" data-letter="C" onclick="selectOption('${q.quizId}', 'C', this)">C) ${q.answer3}</button>
-                                    <button class="btn option-btn py-3 fs-6" data-letter="D" onclick="selectOption('${q.quizId}', 'D', this)">D) ${q.answer4}</button>
+                                <div class="d-grid gap-3 ps-md-3 mb-4">
+                                    <button class="btn option-btn" data-letter="A" onclick="selectOption('${q.quizId}', 'A', this)">A) ${q.answer1}</button>
+                                    <button class="btn option-btn" data-letter="B" onclick="selectOption('${q.quizId}', 'B', this)">B) ${q.answer2}</button>
+                                    <button class="btn option-btn" data-letter="C" onclick="selectOption('${q.quizId}', 'C', this)">C) ${q.answer3}</button>
+                                    <button class="btn option-btn" data-letter="D" onclick="selectOption('${q.quizId}', 'D', this)">D) ${q.answer4}</button>
                                 </div>
-                                <div id="explanation-${q.quizId}" class="alert mt-3 d-none ms-md-4 p-4 border rounded-3">
-                                    <h6 class="alert-heading fw-bold fs-5 mb-3" id="result-title-${q.quizId}"></h6>
-                                    <hr class="opacity-25 mb-3">
-                                    <h6 class="fw-bold text-dark mb-2">Solution Breakdown:</h6>
-                                    <p class="mb-0 text-dark lh-lg">${explanationText}</p>
+                                
+                                <div id="explanation-${q.quizId}" class="alert mt-4 d-none p-4 p-md-5 border rounded-4 bg-light">
+                                    <h5 class="alert-heading fw-bold fs-4 mb-3" id="result-title-${q.quizId}"></h5>
+                                    <hr class="opacity-25 mb-4">
+                                    <h6 class="fw-bold text-dark mb-3 fs-5">Solution Breakdown:</h6>
+                                    <p class="mb-0 text-dark lh-lg" style="font-size: 1.1rem;">${explanationText}</p>
                                 </div>
                             </article>
                         `;
                     });
 
-                    const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-2">&larr; Previous Set</a>` : '';
-                    const nextSetBtn = setIndex < sets.length - 1 ? `<a href="set-${setNumber + 1}.html" class="btn btn-primary px-4 py-2 shadow">Next Practice Set &rarr;</a>` : '';
+                    const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-3 fw-bold rounded-pill">&larr; Previous Practice Set</a>` : '';
+                    const nextSetBtn = setIndex < sets.length - 1 ? `<a href="set-${setNumber + 1}.html" class="btn btn-primary px-4 py-3 shadow fw-bold rounded-pill">Next Practice Set &rarr;</a>` : '';
 
                     const setPageContent = `
                         <div class="row justify-content-center">
-                            <div class="col-lg-10">
+                            <div class="col-lg-10 col-xl-9">
                                 ${getBreadcrumbs(2, cat, safeName, `Practice Set ${setNumber}`)}
                                 
                                 <!-- TIMER HEADER -->
-                                <div class="timer-header bg-white p-3 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4 rounded-3">
+                                <div class="timer-header bg-white p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
                                     <div>
-                                        <h1 class="h4 fw-bold text-dark mb-1">${cat} - Mock Test ${setNumber}</h1>
-                                        <p class="text-muted mb-0 small">Answer all questions, then click submit to view your detailed academic score and answer analysis.</p>
+                                        <h1 class="h3 fw-bold text-dark mb-2">${cat} - Comprehensive Mock Test ${setNumber}</h1>
+                                        <p class="text-muted mb-0 fs-6">Answer all 10 questions, then click submit to view your detailed academic score and answer analysis.</p>
                                     </div>
-                                    <div class="text-center ms-auto">
+                                    <div class="text-center ms-auto bg-light p-3 rounded-4 border">
                                         <span class="d-block text-muted small fw-bold text-uppercase mb-1">Time Remaining</span>
-                                        <div class="fs-3 fw-bold font-monospace bg-light px-3 py-1 rounded text-danger border" id="timer-display">10:00</div>
+                                        <div class="fs-2 fw-bold font-monospace text-danger" id="timer-display">10:00</div>
                                     </div>
                                 </div>
 
                                 <!-- SCORE BOARD -->
-                                <div id="score-board" class="card shadow border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10">
-                                    <h2 class="text-success fw-bold mb-3">Test Completed!</h2>
-                                    <p class="fs-5 text-dark mb-2">Your Final Academic Score:</p>
-                                    <div class="display-3 fw-bold text-success mb-3" id="final-score">0 / 10</div>
-                                    <p class="text-muted">Review your correct and incorrect answers below. Taking multiple timed sets dramatically increases retention for competitive exams.</p>
+                                <div id="score-board" class="card shadow-lg border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10" style="border-width: 2px !important;">
+                                    <h2 class="text-success fw-bold display-6 mb-4">Test Completed Successfully!</h2>
+                                    <p class="fs-4 text-dark mb-3">Your Final Academic Score:</p>
+                                    <div class="display-1 fw-bold text-success mb-4" id="final-score">0 / 10</div>
+                                    <p class="text-muted fs-5 lh-lg">Review your correct and incorrect answers below. Taking multiple timed sets dramatically increases retention for competitive exams.</p>
+                                    <a href="index.html" class="btn btn-success btn-lg mt-3 rounded-pill px-5">Back to ${cat} Hub</a>
                                 </div>
                                 
                                 <div class="ad-container text-center text-muted small mb-5">
@@ -488,14 +341,23 @@ async function buildWedugoQuizSite() {
                                 
                                 <!-- SUBMIT BUTTON -->
                                 <div class="text-center mt-5 mb-5" id="submit-container">
-                                    <button class="btn btn-success btn-lg px-5 py-3 fw-bold shadow-lg rounded-pill fs-5" onclick="submitTest()">
-                                        📝 Submit Results & View Explanations
+                                    <button class="btn btn-success btn-lg px-5 py-4 fw-bold shadow-lg rounded-pill fs-4 w-100 w-md-auto" onclick="submitTest()">
+                                        📝 Submit Test & View Explanations
                                     </button>
                                 </div>
                                 
                                 <div class="d-flex justify-content-between mt-5 pt-4 border-top">
                                     <div>${prevSetBtn}</div>
                                     <div>${nextSetBtn}</div>
+                                </div>
+
+                                <!-- Disqus Comments Section for Sets -->
+                                <div class="mt-5 pt-5 border-top">
+                                    <div class="card bg-white border-0 shadow-sm p-4 p-md-5 rounded-4">
+                                        <h4 class="h3 fw-bold mb-3 text-dark">Community Discussion</h4>
+                                        <p class="text-muted mb-5 fs-5">Have a doubt about any question in this set? Discuss with the community below.</p>
+                                        ${getDisqusEmbed(`${safeName}_set_${setNumber}`, `category/${safeName}/${setFileName}`)}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -504,7 +366,7 @@ async function buildWedugoQuizSite() {
                         <script>
                             const correctAnswers = { ${answersMapScript.join(', ')} };
                             const userAnswers = {};
-                            let timeLeft = 600; // 10 minutes in seconds
+                            let timeLeft = 600; 
                             let timerInterval;
                             let testSubmitted = false;
 
@@ -594,11 +456,19 @@ async function buildWedugoQuizSite() {
                 });
 
                 practiceSetsHtml += `
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <a href="${setFileName}" class="card shadow-sm text-decoration-none card-hover h-100 text-center p-4 border-0 rounded-4">
-                            <div class="fs-1 mb-2">⏱️</div>
-                            <h6 class="fw-bold text-dark mb-1">Mock Set ${setNumber}</h6>
-                            <span class="badge bg-primary bg-opacity-10 text-primary mt-2">${setQuizzes.length} Questions (10m)</span>
+                    <div class="col-sm-6 col-lg-4">
+                        <a href="${setFileName}" class="card shadow-sm text-decoration-none card-hover h-100 p-4 border border-light rounded-4 bg-white">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <span class="fs-4">📝</span>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-0 ms-3">Mock Set ${setNumber}</h5>
+                            </div>
+                            <hr class="opacity-10 my-2">
+                            <div class="d-flex justify-content-between text-muted mt-2">
+                                <small class="fw-medium">10 Questions</small>
+                                <small class="fw-medium text-danger">⏱️ 10 Mins</small>
+                            </div>
                         </a>
                     </div>
                 `;
@@ -609,60 +479,51 @@ async function buildWedugoQuizSite() {
             if (CATEGORY_LIST.includes(cat)) {
                 currentCategoryTasks.push(async () => {
                     let catPageContent = `
-                        ${getBreadcrumbs(2, cat, safeName, '')}
-                        
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4">
-                            <h1 class="display-6 fw-bold mb-3 mb-md-0 text-dark">${cat} MCQs & Study Guide</h1>
-                            <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill shadow-sm">${quizzes.length} Total Questions Available</span>
+                        <div class="row justify-content-center">
+                            <div class="col-lg-10 col-xl-9">
+                                ${getBreadcrumbs(2, cat, safeName, '')}
+                                
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4">
+                                    <h1 class="display-5 fw-bold mb-3 mb-md-0 text-dark">${cat} MCQs & Study Guide</h1>
+                                    <span class="badge bg-primary fs-5 px-4 py-2 rounded-pill shadow-sm">${quizzes.length} Questions</span>
+                                </div>
+                                
+                                ${getCategorySEOText(cat, quizzes.length)}
+                                
+                                <div class="mt-5 mb-5">
+                                    <div class="d-flex align-items-center mb-4">
+                                        <span class="fs-2 me-3">🎯</span>
+                                        <div>
+                                            <h3 class="h3 fw-bold text-dark mb-1">Structured Practice Sets</h3>
+                                            <p class="text-muted mb-0 fs-6">Evaluate your readiness. Immediate feedback provided upon submission.</p>
+                                        </div>
+                                    </div>
+                                    ${practiceSetsHtml}
+                                </div>
+                            </div>
                         </div>
-                        
-                        ${getCategorySEOText(cat, quizzes.length)}
-                        
-                        <div class="mt-5 mb-4">
-                            <h3 class="h4 fw-bold mb-3 text-dark d-flex align-items-center">
-                                <span class="me-2">⏱️</span> Timed Practice Sets
-                            </h3>
-                            <p class="text-muted mb-4">Take these 10-minute mock exams to evaluate your readiness. Immediate feedback and solutions are provided upon submission.</p>
-                            ${practiceSetsHtml}
-                        </div>
-                        
-                        <div class="mt-5">
-                            <h3 class="h4 fw-bold mb-3 text-dark border-bottom pb-3 d-flex align-items-center">
-                                <span class="me-2">🔍</span> Browse All Individual Questions
-                            </h3>
-                            <div class="card shadow-sm mt-4 border-0 rounded-4 overflow-hidden">
-                                <div class="list-group list-group-flush">
                     `;
                     
-                    const listHtml = quizzes.map(q => `
-                        <a href="../../quiz/${q.quizId}/index.html" class="list-group-item list-group-item-action d-flex align-items-center py-3">
-                            <span class="badge bg-secondary rounded-pill me-3" style="min-width: 45px; text-align:center;">Q${q.quizId}</span>
-                            <span class="text-dark fw-medium">${q.question}</span>
-                        </a>
-                    `).join('');
-                    
-                    catPageContent += listHtml + `</div></div></div>`;
                     await fsAsync.writeFile(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} MCQs & Quiz Preparation`, catPageContent, 2));
                 });
 
                 categoriesGridHtml += `
                     <div class="col-md-6 col-lg-4">
-                        <div class="card shadow-sm h-100 card-hover border-0 rounded-4 overflow-hidden">
+                        <div class="card shadow-sm h-100 card-hover border-light rounded-4 overflow-hidden bg-white">
                             <div class="card-body p-4 p-xl-5 text-center d-flex flex-column justify-content-center">
-                                <div class="mb-4 bg-light rounded-circle d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
+                                <div class="mb-4 bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
                                     <span class="fs-2 text-primary">📚</span>
                                 </div>
                                 <h3 class="h4 fw-bold mb-2 text-dark">${cat}</h3>
-                                <p class="text-muted small mb-4">Access a comprehensive library of ${quizzes.length} highly relevant MCQs tailored for this subject.</p>
-                                <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-bold py-2 rounded-pill">Start Practicing</a>
+                                <p class="text-muted mb-4 fs-6">Access a comprehensive library of ${quizzes.length} highly relevant MCQs structured into timed exams.</p>
+                                <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-bold py-3 rounded-pill">Start Practicing</a>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            // --- EXECUTE & FREE MEMORY BEFORE NEXT CATEGORY ---
-            await executeTasksInBatches(currentCategoryTasks, 100);
+            await executeTasksInBatches(currentCategoryTasks, 50);
             currentCategoryTasks = null; 
         }
 
@@ -672,9 +533,9 @@ async function buildWedugoQuizSite() {
         masterPageTasks.push(async () => {
             const categoriesContent = `
                 ${getBreadcrumbs(1, '', '', 'All Categories')}
-                <div class="mb-5 text-center py-4">
-                    <h1 class="display-5 fw-bold mb-3 text-dark">Explore Knowledge Topics</h1>
-                    <p class="lead text-muted col-lg-8 mx-auto">Select a subject below to dive into thousands of practice questions, timed mock sets, and detailed educational explanations designed to help you succeed.</p>
+                <div class="mb-5 text-center py-5">
+                    <h1 class="display-4 fw-bold mb-4 text-dark">Explore Knowledge Topics</h1>
+                    <p class="lead text-muted col-lg-8 mx-auto lh-lg">Select a subject below to dive into thousands of practice questions, timed mock sets, and detailed educational explanations designed to help you succeed.</p>
                 </div>
                 ${categoriesGridHtml}
             `;
@@ -686,72 +547,57 @@ async function buildWedugoQuizSite() {
         masterPageTasks.push(async () => {
             const aboutContent = `
                 ${getBreadcrumbs(1, '', '', 'About Us')}
-                <div class="card shadow-sm p-5 border-0 rounded-4">
-                    <h1 class="fw-bold text-primary mb-4">About Wedugo Education</h1>
-                    <p class="lead text-dark lh-base">Welcome to Wedugo Education, your premier destination for practicing and mastering a diverse range of academic and competitive subjects.</p>
-                    <hr class="my-4">
-                    <h3 class="h5 fw-bold mb-3">Our Mission</h3>
-                    <p class="text-muted mb-4">Our mission is to provide accessible, high-quality multiple-choice questions (MCQs) and detailed study guides to students and aspirants across the globe. We believe that consistent practice and clear conceptual understanding are the keys to cracking any exam.</p>
-                    <h3 class="h5 fw-bold mb-3">What We Offer</h3>
-                    <ul class="text-muted mb-0 lh-lg">
-                        <li><strong>Massive Question Bank:</strong> Over 50,000 carefully curated questions.</li>
-                        <li><strong>Detailed Explanations:</strong> Learn the 'why' behind the correct answers.</li>
-                        <li><strong>Timed Practice:</strong> Topic-wise categorization and 10-question mock sets with built-in timers to track speed and progress.</li>
-                    </ul>
+                <div class="card shadow-sm p-4 p-md-5 border-light rounded-4 bg-white">
+                    <h1 class="fw-bold text-primary mb-4 display-6">About Wedugo Education</h1>
+                    <p class="lead text-dark lh-base mb-5">Welcome to Wedugo Education, your premier destination for practicing and mastering a diverse range of academic and competitive subjects.</p>
+                    <div class="row g-5">
+                        <div class="col-md-6">
+                            <h3 class="h4 fw-bold mb-3">Our Mission</h3>
+                            <p class="text-muted lh-lg fs-6">Our mission is to provide accessible, high-quality multiple-choice questions (MCQs) and detailed study guides to students and aspirants across the globe. We believe that consistent practice and clear conceptual understanding are the keys to cracking any exam.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h3 class="h4 fw-bold mb-3">What We Offer</h3>
+                            <ul class="text-muted mb-0 lh-lg fs-6">
+                                <li><strong>Massive Question Bank:</strong> Over 50,000 carefully curated questions.</li>
+                                <li><strong>Detailed Explanations:</strong> Learn the 'why' behind the correct answers.</li>
+                                <li><strong>Timed Practice:</strong> Topic-wise categorization and 10-question mock sets with built-in timers to track speed and progress.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             `;
             await fsAsync.writeFile(path.join(aboutDir, 'index.html'), getHtmlShell('About Wedugo Education', aboutContent, 1));
         });
 
-        // --- HOMEPAGE LAYOUT ---
-        let top5Html = '<div class="row g-4 mb-5">';
-        validQuizzes.slice(0, 5).forEach(q => {
-            let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill me-2 px-3">${q.matchedCategory}</span>` : '';
-            top5Html += `
-                <div class="col-lg-6 col-xl-4">
-                    <div class="card h-100 shadow-sm border-0 rounded-4 card-hover">
+        // --- HOMEPAGE LAYOUT (Now linking to Thick Practice Sets) ---
+        let topSetsHtml = '<div class="row g-4 mb-5">';
+        globallyGeneratedSets.slice(0, 6).forEach(set => {
+            topSetsHtml += `
+                <div class="col-md-6 col-lg-4">
+                    <a href="${set.link}" class="card shadow-sm border-light rounded-4 card-hover h-100 text-decoration-none bg-white">
                         <div class="card-body p-4 d-flex flex-column">
-                            <div class="mb-3">${badge}</div>
-                            <h3 class="h6 fw-bold text-dark mb-4 lh-base">${q.question}</h3>
-                            
-                            <div class="d-grid gap-2 mb-4">
-                                <div class="preview-option">A) ${q.answer1 || ''}</div>
-                                <div class="preview-option">B) ${q.answer2 || ''}</div>
-                                <div class="preview-option">C) ${q.answer3 || ''}</div>
-                                <div class="preview-option">D) ${q.answer4 || ''}</div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 w-auto align-self-start">${set.category}</span>
+                            <h3 class="h5 fw-bold text-dark mb-4 lh-base">Comprehensive Mock Test ${set.setNumber}</h3>
+                            <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3">
+                                <span class="text-muted small fw-medium">10 Questions</span>
+                                <span class="btn btn-sm btn-outline-primary fw-bold rounded-pill">Start Test &rarr;</span>
                             </div>
-                            
-                            <a href="./quiz/${q.quizId}/index.html" class="btn btn-outline-primary mt-auto fw-bold w-100 rounded-pill py-2">
-                                View Answer & Explanation
-                            </a>
                         </div>
-                    </div>
+                    </a>
                 </div>
             `;
         });
-        top5Html += '</div>';
-
-        let next15Html = '<div class="card shadow-sm border-0 mb-5 rounded-4 overflow-hidden"><div class="list-group list-group-flush">';
-        validQuizzes.slice(5, 20).forEach(q => {
-            let badge = q.matchedCategory !== 'Uncategorized' ? `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill me-3 px-3" style="min-width: max-content;">${q.matchedCategory}</span>` : '';
-            next15Html += `
-                <a href="./quiz/${q.quizId}/index.html" class="list-group-item list-group-item-action d-flex align-items-center py-3">
-                    ${badge}
-                    <span class="text-dark fw-medium text-truncate">${q.question}</span>
-                </a>
-            `;
-        });
-        next15Html += '</div></div>';
+        topSetsHtml += '</div>';
 
         masterPageTasks.push(async () => {
             const homeContent = `
-                <header class="text-center py-5 mb-5 bg-white rounded-4 shadow-sm border-0 px-4 mt-3">
-                    <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 rounded-pill fs-6">Over 50,000 Questions Available</span>
-                    <h1 class="display-4 fw-bold text-dark mb-4">Master Your Exams with Wedugo Education</h1>
-                    <p class="col-md-8 mx-auto fs-5 text-muted mb-5 lh-base">Challenge yourself with high-quality practice sets, timed mock tests, and detailed conceptual explanations designed for competitive success.</p>
+                <header class="text-center py-5 mb-5 bg-white rounded-5 shadow-sm border border-light px-4 mt-3" style="background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);">
+                    <span class="badge bg-primary bg-opacity-10 text-primary mb-4 px-4 py-2 rounded-pill fs-6 border border-primary-subtle">Over 50,000 Questions Consolidated into Exam Sets</span>
+                    <h1 class="display-4 fw-bold text-dark mb-4 px-lg-5">Master Your Exams with Wedugo Education</h1>
+                    <p class="col-lg-8 mx-auto fs-5 text-muted mb-5 lh-lg">Challenge yourself with high-quality practice sets, timed mock tests, and detailed conceptual explanations designed exclusively for competitive success.</p>
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
-                        <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill">Explore All Topics</a>
-                        <a href="#latest" class="btn btn-outline-dark btn-lg px-5 shadow-sm fw-bold rounded-pill">Try Latest MCQs</a>
+                        <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 py-3 shadow-lg fw-bold rounded-pill">Explore All Topics</a>
+                        <a href="#latest" class="btn btn-outline-dark btn-lg px-5 py-3 shadow-sm fw-bold rounded-pill bg-white">Try Latest Sets</a>
                     </div>
                 </header>
                 
@@ -760,18 +606,19 @@ async function buildWedugoQuizSite() {
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
                 
-                <div id="latest" class="d-flex justify-content-between align-items-end mb-4 pt-4 border-top">
+                <div id="latest" class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pt-5">
                     <div>
-                        <h2 class="fw-bold mb-2 text-dark">Recently Added Questions</h2>
-                        <p class="text-muted mb-0">Test your knowledge immediately with these fresh additions.</p>
+                        <h2 class="display-6 fw-bold mb-2 text-dark">Recently Added Mock Tests</h2>
+                        <p class="text-muted mb-0 fs-5">Test your knowledge immediately with our latest timed exam sets.</p>
                     </div>
-                    <a href="./categories/index.html" class="btn btn-outline-primary fw-medium rounded-pill px-4">View All Hubs &rarr;</a>
+                    <a href="./categories/index.html" class="btn btn-outline-primary fw-bold rounded-pill px-4 mt-3 mt-md-0">View All Categories &rarr;</a>
                 </div>
                 
-                ${top5Html}
+                ${topSetsHtml}
                 
-                <h4 class="h5 fw-bold mb-3 text-dark">More Recent Updates</h4>
-                ${next15Html}
+                <div class="text-center mt-5 mb-5">
+                    <a href="./categories/index.html" class="btn btn-dark btn-lg px-5 py-3 fw-bold rounded-pill shadow-sm">Browse 100+ More Practice Sets</a>
+                </div>
             `;
             await fsAsync.writeFile(path.join(distDir, 'index.html'), getHtmlShell('Free MCQ Mock Tests & Study Guides', homeContent, 0));
         });
@@ -797,7 +644,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Thick Content Framework + Disqus Active + Live Timer)");
+        console.log("✅ Build Complete (AdSense Master Framework - Thick Sets Only)");
     } catch (error) {
         console.error("Build failed:", error);
     }

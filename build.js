@@ -189,8 +189,10 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
     const cleanDesc = (seoDescription || 'Practice high-quality exam preparation sets and timed mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     
-    // Low-content single question pages get noindex; High-content sets & hubs stay fully indexable
     const metaRobots = isThinPage ? `<meta name="robots" content="noindex, follow">` : `<meta name="robots" content="index, follow">`;
+
+    // Dynamic Title Generation
+    const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
 
     return `<!DOCTYPE html>
 <html lang="hi">
@@ -206,7 +208,7 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
     </script>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} | Wedugo Education</title>
+    <title>${displayTitle}</title>
     <meta name="description" content="${cleanDesc}">
     <link rel="icon" href="${prefix}/main_images/icon.png" type="image/png">
     
@@ -260,19 +262,17 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
 </html>`;
 }
 
-// AUTOMATIC SITEMAP & ROBOTS GENERATOR (Focuses crawl budget on high-value pages)
+// AUTOMATIC SITEMAP & ROBOTS GENERATOR
 async function generateSitemapAndRobots(distDir, categoriesMap) {
     console.log("6. Auto-generating SEO Sitemap & Robots.txt for fast indexing...");
     
     const today = new Date().toISOString().split('T')[0];
     const urls = [];
 
-    // 1. Core Platform Pages
     urls.push({ loc: `${SITE_BASE_URL}/`, priority: '1.0', changefreq: 'daily' });
     urls.push({ loc: `${SITE_BASE_URL}/categories/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/about/index.html`, priority: '0.5', changefreq: 'monthly' });
 
-    // 2. High-Value Category Hubs & Full Practice Sets
     const QUESTIONS_PER_PAGE = 10;
     for (const [cat, quizzes] of Object.entries(categoriesMap)) {
         if (!quizzes || quizzes.length === 0) continue;
@@ -529,8 +529,9 @@ async function buildWedugoQuizSite() {
                             }
                         </script>
                     `;
-                    // Flagged as true for noindex (keeps domain clean from thin-content penalties)
-                    await fsAsync.writeFile(path.join(quizDir, 'index.html'), getHtmlShell(q.question.substring(0,40) + '...', quizContent, 2, q.question, true));
+                    // Generate SEO Title format
+                    const quizSeoTitle = `Q${q.quizId}: ${q.question.substring(0, 40)}...`;
+                    await fsAsync.writeFile(path.join(quizDir, 'index.html'), getHtmlShell(quizSeoTitle, quizContent, 2, q.question, true));
                 });
             });
 
@@ -587,7 +588,6 @@ async function buildWedugoQuizSite() {
                             </article>
                         `;
 
-                        // Inject mid-set ad between question 5 and 6
                         if (qIndex === 4) {
                             setQuestionsHtml += getAdBannerHtml("Mid-Test Ad");
                         }
@@ -730,8 +730,8 @@ async function buildWedugoQuizSite() {
                             window.onload = startTimer;
                         </script>
                     `;
-                    // Retained as indexable thick content
-                    await fsAsync.writeFile(path.join(specificCatDir, setFileName), getHtmlShell(`${cat} Practice Set ${setNumber}`, setPageContent, 2, "", false));
+                    const seoSetTitle = `${cat} Practice Set ${setNumber}: 10 MCQ Mock Test`;
+                    await fsAsync.writeFile(path.join(specificCatDir, setFileName), getHtmlShell(seoSetTitle, setPageContent, 2, "", false));
                 });
 
                 practiceSetsHtml += `
@@ -872,7 +872,7 @@ async function buildWedugoQuizSite() {
                                         <h2 class="text-success fw-bold display-5 mb-4">Exam Completed!</h2>
                                         <p class="fs-4 text-dark mb-3">Your Final Score:</p>
                                         <div class="display-1 fw-bold text-success mb-4" id="ce-final-score">0 / 0</div>
-                                        <p class="text-secondary fs-5 lh-lg mb-4">Click on the question numbers in the palette above to view solutions.</p>
+                                        <p class="text-secondary fs-5 lh-lg mb-4">Click on the question numbers in the palette above to view the detailed solutions and correct answers.</p>
                                         <button class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow" onclick="quitExam()"><i class="bi bi-house-fill me-2"></i>Return to Category Hub</button>
                                     </div>
                                 </div>
@@ -1058,7 +1058,8 @@ async function buildWedugoQuizSite() {
                             }
                         </script>
                     `;
-                    await fsAsync.writeFile(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} MCQs & Live Exam Engine`, catPageContent, 2, "", false));
+                    const categorySeoTitle = `${cat} MCQs & Live Mock Test: Free Practice Questions`;
+                    await fsAsync.writeFile(path.join(specificCatDir, 'index.html'), getHtmlShell(categorySeoTitle, catPageContent, 2, "", false));
                 });
 
                 categoriesGridHtml += `
@@ -1095,7 +1096,8 @@ async function buildWedugoQuizSite() {
                 ${categoriesGridHtml}
                 ${getAdBannerHtml("Bottom Ad")}
             `;
-            await fsAsync.writeFile(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories & Exam Engines', categoriesContent, 1, "", false));
+            const categoriesSeoTitle = `Explore All Subjects & Topics: Free MCQ Practice`;
+            await fsAsync.writeFile(path.join(categoriesDir, 'index.html'), getHtmlShell(categoriesSeoTitle, categoriesContent, 1, "", false));
         });
 
         const aboutDir = path.join(distDir, 'about');
@@ -1123,7 +1125,8 @@ async function buildWedugoQuizSite() {
                     </div>
                 </div>
             `;
-            await fsAsync.writeFile(path.join(aboutDir, 'index.html'), getHtmlShell('About Wedugo Education', aboutContent, 1, "", false));
+            const aboutSeoTitle = `About Us: Free Educational Test Platform`;
+            await fsAsync.writeFile(path.join(aboutDir, 'index.html'), getHtmlShell(aboutSeoTitle, aboutContent, 1, "", false));
         });
 
         let topSetsHtml = '<div class="row g-4 mb-5">';
@@ -1175,7 +1178,8 @@ async function buildWedugoQuizSite() {
                     <a href="./categories/index.html" class="btn btn-dark btn-lg px-5 py-3 fw-bold rounded-pill shadow-lg"><i class="bi bi-collection-fill me-2"></i>Browse All Live Exams & Sets</a>
                 </div>
             `;
-            await fsAsync.writeFile(path.join(distDir, 'index.html'), getHtmlShell('Free Custom Exam Engines & Study Guides', homeContent, 0, "", false));
+            const homeSeoTitle = `Wedugo Education: Free MCQ Mock Tests & Study Guides`;
+            await fsAsync.writeFile(path.join(distDir, 'index.html'), getHtmlShell(homeSeoTitle, homeContent, 0, "", false));
         });
 
         await executeTasksInBatches(masterPageTasks, 10);
@@ -1202,7 +1206,7 @@ async function buildWedugoQuizSite() {
         // 6. Generate Sitemap & Robots automatically inside public/
         await generateSitemapAndRobots(distDir, categoriesMap);
 
-        console.log("✅ Build Complete (Ad Units Embedded + Auto Sitemap Active)");
+        console.log("✅ Build Complete (SEO Titles Optimized)");
     } catch (error) {
         console.error("Critical Build failed:", error);
     }

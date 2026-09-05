@@ -4,6 +4,7 @@ const path = require('path');
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6ImRuS24j_tOTKA_i1QG_K-DKutrWxjjSbi4WszrZxR90g_1uNaXQqOjnxR2tX9flEFXy7qfY/pub?gid=0&single=true&output=csv";
 const SITE_BASE_URL = "https://www.wedugo.com"; 
+const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 
 const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
@@ -55,15 +56,61 @@ function getRandomRelated(quizzes, currentId, count = 3) {
     return shuffled.slice(0, count);
 }
 
+// STANDARDIZED RESPONSIVE ADSENSE BANNER
+function getAdBannerHtml(label = "Advertisement") {
+    return `
+        <div class="ad-banner-wrapper my-4 text-center">
+            <span class="text-muted d-block small mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">${label}</span>
+            <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #ffffff;">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="${ADSENSE_CLIENT_ID}"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+                </script>
+            </div>
+        </div>
+    `;
+}
+
+// DESKTOP STICKY ADSENSE SIDEBAR
+function getAdSidebar() {
+    return `
+        <div class="col-lg-4 d-none d-lg-block">
+            <div class="sticky-desktop-sidebar">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 mb-4 text-center">
+                    <span class="text-muted small fw-bold text-uppercase mb-2 d-block" style="font-size: 0.75rem;">Sponsored Link</span>
+                    <div class="ad-container shadow-none border-0 mb-0" style="min-height: 280px; background: #f8fafc;">
+                        <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="${ADSENSE_CLIENT_ID}"
+                             data-ad-format="auto"
+                             data-full-width-responsive="true"></ins>
+                        <script>
+                             try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+                        </script>
+                    </div>
+                </div>
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Study Guidance</h5>
+                    <p class="text-secondary small mb-0 lh-lg">Consistent timed testing improves recall speed during competitive examinations. Try our <strong>Live Exam Engine</strong> in the Category Hubs to test full-length sets under realistic constraints.</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function getCategorySEOText(category, totalQuestions) {
     return `
         <div class="card bg-white border-0 shadow-sm p-4 p-md-5 mb-5 rounded-4">
             <h2 class="h4 fw-bold text-dark mb-3"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Comprehensive Guide to ${category}</h2>
             <p class="text-secondary mb-3 lh-lg" style="font-size: 1.05rem;">
-                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for academic excellence and general knowledge enhancement. This topic is frequently tested in <span class="badge bg-light text-dark border">${getExamTarget(category)}</span>. 
+                Welcome to the preparation portal for <strong>${category}</strong>. This module is essential for candidates sitting for <span class="badge bg-light text-dark border">${getExamTarget(category)}</span>. 
             </p>
             <p class="text-secondary mb-0 lh-lg" style="font-size: 1.05rem;">
-                Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Generate a custom live exam or work through our pre-built timed practice sets.
+                Below is our curated syllabus bank of <strong>${totalQuestions} multiple-choice questions (MCQs)</strong> structured for concept mastery and speed training. Work through our timed practice sets or launch a customized exam simulation.
             </p>
         </div>
     `;
@@ -101,27 +148,7 @@ function getDisqusEmbed(identifierId, prefix) {
                 (d.head || d.body).appendChild(s);
             })();
         </script>
-        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
-    `;
-}
-
-function getAdSidebar() {
-    return `
-        <div class="col-lg-4 d-none d-lg-block">
-            <div class="sticky-desktop-sidebar">
-                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 mb-4 text-center">
-                    <span class="text-muted small fw-bold text-uppercase mb-2 d-block">Advertisement</span>
-                    <div class="ad-container shadow-none border-0 mb-0" style="min-height: 250px; background: #f8fafc;">
-                        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-                    </div>
-                </div>
-                <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
-                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Study Tips</h5>
-                    <p class="text-secondary small mb-0 lh-lg">Consistent practice is key. Try our <strong>Custom Live Exam</strong> feature in the category hubs to simulate real testing conditions and improve your speed.</p>
-                </div>
-            </div>
-        </div>
+        <noscript>Please enable JavaScript to view comments powered by Disqus.</noscript>
     `;
 }
 
@@ -151,7 +178,7 @@ function getNavbar(depth) {
 
 function getFooter() {
     return `
-    <footer class="bg-white border-top py-4 mt-5">
+    <footer class="bg-white border-top py-4 mt-5 mt-auto">
         <div class="container text-center">
             <p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p>
         </div>
@@ -162,7 +189,7 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
     const cleanDesc = (seoDescription || 'Practice high-quality exam preparation sets and timed mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     
-    // CRITICAL: Protects AdSense approval by stopping thin pages from being indexed.
+    // Low-content single question pages get noindex; High-content sets & hubs stay fully indexable
     const metaRobots = isThinPage ? `<meta name="robots" content="noindex, follow">` : `<meta name="robots" content="index, follow">`;
 
     return `<!DOCTYPE html>
@@ -189,11 +216,11 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>
     <script type='text/javascript' src='https://platform-api.sharethis.com/js/sharethis.js#property=5c5059d8c9830d001319b017&product=inline-share-buttons' async='async'></script>
     
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #334155; }
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #334155; display: flex; flex-direction: column; min-height: 100vh; }
         .hover-bg-light:hover { background-color: rgba(255,255,255,0.1); }
         .card { border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .card-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important; }
@@ -203,9 +230,8 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
         .option-btn.correct-show { background-color: #f0fdf4 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 600; }
         .option-btn.incorrect-show { background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .option-btn:disabled { opacity: 1; cursor: default; }
-        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #cbd5e1; margin-bottom: 30px; border-radius: 12px; display: block; width: 100%; overflow: hidden; text-align: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px; display: block; width: 100%; overflow: hidden; text-align: center; }
         .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 4px solid #3b82f6; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
-        
         .sticky-desktop-sidebar { position: sticky; top: 20px; }
         
         /* TESTBOOK EXAM UI */
@@ -223,7 +249,7 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
         .legend-unattempted { background-color: #fff; }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
     ${getNavbar(depth)}
     <div class="container flex-grow-1 pb-5">
         ${content}
@@ -234,7 +260,65 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
 </html>`;
 }
 
-// 🛡️ BUG FIX: try/catch wraps every single task preventing Exit Code 1 crashes
+// AUTOMATIC SITEMAP & ROBOTS GENERATOR (Focuses crawl budget on high-value pages)
+async function generateSitemapAndRobots(distDir, categoriesMap) {
+    console.log("6. Auto-generating SEO Sitemap & Robots.txt for fast indexing...");
+    
+    const today = new Date().toISOString().split('T')[0];
+    const urls = [];
+
+    // 1. Core Platform Pages
+    urls.push({ loc: `${SITE_BASE_URL}/`, priority: '1.0', changefreq: 'daily' });
+    urls.push({ loc: `${SITE_BASE_URL}/categories/index.html`, priority: '0.9', changefreq: 'weekly' });
+    urls.push({ loc: `${SITE_BASE_URL}/about/index.html`, priority: '0.5', changefreq: 'monthly' });
+
+    // 2. High-Value Category Hubs & Full Practice Sets
+    const QUESTIONS_PER_PAGE = 10;
+    for (const [cat, quizzes] of Object.entries(categoriesMap)) {
+        if (!quizzes || quizzes.length === 0) continue;
+        
+        const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        
+        urls.push({
+            loc: `${SITE_BASE_URL}/category/${safeName}/index.html`,
+            priority: '0.8',
+            changefreq: 'weekly'
+        });
+
+        const totalSets = Math.ceil(quizzes.length / QUESTIONS_PER_PAGE);
+        for (let s = 1; s <= totalSets; s++) {
+            urls.push({
+                loc: `${SITE_BASE_URL}/category/${safeName}/set-${s}.html`,
+                priority: '0.7',
+                changefreq: 'monthly'
+            });
+        }
+    }
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    for (const u of urls) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${u.loc}</loc>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `    <changefreq>${u.changefreq}</changefreq>\n`;
+        xml += `    <priority>${u.priority}</priority>\n`;
+        xml += `  </url>\n`;
+    }
+    xml += `</urlset>`;
+
+    await fsAsync.writeFile(path.join(distDir, 'sitemap.xml'), xml, 'utf8');
+
+    const robotsTxt = `User-agent: *
+Allow: /
+
+# Fast Indexing Sitemap
+Sitemap: ${SITE_BASE_URL}/sitemap.xml
+`;
+    await fsAsync.writeFile(path.join(distDir, 'robots.txt'), robotsTxt, 'utf8');
+    console.log(` -> sitemap.xml generated with ${urls.length} indexable high-value URLs.`);
+}
+
 async function executeTasksInBatches(tasks, batchSize = 50) {
     for (let i = 0; i < tasks.length; i += batchSize) {
         const batch = tasks.slice(i, i + batchSize);
@@ -242,7 +326,7 @@ async function executeTasksInBatches(tasks, batchSize = 50) {
             try {
                 await task();
             } catch (err) {
-                console.error("Task processing error:", err.message);
+                console.error("Batch task warning:", err.message);
             }
         }));
     }
@@ -264,8 +348,6 @@ async function buildWedugoQuizSite() {
         }
         
         fs.mkdirSync(distDir, { recursive: true });
-        
-        // Ensure main folders exist upfront to prevent concurrent mkdir EEXIST crashes
         const catMainDir = path.join(distDir, 'category');
         fs.mkdirSync(catMainDir, { recursive: true });
         const quizMainDir = path.join(distDir, 'quiz');
@@ -274,9 +356,8 @@ async function buildWedugoQuizSite() {
         const categoriesMap = {};
         CATEGORY_LIST.forEach(cat => categoriesMap[cat] = []);
         categoriesMap['Uncategorized'] = [];
-        const validQuizzes = [];
 
-        console.log("2. Processing Data...");
+        console.log("2. Processing Rows...");
         rows.forEach((line, index) => {
             const values = parseCSVLine(line);
             if (values.length < headers.length) return; 
@@ -301,14 +382,13 @@ async function buildWedugoQuizSite() {
             q.matchedCategory = matchedCat;
 
             categoriesMap[matchedCat].push(q);
-            validQuizzes.push(q);
         });
 
         let categoriesGridHtml = '<div class="row g-4">';
         const masterPageTasks = [];
         const globallyGeneratedSets = []; 
 
-        console.log("3. Generating Premium UI Files (Sets, Custom Exam SPAs, Ad Layouts)...");
+        console.log("3. Generating Platform Content & Integrating Ad Units...");
         
         for (const [cat, quizzes] of Object.entries(categoriesMap)) {
             if (!quizzes || quizzes.length === 0) continue; 
@@ -319,7 +399,7 @@ async function buildWedugoQuizSite() {
 
             let currentCategoryTasks = [];
 
-            // INDIVIDUAL QUIZ PAGES
+            // INDIVIDUAL QUIZ PAGES (Ad unit included, marked noindex for safety)
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(quizMainDir, String(q.quizId));
                 
@@ -362,10 +442,7 @@ async function buildWedugoQuizSite() {
                         ${getBreadcrumbs(2, q.matchedCategory, safeName, 'Question ' + q.quizId)}
                         <div class="row">
                             <div class="col-lg-8">
-                                <div class="ad-container d-lg-none">
-                                    <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-                                </div>
+                                ${getAdBannerHtml("Top Ad")}
                                 
                                 <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
                                     <header class="mb-4 border-bottom pb-4">
@@ -394,6 +471,8 @@ async function buildWedugoQuizSite() {
                                     </div>
                                     
                                     ${navButtonsHtml}
+                                    
+                                    ${getAdBannerHtml("In-Content Ad")}
                                     ${relatedHtml}
                                     
                                     <div class="mt-5 pt-5 border-top">
@@ -450,12 +529,12 @@ async function buildWedugoQuizSite() {
                             }
                         </script>
                     `;
-                    // pass 'true' to add noindex
+                    // Flagged as true for noindex (keeps domain clean from thin-content penalties)
                     await fsAsync.writeFile(path.join(quizDir, 'index.html'), getHtmlShell(q.question.substring(0,40) + '...', quizContent, 2, q.question, true));
                 });
             });
 
-            // 10-Q PRACTICE SETS
+            // 10-QUESTION PRACTICE SETS (High-Value Indexable Content)
             const QUESTIONS_PER_PAGE = 10;
             const sets = chunkArray(quizzes, QUESTIONS_PER_PAGE);
             let practiceSetsHtml = '<div class="row g-4 mb-4">';
@@ -507,6 +586,11 @@ async function buildWedugoQuizSite() {
                                 </div>
                             </article>
                         `;
+
+                        // Inject mid-set ad between question 5 and 6
+                        if (qIndex === 4) {
+                            setQuestionsHtml += getAdBannerHtml("Mid-Test Ad");
+                        }
                     });
 
                     const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-3 fw-bold rounded-pill"><i class="bi bi-arrow-left me-2"></i>Previous Set</a>` : '';
@@ -516,10 +600,12 @@ async function buildWedugoQuizSite() {
                         ${getBreadcrumbs(2, cat, safeName, `Practice Set ${setNumber}`)}
                         <div class="row">
                             <div class="col-lg-8">
+                                ${getAdBannerHtml("Top Ad")}
+                                
                                 <div class="timer-header p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
                                     <div>
                                         <h1 class="h3 fw-bold text-dark mb-2">${cat} - Mock Test ${setNumber}</h1>
-                                        <p class="text-muted mb-0 fs-6">Answer all 10 questions, then click submit to view your detailed academic score and answer analysis.</p>
+                                        <p class="text-muted mb-0 fs-6">Answer all 10 questions, then click submit to view your academic score and explanations.</p>
                                     </div>
                                     <div class="text-center ms-auto bg-light p-3 rounded-4 border">
                                         <span class="d-block text-muted small fw-bold text-uppercase mb-1">Time Remaining</span>
@@ -532,13 +618,8 @@ async function buildWedugoQuizSite() {
                                     <h2 class="text-success fw-bold display-6 mb-4">Test Completed Successfully!</h2>
                                     <p class="fs-4 text-dark mb-3">Your Final Academic Score:</p>
                                     <div class="display-1 fw-bold text-success mb-4" id="final-score">0 / 10</div>
-                                    <p class="text-muted fs-5 lh-lg">Review your correct and incorrect answers below.</p>
+                                    <p class="text-muted fs-5 lh-lg">Review your solutions below.</p>
                                     <a href="index.html" class="btn btn-success btn-lg mt-3 rounded-pill px-5 fw-bold">Back to ${cat} Hub</a>
-                                </div>
-                                
-                                <div class="ad-container d-lg-none">
-                                    <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                                 </div>
                                 
                                 <div class="practice-set-container">
@@ -649,7 +730,7 @@ async function buildWedugoQuizSite() {
                             window.onload = startTimer;
                         </script>
                     `;
-                    // pass 'false' to ensure Sets are indexed
+                    // Retained as indexable thick content
                     await fsAsync.writeFile(path.join(specificCatDir, setFileName), getHtmlShell(`${cat} Practice Set ${setNumber}`, setPageContent, 2, "", false));
                 });
 
@@ -673,7 +754,7 @@ async function buildWedugoQuizSite() {
             });
             practiceSetsHtml += '</div>';
 
-            // 🌟 CATEGORY MASTER PAGE (Custom Testbook-Style Exam Engine SPA)
+            // CATEGORY MASTER PAGE (With Ads & Live Exam Engine)
             const safeCategoryDataString = JSON.stringify(quizzes).replace(/</g, '\\u003c');
 
             if (CATEGORY_LIST.includes(cat)) {
@@ -682,6 +763,8 @@ async function buildWedugoQuizSite() {
                         <div class="row">
                             <div class="col-12">
                                 ${getBreadcrumbs(2, cat, safeName, '')}
+                                
+                                ${getAdBannerHtml("Top Banner Ad")}
                                 
                                 <div id="setup-view">
                                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4">
@@ -694,7 +777,7 @@ async function buildWedugoQuizSite() {
                                     <div class="card shadow-sm border-0 p-4 p-md-5 mb-5 rounded-4 bg-primary text-white" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
                                         <div class="text-center mb-4">
                                             <h3 class="fw-bold display-6 text-white"><i class="bi bi-rocket-takeoff-fill me-3"></i>Generate Custom Live Exam</h3>
-                                            <p class="fs-5 text-white-50 mt-3">Simulate the exact MPESB/UPSC exam environment. Choose the number of questions to attempt.</p>
+                                            <p class="fs-5 text-white-50 mt-3">Simulate exam conditions with custom question limits and automatic scoring.</p>
                                         </div>
                                         <div class="row justify-content-center mt-4">
                                             <div class="col-md-8 col-lg-6">
@@ -712,6 +795,8 @@ async function buildWedugoQuizSite() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    ${getAdBannerHtml("In-Feed Hub Ad")}
 
                                     <div class="mt-5 mb-5">
                                         <div class="d-flex align-items-center mb-4 border-bottom pb-3">
@@ -787,7 +872,7 @@ async function buildWedugoQuizSite() {
                                         <h2 class="text-success fw-bold display-5 mb-4">Exam Completed!</h2>
                                         <p class="fs-4 text-dark mb-3">Your Final Score:</p>
                                         <div class="display-1 fw-bold text-success mb-4" id="ce-final-score">0 / 0</div>
-                                        <p class="text-secondary fs-5 lh-lg mb-4">Click on the question numbers in the palette above to view the detailed solutions and correct answers.</p>
+                                        <p class="text-secondary fs-5 lh-lg mb-4">Click on the question numbers in the palette above to view solutions.</p>
                                         <button class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow" onclick="quitExam()"><i class="bi bi-house-fill me-2"></i>Return to Category Hub</button>
                                     </div>
                                 </div>
@@ -795,9 +880,7 @@ async function buildWedugoQuizSite() {
                         </div>
 
                         <script>
-                            // 🚀 BUG FIX: Safe Data injection ensuring no JS parsing syntax errors
                             const allQuestionsData = ${safeCategoryDataString};
-                            
                             let examQuestions = [];
                             let ceUserAnswers = {};
                             let currentQIndex = 0;
@@ -975,7 +1058,6 @@ async function buildWedugoQuizSite() {
                             }
                         </script>
                     `;
-                    
                     await fsAsync.writeFile(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} MCQs & Live Exam Engine`, catPageContent, 2, "", false));
                 });
 
@@ -987,7 +1069,7 @@ async function buildWedugoQuizSite() {
                                     <i class="bi bi-display fs-1 text-primary"></i>
                                 </div>
                                 <h3 class="h4 fw-bold mb-3 text-dark">${cat}</h3>
-                                <p class="text-secondary mb-4 fs-6 lh-lg">Custom Testbook-style exam engine with ${quizzes.length} highly relevant MCQs.</p>
+                                <p class="text-secondary mb-4 fs-6 lh-lg">Live Testbook-style exam simulation with ${quizzes.length} questions.</p>
                                 <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-bold py-3 rounded-pill shadow-sm">Launch Exam Engine</a>
                             </div>
                         </div>
@@ -999,17 +1081,19 @@ async function buildWedugoQuizSite() {
             currentCategoryTasks = null; 
         }
 
-        console.log("4. Building Core Pages...");
+        console.log("4. Building Core Pages with Advertisements...");
         const categoriesDir = path.join(distDir, 'categories');
         fs.mkdirSync(categoriesDir, { recursive: true });
         masterPageTasks.push(async () => {
             const categoriesContent = `
                 ${getBreadcrumbs(1, '', '', 'All Categories')}
+                ${getAdBannerHtml("Top Ad")}
                 <div class="mb-5 text-center py-5">
                     <h1 class="display-4 fw-bold mb-4 text-dark">Explore Knowledge Topics</h1>
                     <p class="lead text-secondary col-lg-8 mx-auto lh-lg">Select a subject below to launch dynamic custom exams, timed mock sets, and detailed educational explanations.</p>
                 </div>
                 ${categoriesGridHtml}
+                ${getAdBannerHtml("Bottom Ad")}
             `;
             await fsAsync.writeFile(path.join(categoriesDir, 'index.html'), getHtmlShell('All Categories & Exam Engines', categoriesContent, 1, "", false));
         });
@@ -1019,6 +1103,7 @@ async function buildWedugoQuizSite() {
         masterPageTasks.push(async () => {
             const aboutContent = `
                 ${getBreadcrumbs(1, '', '', 'About Us')}
+                ${getAdBannerHtml("Top Ad")}
                 <div class="card shadow-sm p-4 p-md-5 border-light rounded-4 bg-white">
                     <h1 class="fw-bold text-primary mb-4 display-5"><i class="bi bi-building-fill-check me-3"></i>About Wedugo Education</h1>
                     <p class="lead text-dark lh-base mb-5">Welcome to Wedugo Education, your premier destination for practicing and mastering a diverse range of academic and competitive subjects.</p>
@@ -1072,10 +1157,7 @@ async function buildWedugoQuizSite() {
                     </div>
                 </header>
                 
-                <div class="ad-container shadow-sm border-0">
-                    <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-                </div>
+                ${getAdBannerHtml("Homepage Top Ad")}
                 
                 <div id="latest" class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pt-5">
                     <div>
@@ -1086,6 +1168,8 @@ async function buildWedugoQuizSite() {
                 </div>
                 
                 ${topSetsHtml}
+                
+                ${getAdBannerHtml("Homepage Bottom Ad")}
                 
                 <div class="text-center mt-5 mb-5 pt-4 border-top">
                     <a href="./categories/index.html" class="btn btn-dark btn-lg px-5 py-3 fw-bold rounded-pill shadow-lg"><i class="bi bi-collection-fill me-2"></i>Browse All Live Exams & Sets</a>
@@ -1106,7 +1190,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        const staticFiles = ['Ads.txt','robots.txt', 'CNAME', '404.html'];
+        const staticFiles = ['Ads.txt', 'CNAME', '404.html'];
         staticFiles.forEach(file => {
             const sourcePath = path.join(__dirname, file);
             const targetName = file === 'Ads.txt' ? 'ads.txt' : file; 
@@ -1115,7 +1199,10 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (Exit Code 1 Fixed + Safe File Generation)");
+        // 6. Generate Sitemap & Robots automatically inside public/
+        await generateSitemapAndRobots(distDir, categoriesMap);
+
+        console.log("✅ Build Complete (Ad Units Embedded + Auto Sitemap Active)");
     } catch (error) {
         console.error("Critical Build failed:", error);
     }

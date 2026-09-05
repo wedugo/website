@@ -57,13 +57,13 @@ function getRandomRelated(quizzes, currentId, count = 3) {
 
 function getCategorySEOText(category, totalQuestions) {
     return `
-        <div class="card bg-white border border-light shadow-sm p-4 p-md-5 mb-5 rounded-4">
-            <h2 class="h4 fw-bold text-dark mb-3">Comprehensive Guide to ${category}</h2>
-            <p class="text-muted mb-3 lh-lg" style="font-size: 1.05rem;">
-                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for academic excellence and general knowledge enhancement. This topic is frequently tested in <strong>${getExamTarget(category)}</strong>. 
+        <div class="card bg-white border-0 shadow-sm p-4 p-md-5 mb-5 rounded-4">
+            <h2 class="h4 fw-bold text-dark mb-3"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Comprehensive Guide to ${category}</h2>
+            <p class="text-secondary mb-3 lh-lg" style="font-size: 1.05rem;">
+                Welcome to the ultimate preparation hub for <strong>${category}</strong>. Mastering this subject is crucial for academic excellence and general knowledge enhancement. This topic is frequently tested in <span class="badge bg-light text-dark border">${getExamTarget(category)}</span>. 
             </p>
-            <p class="text-muted mb-0 lh-lg" style="font-size: 1.05rem;">
-                Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Generate a custom exam or work through our timed structured practice sets.
+            <p class="text-secondary mb-0 lh-lg" style="font-size: 1.05rem;">
+                Below, you will find a curated collection of <strong>${totalQuestions} carefully selected multiple-choice questions (MCQs)</strong> designed to test your understanding, improve your retention, and prepare you for real-world exam scenarios. Generate a custom live exam or work through our pre-built timed practice sets.
             </p>
         </div>
     `;
@@ -73,11 +73,11 @@ function getBreadcrumbs(depth, category, safeName, currentTitle) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     return `
         <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb bg-white p-3 rounded-4 shadow-sm mb-0 border">
-                <li class="breadcrumb-item"><a href="${prefix}/index.html" class="text-decoration-none text-primary fw-medium">Home</a></li>
+            <ol class="breadcrumb bg-white p-3 rounded-4 shadow-sm mb-0 border-0">
+                <li class="breadcrumb-item"><a href="${prefix}/index.html" class="text-decoration-none text-primary fw-medium"><i class="bi bi-house-door-fill me-1"></i>Home</a></li>
                 <li class="breadcrumb-item"><a href="${prefix}/categories/index.html" class="text-decoration-none text-primary fw-medium">All Topics</a></li>
                 ${category ? `<li class="breadcrumb-item"><a href="${prefix}/category/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>` : ''}
-                ${currentTitle ? `<li class="breadcrumb-item active text-truncate" aria-current="page" style="max-width: 250px;">${currentTitle}</li>` : ''}
+                ${currentTitle ? `<li class="breadcrumb-item active text-truncate fw-medium" aria-current="page" style="max-width: 250px;">${currentTitle}</li>` : ''}
             </ol>
         </nav>
     `;
@@ -109,9 +109,9 @@ function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     const cacheBuster = new Date().getTime(); 
     return `
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm py-3">
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4 shadow-sm py-3" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center" href="${prefix}/index.html">
+            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center tracking-tight" href="${prefix}/index.html">
                 <img src="${prefix}/main_images/logo.png?v=${cacheBuster}" alt="Wedugo Logo" height="35" class="me-2 d-inline-block align-text-top" onerror="this.style.display='none'">
                 Wedugo Education
             </a>
@@ -119,10 +119,10 @@ function getNavbar(depth) {
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto fw-medium fs-5 gap-2">
-                    <li class="nav-item"><a class="nav-link px-3" href="${prefix}/index.html">Home</a></li>
-                    <li class="nav-item"><a class="nav-link px-3" href="${prefix}/categories/index.html">Categories</a></li>
-                    <li class="nav-item"><a class="nav-link px-3" href="${prefix}/about/index.html">About</a></li>
+                <ul class="navbar-nav ms-auto fw-medium fs-6 gap-3">
+                    <li class="nav-item"><a class="nav-link text-white px-3 rounded-pill hover-bg-light" href="${prefix}/index.html"><i class="bi bi-house me-1"></i>Home</a></li>
+                    <li class="nav-item"><a class="nav-link text-white px-3 rounded-pill hover-bg-light" href="${prefix}/categories/index.html"><i class="bi bi-grid me-1"></i>Categories</a></li>
+                    <li class="nav-item"><a class="nav-link text-white px-3 rounded-pill hover-bg-light" href="${prefix}/about/index.html"><i class="bi bi-info-circle me-1"></i>About</a></li>
                 </ul>
             </div>
         </div>
@@ -132,8 +132,6 @@ function getNavbar(depth) {
 function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = false) {
     const cleanDesc = (seoDescription || 'Practice high-quality exam preparation sets and timed mock tests on Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
-    
-    // Add noindex to single-question thin pages to prevent AdSense index bloat
     const metaRobots = isThinPage ? `<meta name="robots" content="noindex, follow">` : `<meta name="robots" content="index, follow">`;
 
     return `<!DOCTYPE html>
@@ -153,36 +151,43 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
     <title>${title} | Wedugo Education</title>
     <meta name="description" content="${cleanDesc}">
     <link rel="icon" href="${prefix}/main_images/icon.png" type="image/png">
+    
+    <!-- Premium Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5947676189341600" crossorigin="anonymous"></script>
     <script type='text/javascript' src='https://platform-api.sharethis.com/js/sharethis.js#property=5c5059d8c9830d001319b017&product=inline-share-buttons' async='async'></script>
     
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #212529; }
-        .card { border: 1px solid #e9ecef; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-        .option-btn { text-align: left; padding: 18px 24px; font-weight: 500; font-size: 1.1rem; border-radius: 8px; border: 2px solid #dee2e6; background: #fff; transition: all 0.2s ease; color: #495057; }
-        .option-btn:hover:not(:disabled) { background-color: #f8f9fa; border-color: #adb5bd; transform: translateX(6px); }
-        .option-btn.selected { background-color: #e7f1ff; border-color: #0d6efd; color: #084298; }
-        .option-btn.correct-show { background-color: #d1e7dd !important; border-color: #198754 !important; color: #0f5132 !important; }
-        .option-btn.incorrect-show { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #842029 !important; }
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #334155; }
+        .hover-bg-light:hover { background-color: rgba(255,255,255,0.1); }
+        .card { border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important; }
+        .option-btn { text-align: left; padding: 16px 24px; font-weight: 500; font-size: 1.05rem; border-radius: 12px; border: 2px solid #e2e8f0; background: #ffffff; transition: all 0.2s; color: #475569; }
+        .option-btn:hover:not(:disabled) { background-color: #f8fafc; border-color: #cbd5e1; transform: translateX(5px); }
+        .option-btn.selected { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15); }
+        .option-btn.correct-show { background-color: #f0fdf4 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 600; }
+        .option-btn.incorrect-show { background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .option-btn:disabled { opacity: 1; cursor: default; }
-        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #ced4da; margin-bottom: 30px; border-radius: 12px; display: block; width: 100%; overflow: hidden; text-align: center; }
-        .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 4px solid #0d6efd; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); }
+        .ad-container { min-height: 100px; background: #fff; border: 1px dashed #cbd5e1; margin-bottom: 30px; border-radius: 12px; display: block; width: 100%; overflow: hidden; text-align: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .timer-header { position: sticky; top: 0; z-index: 1020; border-bottom: 4px solid #3b82f6; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
         
         /* TESTBOOK STYLE PALETTE CSS */
-        .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
-        .q-node { width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid #ced4da; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; background: #fff; color: #495057; transition: 0.2s; }
-        .q-node:hover { background: #e9ecef; }
-        .q-node.active { border: 2px solid #0d6efd; box-shadow: 0 0 0 3px rgba(13,110,253,0.25); }
-        .q-node.attempted { background-color: #0d6efd; color: #fff; border-color: #0d6efd; }
-        .q-node.correct { background-color: #198754 !important; color: #fff !important; border-color: #198754 !important; }
-        .q-node.incorrect { background-color: #dc3545 !important; color: #fff !important; border-color: #dc3545 !important; }
-        
-        .exam-sidebar { background: #e0f2f1; padding: 15px; border-radius: 8px; border: 2px solid #b2dfdb; }
-        .legend-box { width: 16px; height: 16px; display: inline-block; border-radius: 4px; margin-right: 5px; vertical-align: middle; border: 1px solid #ccc; }
-        .legend-correct { background-color: #198754; border-color: #198754; }
-        .legend-incorrect { background-color: #dc3545; border-color: #dc3545; }
+        .q-node { width: 42px; height: 42px; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.95rem; cursor: pointer; background: #fff; color: #475569; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0 auto; }
+        .q-node:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .q-node.active { border: 2px solid #3b82f6; background: #eff6ff; color: #1d4ed8; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .q-node.attempted { background-color: #3b82f6; color: #fff; border-color: #3b82f6; }
+        .q-node.correct { background-color: #22c55e !important; color: #fff !important; border-color: #22c55e !important; }
+        .q-node.incorrect { background-color: #ef4444 !important; color: #fff !important; border-color: #ef4444 !important; }
+        .palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 12px; margin-top: 15px; }
+        .exam-sidebar { background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; }
+        .legend-box { width: 16px; height: 16px; display: inline-block; border-radius: 4px; margin-right: 6px; vertical-align: middle; border: 1px solid #cbd5e1; }
+        .legend-correct { background-color: #22c55e; border-color: #22c55e; }
+        .legend-incorrect { background-color: #ef4444; border-color: #ef4444; }
         .legend-unattempted { background-color: #fff; }
     </style>
 </head>
@@ -257,7 +262,7 @@ async function buildWedugoQuizSite() {
         const masterPageTasks = [];
         const globallyGeneratedSets = []; 
 
-        console.log("3. Generating Files (Preserving Single Pages, Sets, & Injecting Custom Exam SPAs)...");
+        console.log("3. Generating Premium UI Files (Sets, Custom Exam SPAs)...");
         
         for (const [cat, quizzes] of Object.entries(categoriesMap)) {
             if (!quizzes || quizzes.length === 0) continue; 
@@ -268,7 +273,7 @@ async function buildWedugoQuizSite() {
 
             let currentCategoryTasks = [];
 
-            // INDIVIDUAL QUIZ PAGES (Retained, but marked noindex for AdSense compliance)
+            // INDIVIDUAL QUIZ PAGES (Retained, noindex applied)
             quizzes.forEach((q, i) => {
                 const quizDir = path.join(distDir, 'quiz', String(q.quizId));
                 
@@ -280,12 +285,12 @@ async function buildWedugoQuizSite() {
                 const relatedQuizzes = getRandomRelated(quizzes, q.quizId, 3);
                 let relatedHtml = '';
                 if(relatedQuizzes.length > 0) {
-                    relatedHtml = `<div class="mt-5"><h4 class="h5 fw-bold mb-4 text-dark border-bottom pb-2">Related Questions in ${q.matchedCategory}</h4><div class="row g-3">`;
+                    relatedHtml = `<div class="mt-5"><h4 class="h5 fw-bold mb-4 text-dark border-bottom pb-3"><i class="bi bi-link-45deg me-2 text-primary"></i>Related Questions in ${q.matchedCategory}</h4><div class="row g-3">`;
                     relatedQuizzes.forEach(rq => {
                         relatedHtml += `
                             <div class="col-md-4">
-                                <a href="../${rq.quizId}/index.html" class="card related-q-card h-100 shadow-sm text-decoration-none card-hover bg-light p-3 border-0">
-                                    <span class="badge bg-secondary mb-2" style="width:fit-content">Q${rq.quizId}</span>
+                                <a href="../${rq.quizId}/index.html" class="card related-q-card h-100 shadow-sm text-decoration-none card-hover bg-white p-4 border-0">
+                                    <span class="badge bg-light text-secondary mb-3 border" style="width:fit-content">Q${rq.quizId}</span>
                                     <p class="text-dark fw-medium small mb-0 lh-base">${rq.question.substring(0, 80)}...</p>
                                 </a>
                             </div>
@@ -302,8 +307,8 @@ async function buildWedugoQuizSite() {
 
                     const navButtonsHtml = `
                         <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                            ${prevQuiz ? `<a href="../${prevQuiz.quizId}/index.html" class="btn btn-outline-secondary fw-medium px-3 px-md-4">&larr; Previous</a>` : `<button class="btn btn-outline-secondary fw-medium px-3 px-md-4" disabled>&larr; Previous</button>`}
-                            ${nextQuiz ? `<a href="../${nextQuiz.quizId}/index.html" class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm">Next Question &rarr;</a>` : `<button class="btn btn-primary fw-medium px-3 px-md-4 shadow-sm" disabled>Next Question &rarr;</button>`}
+                            ${prevQuiz ? `<a href="../${prevQuiz.quizId}/index.html" class="btn btn-outline-secondary fw-bold px-4 rounded-pill"><i class="bi bi-arrow-left me-2"></i>Previous</a>` : `<button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" disabled><i class="bi bi-arrow-left me-2"></i>Previous</button>`}
+                            ${nextQuiz ? `<a href="../${nextQuiz.quizId}/index.html" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm">Next<i class="bi bi-arrow-right ms-2"></i></a>` : `<button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" disabled>Next<i class="bi bi-arrow-right ms-2"></i></button>`}
                         </div>
                     `;
 
@@ -312,19 +317,19 @@ async function buildWedugoQuizSite() {
                             <div class="col-lg-9">
                                 ${getBreadcrumbs(2, q.matchedCategory, safeName, 'Question ' + q.quizId)}
                                 
-                                <div class="ad-container text-center text-muted small">
+                                <div class="ad-container">
                                     <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
                                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                                 </div>
                                 
-                                <article class="card shadow-sm p-4 p-md-5 mb-4 bg-white">
-                                    <header class="mb-4">
+                                <article class="card p-4 p-md-5 mb-4 bg-white">
+                                    <header class="mb-4 border-bottom pb-4">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                                            <a href="../../category/${safeName}/index.html" class="badge bg-primary badge-cat text-decoration-none">${q.matchedCategory}</a>
-                                            <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle">Difficulty: ${diffData.label}</span>
-                                            <span class="badge bg-light text-secondary border ms-auto fs-6 font-monospace" id="single-timer">⏱️ 00:00</span>
+                                            <a href="../../category/${safeName}/index.html" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill"><i class="bi bi-folder2-open me-1"></i>${q.matchedCategory}</a>
+                                            <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle px-3 py-2 rounded-pill"><i class="bi bi-bar-chart-fill me-1"></i>${diffData.label}</span>
+                                            <span class="badge bg-light text-secondary border ms-auto fs-6 font-monospace rounded-pill px-3 py-2" id="single-timer"><i class="bi bi-stopwatch me-2"></i>00:00</span>
                                         </div>
-                                        <h1 class="h3 mb-4 fw-bold text-dark lh-base">${q.question}</h1>
+                                        <h1 class="h3 fw-bold text-dark lh-base mt-3">${q.question}</h1>
                                     </header>
 
                                     <div class="d-grid gap-3 mb-4" id="options-container">
@@ -334,23 +339,24 @@ async function buildWedugoQuizSite() {
                                         <button class="btn option-btn" onclick="checkAnswer(this, 'D')">D) ${q.answer4 || ''}</button>
                                     </div>
                                     
-                                    <div id="explanation-box" class="alert mt-4 d-none p-4 rounded-3 border">
+                                    <div id="explanation-box" class="alert mt-4 d-none p-4 rounded-4 border">
                                         <h5 class="alert-heading fw-bold mb-3 d-flex align-items-center" id="result-title"></h5>
                                         <hr class="opacity-25">
                                         <div class="mt-3">
-                                            <h6 class="fw-bold text-dark mb-2">Detailed Solution & Learning Notes:</h6>
-                                            <p class="mb-3 text-dark lh-lg" style="font-size: 1.05rem;">${explanationText}</p>
+                                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6>
+                                            <p class="mb-0 text-dark lh-lg" style="font-size: 1.05rem;">${explanationText}</p>
                                         </div>
                                     </div>
                                     
                                     ${navButtonsHtml}
                                     ${relatedHtml}
                                     
-                                    <div class="mt-5 pt-4 border-top">
-                                        <h4 class="h5 fw-bold mb-3 text-dark">Community Discussion</h4>
-                                        ${getDisqusEmbed(q.quizId, `quiz/${q.quizId}`)}
+                                    <div class="mt-5 pt-5 border-top">
+                                        <div class="bg-light p-4 p-md-5 rounded-4 border">
+                                            <h4 class="h4 fw-bold mb-3 text-dark"><i class="bi bi-chat-square-text-fill text-primary me-2"></i>Community Discussion</h4>
+                                            ${getDisqusEmbed(q.quizId, `quiz/${q.quizId}`)}
+                                        </div>
                                     </div>
-                                    
                                 </article>
                             </div>
                         </div>
@@ -363,7 +369,7 @@ async function buildWedugoQuizSite() {
                                 seconds++;
                                 let m = Math.floor(seconds / 60);
                                 let s = seconds % 60;
-                                document.getElementById('single-timer').innerHTML = '⏱️ ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                                document.getElementById('single-timer').innerHTML = '<i class="bi bi-stopwatch me-2"></i>' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
                             }
                             
                             window.addEventListener('load', function() {
@@ -389,7 +395,7 @@ async function buildWedugoQuizSite() {
                                 if(selectedLetter === correctLetter) {
                                     btnElement.classList.add('correct-show');
                                     explanationBox.classList.add('alert-success', 'border-success', 'border-opacity-25');
-                                    resultTitle.innerHTML = "✨ Correct Answer! Time taken: " + document.getElementById('single-timer').innerText.replace('⏱️ ', '');
+                                    resultTitle.innerHTML = "✨ Correct Answer! Time taken: " + document.getElementById('single-timer').innerText.trim();
                                 } else {
                                     btnElement.classList.add('incorrect-show');
                                     explanationBox.classList.add('alert-danger', 'border-danger', 'border-opacity-25');
@@ -398,7 +404,6 @@ async function buildWedugoQuizSite() {
                             }
                         </script>
                     `;
-                    // isThinPage = true
                     await fsAsync.writeFile(path.join(quizDir, 'index.html'), getHtmlShell(q.question.substring(0,40) + '...', quizContent, 2, q.question, true));
                 });
             });
@@ -433,7 +438,7 @@ async function buildWedugoQuizSite() {
                         answersMapScript.push(`'${q.quizId}': '${correctLetter}'`);
                         
                         setQuestionsHtml += `
-                            <article class="card shadow-sm p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-${q.quizId}">
+                            <article class="card p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-${q.quizId}">
                                 <div class="d-flex align-items-center flex-wrap gap-2 mb-4 pb-4 border-bottom">
                                     <span class="badge bg-primary rounded-pill me-2 px-3 py-2 fs-6">Question ${(setIndex * QUESTIONS_PER_PAGE) + qIndex + 1}</span>
                                     <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle px-3 py-2 rounded-pill fs-6">${diffData.label}</span>
@@ -450,41 +455,42 @@ async function buildWedugoQuizSite() {
                                 <div id="explanation-${q.quizId}" class="alert mt-4 d-none p-4 p-md-5 border rounded-4 bg-light">
                                     <h5 class="alert-heading fw-bold fs-4 mb-3" id="result-title-${q.quizId}"></h5>
                                     <hr class="opacity-25 mb-4">
-                                    <h6 class="fw-bold text-dark mb-3 fs-5">Solution Breakdown:</h6>
+                                    <h6 class="fw-bold text-dark mb-3 fs-5"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Solution Breakdown:</h6>
                                     <p class="mb-0 text-dark lh-lg" style="font-size: 1.1rem;">${explanationText}</p>
                                 </div>
                             </article>
                         `;
                     });
 
-                    const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-3 fw-bold rounded-pill">&larr; Previous Practice Set</a>` : '';
-                    const nextSetBtn = setIndex < sets.length - 1 ? `<a href="set-${setNumber + 1}.html" class="btn btn-primary px-4 py-3 shadow fw-bold rounded-pill">Next Practice Set &rarr;</a>` : '';
+                    const prevSetBtn = setIndex > 0 ? `<a href="set-${setNumber - 1}.html" class="btn btn-outline-secondary px-4 py-3 fw-bold rounded-pill"><i class="bi bi-arrow-left me-2"></i>Previous Set</a>` : '';
+                    const nextSetBtn = setIndex < sets.length - 1 ? `<a href="set-${setNumber + 1}.html" class="btn btn-primary px-4 py-3 shadow fw-bold rounded-pill">Next Set<i class="bi bi-arrow-right ms-2"></i></a>` : '';
 
                     const setPageContent = `
                         <div class="row justify-content-center">
                             <div class="col-lg-10 col-xl-9">
                                 ${getBreadcrumbs(2, cat, safeName, `Practice Set ${setNumber}`)}
                                 
-                                <div class="timer-header bg-white p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
+                                <div class="timer-header p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
                                     <div>
                                         <h1 class="h3 fw-bold text-dark mb-2">${cat} - Mock Test ${setNumber}</h1>
                                         <p class="text-muted mb-0 fs-6">Answer all 10 questions, then click submit to view your detailed academic score and answer analysis.</p>
                                     </div>
                                     <div class="text-center ms-auto bg-light p-3 rounded-4 border">
                                         <span class="d-block text-muted small fw-bold text-uppercase mb-1">Time Remaining</span>
-                                        <div class="fs-2 fw-bold font-monospace text-danger" id="timer-display">10:00</div>
+                                        <div class="fs-3 fw-bold font-monospace text-danger" id="timer-display"><i class="bi bi-stopwatch me-2"></i>10:00</div>
                                     </div>
                                 </div>
 
                                 <div id="score-board" class="card shadow-lg border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10" style="border-width: 2px !important;">
+                                    <div class="display-1 text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
                                     <h2 class="text-success fw-bold display-6 mb-4">Test Completed Successfully!</h2>
                                     <p class="fs-4 text-dark mb-3">Your Final Academic Score:</p>
                                     <div class="display-1 fw-bold text-success mb-4" id="final-score">0 / 10</div>
                                     <p class="text-muted fs-5 lh-lg">Review your correct and incorrect answers below.</p>
-                                    <a href="index.html" class="btn btn-success btn-lg mt-3 rounded-pill px-5">Back to ${cat} Hub</a>
+                                    <a href="index.html" class="btn btn-success btn-lg mt-3 rounded-pill px-5 fw-bold">Back to ${cat} Hub</a>
                                 </div>
                                 
-                                <div class="ad-container text-center text-muted small mb-5">
+                                <div class="ad-container">
                                     <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
                                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                                 </div>
@@ -495,7 +501,7 @@ async function buildWedugoQuizSite() {
                                 
                                 <div class="text-center mt-5 mb-5" id="submit-container">
                                     <button class="btn btn-success btn-lg px-5 py-4 fw-bold shadow-lg rounded-pill fs-4 w-100 w-md-auto" onclick="submitTest()">
-                                        📝 Submit Test & View Explanations
+                                        <i class="bi bi-journal-check me-2"></i>Submit Test & View Explanations
                                     </button>
                                 </div>
                                 
@@ -506,7 +512,7 @@ async function buildWedugoQuizSite() {
 
                                 <div class="mt-5 pt-5 border-top">
                                     <div class="card bg-white border-0 shadow-sm p-4 p-md-5 rounded-4">
-                                        <h4 class="h3 fw-bold mb-3 text-dark">Community Discussion</h4>
+                                        <h4 class="h3 fw-bold mb-4 text-dark"><i class="bi bi-chat-square-text-fill text-primary me-2"></i>Community Discussion</h4>
                                         ${getDisqusEmbed(`${safeName}_set_${setNumber}`, `category/${safeName}/${setFileName}`)}
                                     </div>
                                 </div>
@@ -527,7 +533,7 @@ async function buildWedugoQuizSite() {
                                     timeLeft--;
                                     let m = Math.floor(timeLeft / 60);
                                     let s = timeLeft % 60;
-                                    display.innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                                    display.innerHTML = '<i class="bi bi-stopwatch me-2"></i>' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
                                     if (timeLeft <= 0) {
                                         clearInterval(timerInterval);
                                         submitTest();
@@ -601,17 +607,17 @@ async function buildWedugoQuizSite() {
 
                 practiceSetsHtml += `
                     <div class="col-sm-6 col-lg-4">
-                        <a href="${setFileName}" class="card shadow-sm text-decoration-none card-hover h-100 p-4 border border-light rounded-4 bg-white">
+                        <a href="${setFileName}" class="card shadow-sm text-decoration-none card-hover h-100 p-4 border border-light rounded-4 bg-white d-block">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <span class="fs-4">📝</span>
+                                    <i class="bi bi-card-checklist fs-4"></i>
                                 </div>
                                 <h5 class="fw-bold text-dark mb-0 ms-3">Mock Set ${setNumber}</h5>
                             </div>
-                            <hr class="opacity-10 my-2">
-                            <div class="d-flex justify-content-between text-muted mt-2">
-                                <small class="fw-medium">10 Questions</small>
-                                <small class="fw-medium text-danger">⏱️ 10 Mins</small>
+                            <hr class="opacity-10 my-3">
+                            <div class="d-flex justify-content-between text-secondary mt-2">
+                                <small class="fw-medium"><i class="bi bi-ui-checks me-1"></i>10 Qs</small>
+                                <small class="fw-bold text-danger"><i class="bi bi-stopwatch me-1"></i>10 Mins</small>
                             </div>
                         </a>
                     </div>
@@ -619,8 +625,7 @@ async function buildWedugoQuizSite() {
             });
             practiceSetsHtml += '</div>';
 
-            // 🌟 CATEGORY MASTER PAGE (NEW FEATURE: Custom Testbook-Style Exam Engine)
-            // Injecting the full category question bank safely as JSON
+            // 🌟 CATEGORY MASTER PAGE (Custom Testbook-Style Exam Engine - FIXED SYNTAX ERROR)
             const safeCategoryDataString = JSON.stringify(quizzes).replace(/</g, '\\u003c');
 
             if (CATEGORY_LIST.includes(cat)) {
@@ -638,17 +643,16 @@ async function buildWedugoQuizSite() {
                                     
                                     ${getCategorySEOText(cat, quizzes.length)}
                                     
-                                    <!-- NEW: Custom Exam Generator (Testbook UI Launcher) -->
-                                    <div class="card shadow-lg border-primary border-2 p-5 mb-5 rounded-4 bg-primary bg-opacity-10">
+                                    <div class="card shadow-sm border-0 p-4 p-md-5 mb-5 rounded-4 bg-primary text-white" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
                                         <div class="text-center mb-4">
-                                            <h3 class="fw-bold text-primary display-6">🚀 Generate Custom Live Exam</h3>
-                                            <p class="text-dark fs-5">Simulate the exact MPESB/UPSC exam environment. Choose the number of questions to attempt.</p>
+                                            <h3 class="fw-bold display-6 text-white"><i class="bi bi-rocket-takeoff-fill me-3"></i>Generate Custom Live Exam</h3>
+                                            <p class="fs-5 text-white-50 mt-3">Simulate the exact MPESB/UPSC exam environment. Choose the number of questions to attempt.</p>
                                         </div>
-                                        <div class="row justify-content-center">
-                                            <div class="col-md-6 col-lg-4">
-                                                <div class="input-group input-group-lg mb-3 shadow-sm">
-                                                    <span class="input-group-text bg-white fw-bold">Questions:</span>
-                                                    <select class="form-select fw-bold" id="custom-q-count">
+                                        <div class="row justify-content-center mt-4">
+                                            <div class="col-md-8 col-lg-6">
+                                                <div class="input-group input-group-lg mb-4 shadow">
+                                                    <span class="input-group-text bg-white border-0 fw-bold text-primary"><i class="bi bi-funnel-fill me-2"></i>Select Limit:</span>
+                                                    <select class="form-select border-0 fw-bold text-dark" id="custom-q-count">
                                                         <option value="10">10 Questions (10 Mins)</option>
                                                         <option value="20" selected>20 Questions (20 Mins)</option>
                                                         <option value="30">30 Questions (30 Mins)</option>
@@ -656,99 +660,98 @@ async function buildWedugoQuizSite() {
                                                         <option value="100">100 Questions (100 Mins)</option>
                                                     </select>
                                                 </div>
-                                                <button class="btn btn-primary btn-lg w-100 fw-bold shadow py-3 fs-4 rounded-pill" onclick="startCustomExam()">Start Live Exam Now</button>
+                                                <button class="btn btn-light text-primary btn-lg w-100 fw-bold shadow-lg py-3 fs-4 rounded-pill" onclick="startCustomExam()"><i class="bi bi-play-circle-fill me-2"></i>Start Live Exam Now</button>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="mt-5 mb-5">
                                         <div class="d-flex align-items-center mb-4 border-bottom pb-3">
-                                            <span class="fs-2 me-3">🎯</span>
+                                            <span class="fs-1 me-3 text-primary"><i class="bi bi-bullseye"></i></span>
                                             <div>
                                                 <h3 class="h3 fw-bold text-dark mb-1">Standard Structured Sets</h3>
-                                                <p class="text-muted mb-0 fs-6">Pre-built 10-question mock exams.</p>
+                                                <p class="text-secondary mb-0 fs-6">Pre-built 10-question mock exams.</p>
                                             </div>
                                         </div>
                                         ${practiceSetsHtml}
                                     </div>
                                 </div>
                                 
-                                <!-- NEW: The Testbook Style Custom Exam Engine SPA UI -->
                                 <div id="exam-view" class="d-none">
                                     <div class="row g-4">
                                         <!-- Left Pane: Question Area -->
                                         <div class="col-lg-8">
-                                            <div class="card shadow-sm border-0 rounded-4 h-100 d-flex flex-column">
+                                            <div class="card shadow-sm border border-light rounded-4 h-100 d-flex flex-column bg-white">
                                                 <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center rounded-top-4">
-                                                    <span class="badge bg-primary fs-5 px-3 py-2" id="ce-q-number">Question 1</span>
-                                                    <button class="btn btn-sm btn-outline-danger fw-bold" onclick="quitExam()">Quit Exam</button>
+                                                    <span class="badge bg-primary fs-5 px-4 py-2 rounded-pill" id="ce-q-number">Question 1</span>
+                                                    <button class="btn btn-outline-danger fw-bold rounded-pill px-4" onclick="quitExam()"><i class="bi bi-x-circle me-2"></i>Quit Exam</button>
                                                 </div>
                                                 <div class="card-body p-4 p-md-5 flex-grow-1">
-                                                    <h3 class="h4 fw-bold text-dark mb-4 lh-base" id="ce-q-text">Loading question...</h3>
-                                                    <div class="d-grid gap-3" id="ce-options-container">
+                                                    <h3 class="h4 fw-bold text-dark mb-5 lh-base" id="ce-q-text" style="line-height: 1.6 !important;">Loading question...</h3>
+                                                    <div class="d-grid gap-3 ps-md-2" id="ce-options-container">
                                                         <button class="btn option-btn" id="ce-opt-A" onclick="selectCEOption('A')"></button>
                                                         <button class="btn option-btn" id="ce-opt-B" onclick="selectCEOption('B')"></button>
                                                         <button class="btn option-btn" id="ce-opt-C" onclick="selectCEOption('C')"></button>
                                                         <button class="btn option-btn" id="ce-opt-D" onclick="selectCEOption('D')"></button>
                                                     </div>
                                                     
-                                                    <div id="ce-solution-box" class="alert mt-5 d-none p-4 border rounded-4 bg-light">
-                                                        <h5 class="alert-heading fw-bold fs-5 mb-3" id="ce-result-title"></h5>
-                                                        <hr class="opacity-25 mb-3">
-                                                        <h6 class="fw-bold text-dark mb-2">Detailed Solution:</h6>
-                                                        <p class="mb-0 text-dark lh-lg" id="ce-solution-text"></p>
+                                                    <div id="ce-solution-box" class="alert mt-5 d-none p-4 p-md-5 border rounded-4 bg-light">
+                                                        <h5 class="alert-heading fw-bold fs-4 mb-3" id="ce-result-title"></h5>
+                                                        <hr class="opacity-25 mb-4">
+                                                        <h6 class="fw-bold text-dark mb-3 fs-5"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6>
+                                                        <p class="mb-0 text-dark lh-lg" id="ce-solution-text" style="font-size: 1.1rem;"></p>
                                                     </div>
                                                 </div>
                                                 <div class="card-footer bg-white border-top p-4 d-flex justify-content-between rounded-bottom-4">
-                                                    <button class="btn btn-outline-secondary px-4 fw-bold" onclick="navCEPrev()">Previous</button>
-                                                    <button class="btn btn-primary px-5 fw-bold shadow-sm" onclick="navCENext()">Next</button>
+                                                    <button class="btn btn-outline-secondary px-5 py-3 fw-bold rounded-pill" onclick="navCEPrev()"><i class="bi bi-arrow-left me-2"></i>Previous</button>
+                                                    <button class="btn btn-primary px-5 py-3 fw-bold shadow-sm rounded-pill" onclick="navCENext()">Next<i class="bi bi-arrow-right ms-2"></i></button>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <!-- Right Pane: Testbook Style Sidebar -->
                                         <div class="col-lg-4">
-                                            <div class="exam-sidebar shadow-sm h-100 d-flex flex-column">
-                                                <div class="text-center mb-3 bg-white p-3 rounded border">
-                                                    <span class="d-block text-muted small fw-bold text-uppercase mb-1">Time Remaining</span>
-                                                    <div class="fs-2 fw-bold font-monospace text-danger" id="ce-timer">00:00</div>
+                                            <div class="exam-sidebar shadow-sm h-100 d-flex flex-column bg-white">
+                                                <div class="text-center mb-4 bg-light p-4 rounded-4 border">
+                                                    <span class="d-block text-secondary small fw-bold text-uppercase mb-2">Time Remaining</span>
+                                                    <div class="fs-1 fw-bold font-monospace text-danger" id="ce-timer">00:00</div>
                                                 </div>
                                                 
-                                                <div class="bg-white p-3 rounded border mb-3 flex-grow-1">
-                                                    <h6 class="fw-bold border-bottom pb-2">Question Palette: ${cat}</h6>
-                                                    <div class="palette-grid" id="ce-palette">
-                                                        <!-- Palette Nodes Generated by JS -->
-                                                    </div>
+                                                <div class="bg-white p-4 rounded-4 border mb-4 flex-grow-1 shadow-sm">
+                                                    <h6 class="fw-bold border-bottom pb-3 text-dark"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Question Palette</h6>
+                                                    <div class="palette-grid" id="ce-palette"></div>
                                                 </div>
                                                 
-                                                <div class="bg-white p-3 rounded border mb-3">
-                                                    <h6 class="fw-bold small mb-2 text-muted">Legend:</h6>
-                                                    <div class="d-flex justify-content-between small fw-medium">
+                                                <div class="bg-light p-4 rounded-4 border mb-4">
+                                                    <h6 class="fw-bold small mb-3 text-secondary text-uppercase">Legend:</h6>
+                                                    <div class="d-flex justify-content-between small fw-bold text-dark">
                                                         <div><span class="legend-box legend-correct" id="legend-green"></span> <span id="leg-g-txt">Correct</span></div>
                                                         <div><span class="legend-box legend-incorrect" id="legend-red"></span> <span id="leg-r-txt">Incorrect</span></div>
-                                                        <div><span class="legend-box legend-unattempted" style="background:#0d6efd" id="legend-blue"></span> <span id="leg-b-txt">Attempted</span></div>
+                                                        <div><span class="legend-box legend-unattempted" style="background:#3b82f6; border-color:#3b82f6" id="legend-blue"></span> <span id="leg-b-txt">Attempted</span></div>
                                                     </div>
                                                 </div>
                                                 
-                                                <button class="btn btn-success btn-lg w-100 fw-bold shadow mt-auto" id="ce-submit-btn" onclick="submitCustomExam()">Submit Test</button>
+                                                <button class="btn btn-success btn-lg w-100 fw-bold shadow-lg mt-auto py-3 rounded-pill" id="ce-submit-btn" onclick="submitCustomExam()"><i class="bi bi-check-circle-fill me-2"></i>Submit Final Test</button>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div id="ce-score-board" class="card shadow-lg border-success d-none mt-5 text-center p-5 rounded-4 bg-success bg-opacity-10" style="border-width: 2px !important;">
-                                        <h2 class="text-success fw-bold display-6 mb-4">Exam Completed!</h2>
+                                        <div class="display-1 text-success mb-3"><i class="bi bi-trophy-fill"></i></div>
+                                        <h2 class="text-success fw-bold display-5 mb-4">Exam Completed!</h2>
                                         <p class="fs-4 text-dark mb-3">Your Final Score:</p>
                                         <div class="display-1 fw-bold text-success mb-4" id="ce-final-score">0 / 0</div>
-                                        <p class="text-muted fs-5 lh-lg mb-4">You can now click on the question numbers in the palette above to view the detailed solutions and correct answers.</p>
-                                        <button class="btn btn-outline-success btn-lg px-5 rounded-pill fw-bold" onclick="quitExam()">Return to Category Hub</button>
+                                        <p class="text-secondary fs-5 lh-lg mb-4">Click on the question numbers in the palette above to view the detailed solutions and correct answers.</p>
+                                        <button class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow" onclick="quitExam()"><i class="bi bi-house-fill me-2"></i>Return to Category Hub</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TESTBOOK SPA ENGINE JS -->
                         <script>
-                            const allQuestionsData = JSON.parse('${safeCategoryDataString}');
+                            // 🚀 BUG FIX: Data injected directly as a JS array object
+                            const allQuestionsData = ${safeCategoryDataString};
+                            
                             let examQuestions = [];
                             let ceUserAnswers = {};
                             let currentQIndex = 0;
@@ -759,22 +762,19 @@ async function buildWedugoQuizSite() {
                             function startCustomExam() {
                                 const qCount = parseInt(document.getElementById('custom-q-count').value);
                                 
-                                // Shuffle and pick requested amount
                                 let shuffled = allQuestionsData.sort(() => 0.5 - Math.random());
                                 examQuestions = shuffled.slice(0, Math.min(qCount, shuffled.length));
                                 
                                 ceUserAnswers = {};
                                 currentQIndex = 0;
                                 isExamSubmitted = false;
-                                ceTimeLeft = examQuestions.length * 60; // 1 min per question
+                                ceTimeLeft = examQuestions.length * 60; 
                                 
-                                // UI Switch
                                 document.getElementById('setup-view').classList.add('d-none');
                                 document.getElementById('exam-view').classList.remove('d-none');
                                 document.getElementById('ce-score-board').classList.add('d-none');
                                 document.getElementById('ce-submit-btn').classList.remove('d-none');
                                 
-                                // Reset Legend labels for taking test
                                 document.getElementById('legend-green').style.backgroundColor = '#fff';
                                 document.getElementById('leg-g-txt').innerText = 'Unattempted';
                                 document.getElementById('legend-red').style.display = 'none';
@@ -794,7 +794,7 @@ async function buildWedugoQuizSite() {
                                 ceTimeLeft--;
                                 let m = Math.floor(ceTimeLeft / 60);
                                 let s = ceTimeLeft % 60;
-                                document.getElementById('ce-timer').innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                                document.getElementById('ce-timer').innerHTML = '<i class="bi bi-stopwatch me-2"></i>' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
                                 if (ceTimeLeft <= 0) {
                                     clearInterval(ceTimerInterval);
                                     submitCustomExam();
@@ -818,11 +818,9 @@ async function buildWedugoQuizSite() {
                                 currentQIndex = index;
                                 const q = examQuestions[index];
                                 
-                                // Update Palette Active State
                                 document.querySelectorAll('.q-node').forEach(n => n.classList.remove('active'));
                                 document.getElementById('node-' + index).classList.add('active');
                                 
-                                // Render Texts
                                 document.getElementById('ce-q-number').innerText = 'Question ' + (index + 1);
                                 document.getElementById('ce-q-text').innerText = q.question;
                                 
@@ -830,15 +828,13 @@ async function buildWedugoQuizSite() {
                                 opts.forEach(letter => {
                                     const btn = document.getElementById('ce-opt-' + letter);
                                     btn.innerText = letter + ') ' + q['answer' + (opts.indexOf(letter)+1)];
-                                    btn.className = 'btn option-btn'; // Reset
-                                    btn.disabled = isExamSubmitted; // Disable if submitted
+                                    btn.className = 'btn option-btn'; 
+                                    btn.disabled = isExamSubmitted; 
                                     
-                                    // Restore selected state during exam
                                     if (ceUserAnswers[index] === letter) {
                                         btn.classList.add('selected');
                                     }
                                     
-                                    // If submitted, show correct/incorrect colors
                                     if (isExamSubmitted) {
                                         const correctLetter = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
                                         if (letter === correctLetter) btn.classList.add('correct-show');
@@ -846,21 +842,20 @@ async function buildWedugoQuizSite() {
                                     }
                                 });
                                 
-                                // Solution Box Logic
                                 const solBox = document.getElementById('ce-solution-box');
                                 if (isExamSubmitted) {
                                     solBox.classList.remove('d-none');
                                     const correctLetter = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
                                     const title = document.getElementById('ce-result-title');
                                     if (ceUserAnswers[index] === correctLetter) {
-                                        solBox.className = 'alert mt-5 p-4 border rounded-4 alert-success border-success border-opacity-25';
-                                        title.innerText = '✨ Correct!';
+                                        solBox.className = 'alert mt-5 p-4 p-md-5 border rounded-4 alert-success border-success border-opacity-25';
+                                        title.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Correct!';
                                     } else if (!ceUserAnswers[index]) {
-                                        solBox.className = 'alert mt-5 p-4 border rounded-4 alert-warning border-warning border-opacity-25';
-                                        title.innerText = '⚠️ Unanswered. Correct: ' + correctLetter;
+                                        solBox.className = 'alert mt-5 p-4 p-md-5 border rounded-4 alert-warning border-warning border-opacity-25';
+                                        title.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Unanswered. Correct: ' + correctLetter;
                                     } else {
-                                        solBox.className = 'alert mt-5 p-4 border rounded-4 alert-danger border-danger border-opacity-25';
-                                        title.innerText = '❌ Incorrect. Correct: ' + correctLetter;
+                                        solBox.className = 'alert mt-5 p-4 p-md-5 border rounded-4 alert-danger border-danger border-opacity-25';
+                                        title.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Incorrect. Correct: ' + correctLetter;
                                     }
                                     document.getElementById('ce-solution-text').innerText = q.answerdetail || 'Standard foundational principle.';
                                 } else {
@@ -872,12 +867,10 @@ async function buildWedugoQuizSite() {
                                 if (isExamSubmitted) return;
                                 ceUserAnswers[currentQIndex] = letter;
                                 
-                                // Color button
                                 const opts = ['A', 'B', 'C', 'D'];
                                 opts.forEach(l => document.getElementById('ce-opt-' + l).classList.remove('selected'));
                                 document.getElementById('ce-opt-' + letter).classList.add('selected');
                                 
-                                // Mark palette as attempted (blue)
                                 document.getElementById('node-' + currentQIndex).classList.add('attempted');
                             }
 
@@ -901,7 +894,7 @@ async function buildWedugoQuizSite() {
                                     const correct = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
                                     const user = ceUserAnswers[i];
                                     const node = document.getElementById('node-' + i);
-                                    node.classList.remove('attempted'); // Clear blue
+                                    node.classList.remove('attempted'); 
                                     
                                     if (user === correct) {
                                         score++;
@@ -911,20 +904,18 @@ async function buildWedugoQuizSite() {
                                     }
                                 });
                                 
-                                // Update Legend
-                                document.getElementById('legend-green').style.backgroundColor = '#198754';
+                                document.getElementById('legend-green').style.backgroundColor = '#22c55e';
+                                document.getElementById('legend-green').style.borderColor = '#22c55e';
                                 document.getElementById('leg-g-txt').innerText = 'Correct';
                                 document.getElementById('legend-red').style.display = 'inline-block';
                                 document.getElementById('leg-r-txt').style.display = 'inline';
                                 document.getElementById('leg-b-txt').innerText = 'Unattempted';
                                 document.getElementById('legend-blue').style.backgroundColor = '#fff';
-                                document.getElementById('legend-blue').style.border = '1px solid #ccc';
+                                document.getElementById('legend-blue').style.borderColor = '#cbd5e1';
                                 
-                                // Show Score
                                 document.getElementById('ce-score-board').classList.remove('d-none');
                                 document.getElementById('ce-final-score').innerText = score + " / " + examQuestions.length;
                                 
-                                // Re-render current to show solution
                                 renderCEQuestion(currentQIndex);
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }
@@ -944,14 +935,14 @@ async function buildWedugoQuizSite() {
 
                 categoriesGridHtml += `
                     <div class="col-md-6 col-lg-4">
-                        <div class="card shadow-sm h-100 card-hover border-light rounded-4 overflow-hidden bg-white">
+                        <div class="card shadow-sm h-100 card-hover border border-light rounded-4 overflow-hidden bg-white">
                             <div class="card-body p-4 p-xl-5 text-center d-flex flex-column justify-content-center">
                                 <div class="mb-4 bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
-                                    <span class="fs-2 text-primary">⚙️</span>
+                                    <i class="bi bi-display fs-1 text-primary"></i>
                                 </div>
-                                <h3 class="h4 fw-bold mb-2 text-dark">${cat}</h3>
-                                <p class="text-muted mb-4 fs-6">Custom Testbook-style exam engine with ${quizzes.length} highly relevant MCQs.</p>
-                                <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-bold py-3 rounded-pill">Launch Exam Engine</a>
+                                <h3 class="h4 fw-bold mb-3 text-dark">${cat}</h3>
+                                <p class="text-secondary mb-4 fs-6 lh-lg">Custom Testbook-style exam engine with ${quizzes.length} highly relevant MCQs.</p>
+                                <a href="../category/${safeName}/index.html" class="btn btn-outline-primary mt-auto w-100 fw-bold py-3 rounded-pill shadow-sm">Launch Exam Engine</a>
                             </div>
                         </div>
                     </div>
@@ -970,7 +961,7 @@ async function buildWedugoQuizSite() {
                 ${getBreadcrumbs(1, '', '', 'All Categories')}
                 <div class="mb-5 text-center py-5">
                     <h1 class="display-4 fw-bold mb-4 text-dark">Explore Knowledge Topics</h1>
-                    <p class="lead text-muted col-lg-8 mx-auto lh-lg">Select a subject below to launch dynamic custom exams, timed mock sets, and detailed educational explanations.</p>
+                    <p class="lead text-secondary col-lg-8 mx-auto lh-lg">Select a subject below to launch dynamic custom exams, timed mock sets, and detailed educational explanations.</p>
                 </div>
                 ${categoriesGridHtml}
             `;
@@ -983,19 +974,19 @@ async function buildWedugoQuizSite() {
             const aboutContent = `
                 ${getBreadcrumbs(1, '', '', 'About Us')}
                 <div class="card shadow-sm p-4 p-md-5 border-light rounded-4 bg-white">
-                    <h1 class="fw-bold text-primary mb-4 display-6">About Wedugo Education</h1>
+                    <h1 class="fw-bold text-primary mb-4 display-5"><i class="bi bi-building-fill-check me-3"></i>About Wedugo Education</h1>
                     <p class="lead text-dark lh-base mb-5">Welcome to Wedugo Education, your premier destination for practicing and mastering a diverse range of academic and competitive subjects.</p>
-                    <div class="row g-5">
+                    <div class="row g-5 mt-2">
                         <div class="col-md-6">
-                            <h3 class="h4 fw-bold mb-3">Our Mission</h3>
-                            <p class="text-muted lh-lg fs-6">Our mission is to provide accessible, high-quality multiple-choice questions (MCQs) and dynamic testing engines to aspirants across the globe.</p>
+                            <h3 class="h4 fw-bold mb-3 text-dark"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Our Mission</h3>
+                            <p class="text-secondary lh-lg fs-6">Our mission is to provide accessible, high-quality multiple-choice questions (MCQs) and dynamic testing engines to aspirants across the globe.</p>
                         </div>
                         <div class="col-md-6">
-                            <h3 class="h4 fw-bold mb-3">What We Offer</h3>
-                            <ul class="text-muted mb-0 lh-lg fs-6">
-                                <li><strong>Dynamic Exam Engine:</strong> Choose how many questions you want to simulate real testing environments.</li>
-                                <li><strong>Massive Question Bank:</strong> Over 50,000 carefully curated questions.</li>
-                                <li><strong>Detailed Explanations:</strong> Learn the 'why' behind the correct answers.</li>
+                            <h3 class="h4 fw-bold mb-3 text-dark"><i class="bi bi-layers-fill text-success me-2"></i>What We Offer</h3>
+                            <ul class="text-secondary mb-0 lh-lg fs-6 list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Dynamic Exam Engine:</strong> Choose how many questions you want to simulate real testing environments.</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Massive Question Bank:</strong> Over 50,000 carefully curated questions.</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Detailed Explanations:</strong> Learn the 'why' behind the correct answers.</li>
                             </ul>
                         </div>
                     </div>
@@ -1008,13 +999,13 @@ async function buildWedugoQuizSite() {
         globallyGeneratedSets.slice(0, 6).forEach(set => {
             topSetsHtml += `
                 <div class="col-md-6 col-lg-4">
-                    <a href="${set.link}" class="card shadow-sm border-light rounded-4 card-hover h-100 text-decoration-none bg-white">
+                    <a href="${set.link}" class="card shadow-sm border border-light rounded-4 card-hover h-100 text-decoration-none bg-white">
                         <div class="card-body p-4 d-flex flex-column">
-                            <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 w-auto align-self-start">${set.category}</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 w-auto align-self-start border border-primary-subtle"><i class="bi bi-bookmark-fill me-1"></i>${set.category}</span>
                             <h3 class="h5 fw-bold text-dark mb-4 lh-base">Comprehensive Mock Test ${set.setNumber}</h3>
                             <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3">
-                                <span class="text-muted small fw-medium">10 Questions</span>
-                                <span class="btn btn-sm btn-outline-primary fw-bold rounded-pill">Start Test &rarr;</span>
+                                <span class="text-secondary small fw-bold"><i class="bi bi-ui-checks me-1"></i>10 Questions</span>
+                                <span class="btn btn-sm btn-light text-primary fw-bold rounded-pill shadow-sm">Start Test<i class="bi bi-arrow-right ms-2"></i></span>
                             </div>
                         </div>
                     </a>
@@ -1025,33 +1016,33 @@ async function buildWedugoQuizSite() {
 
         masterPageTasks.push(async () => {
             const homeContent = `
-                <header class="text-center py-5 mb-5 bg-white rounded-5 shadow-sm border border-light px-4 mt-3" style="background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);">
-                    <span class="badge bg-primary bg-opacity-10 text-primary mb-4 px-4 py-2 rounded-pill fs-6 border border-primary-subtle">New Custom Exam Engines Available</span>
-                    <h1 class="display-4 fw-bold text-dark mb-4 px-lg-5">Master Your Exams with Wedugo Education</h1>
-                    <p class="col-lg-8 mx-auto fs-5 text-muted mb-5 lh-lg">Challenge yourself with dynamic, user-controlled exam environments. Select your subject, choose your question count, and test your knowledge against our 50,000+ question database.</p>
+                <header class="text-center py-5 mb-5 bg-white rounded-5 shadow-sm border border-light px-4 mt-3 position-relative overflow-hidden" style="background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+                    <span class="badge bg-danger bg-opacity-10 text-danger mb-4 px-4 py-2 rounded-pill fs-6 border border-danger-subtle"><i class="bi bi-stars me-2"></i>New Custom Exam Engines Available</span>
+                    <h1 class="display-3 fw-bold text-dark mb-4 px-lg-5 tracking-tight">Master Your Exams with Wedugo Education</h1>
+                    <p class="col-lg-8 mx-auto fs-5 text-secondary mb-5 lh-lg">Challenge yourself with dynamic, user-controlled exam environments. Select your subject, choose your question count, and test your knowledge against our 50,000+ question database.</p>
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
-                        <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 py-3 shadow-lg fw-bold rounded-pill">Launch Exam Engine</a>
-                        <a href="#latest" class="btn btn-outline-dark btn-lg px-5 py-3 shadow-sm fw-bold rounded-pill bg-white">Try Latest Sets</a>
+                        <a href="./categories/index.html" class="btn btn-primary btn-lg px-5 py-3 shadow-lg fw-bold rounded-pill"><i class="bi bi-lightning-charge-fill me-2"></i>Launch Exam Engine</a>
+                        <a href="#latest" class="btn btn-white border btn-lg px-5 py-3 shadow-sm fw-bold rounded-pill text-dark"><i class="bi bi-clock-history me-2"></i>Try Latest Sets</a>
                     </div>
                 </header>
                 
-                <div class="ad-container text-center text-muted small mb-5">
+                <div class="ad-container shadow-sm border-0">
                     <ins class="adsbygoogle" style="display:block; width:100%;" data-ad-client="ca-pub-5947676189341600" data-ad-format="auto" data-full-width-responsive="true"></ins>
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
                 
                 <div id="latest" class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pt-5">
                     <div>
-                        <h2 class="display-6 fw-bold mb-2 text-dark">Recently Added Mock Tests</h2>
-                        <p class="text-muted mb-0 fs-5">Test your knowledge immediately with our latest timed exam sets.</p>
+                        <h2 class="display-6 fw-bold mb-2 text-dark"><i class="bi bi-fire text-danger me-2"></i>Recently Added Mock Tests</h2>
+                        <p class="text-secondary mb-0 fs-5">Test your knowledge immediately with our latest timed exam sets.</p>
                     </div>
-                    <a href="./categories/index.html" class="btn btn-outline-primary fw-bold rounded-pill px-4 mt-3 mt-md-0">View All Categories &rarr;</a>
+                    <a href="./categories/index.html" class="btn btn-outline-primary fw-bold rounded-pill px-4 py-2 mt-3 mt-md-0 shadow-sm">View All Categories<i class="bi bi-arrow-right ms-2"></i></a>
                 </div>
                 
                 ${topSetsHtml}
                 
-                <div class="text-center mt-5 mb-5">
-                    <a href="./categories/index.html" class="btn btn-dark btn-lg px-5 py-3 fw-bold rounded-pill shadow-sm">Browse All Live Exams & Sets</a>
+                <div class="text-center mt-5 mb-5 pt-4 border-top">
+                    <a href="./categories/index.html" class="btn btn-dark btn-lg px-5 py-3 fw-bold rounded-pill shadow-lg"><i class="bi bi-collection-fill me-2"></i>Browse All Live Exams & Sets</a>
                 </div>
             `;
             await fsAsync.writeFile(path.join(distDir, 'index.html'), getHtmlShell('Free Custom Exam Engines & Study Guides', homeContent, 0, "", false));
@@ -1078,7 +1069,7 @@ async function buildWedugoQuizSite() {
             }
         });
 
-        console.log("✅ Build Complete (AdSense Ready: Custom Live Exam SPA + NoIndex Thin Pages)");
+        console.log("✅ Build Complete (Premium Modern UI + Bug Fixes Active)");
     } catch (error) {
         console.error("Build failed:", error);
     }

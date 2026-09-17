@@ -30,7 +30,7 @@ jobs:
           node-version: '24'
 
       - name: Generate Pages from Google Sheet
-        run: node build.js && node build-blog.js
+        run: node build.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

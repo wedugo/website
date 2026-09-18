@@ -51,6 +51,16 @@ function chunkArray(array, size) {
 }
 
 // ==========================================
+// HELPER FUNCTIONS
+// ==========================================
+function getDifficultyData(questionStr) {
+    const len = (questionStr || "").length;
+    if (len < 50) return { label: 'Easy', time: '30 sec', color: 'success' };
+    if (len > 120) return { label: 'Hard', time: '90 sec', color: 'danger' };
+    return { label: 'Medium', time: '60 sec', color: 'warning' };
+}
+
+// ==========================================
 // ADVERTISEMENT & UI COMPONENTS
 // ==========================================
 function getAdBannerHtml(label = "Advertisement") {
@@ -118,6 +128,7 @@ function getNavbar(depth) {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mcqs/index.html"><i class="bi bi-list-check me-1"></i>MCQs</a></li>
                     <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="${prefix}/custom-exam/index.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/topic/index.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/about/index.html"><i class="bi bi-info-circle me-1"></i>About</a></li>
                 </ul>
             </div>
         </div>
@@ -143,7 +154,7 @@ function getFooter(depth) {
     </footer>`;
 }
 
-// 🟢 THIN CONTENT MITIGATION & HTML SHELL
+// 🟢 THIN CONTENT MITIGATION & HTML SHELL & NEW GA TAG
 function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = false) {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
@@ -155,9 +166,15 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
 <head>
     <meta charset="UTF-8">
     ${metaRobots}
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-23NQJXPC86"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-23NQJXPC86');</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G3TY8XCR55"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-G3TY8XCR55');
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${displayTitle}</title>
     <meta name="description" content="${cleanDesc}">
     <link rel="icon" href="${prefix}/main_images/icon.png" type="image/png">
@@ -186,22 +203,35 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
         .option-btn.incorrect-show { background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .timer-header { position: sticky; top: 70px; z-index: 1020; border-bottom: 4px solid #3b82f6; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
 
-        /* Custom Exam Portal CSS (TCS iON Style) */
-        .portal-header { border-bottom: 1px solid #ddd; background: #fff; padding: 10px 20px; font-weight: bold; }
-        .marks-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; color: #fff;}
-        .marks-plus { background: #22c55e; } .marks-minus { background: #ef4444; }
-        .q-palette-btn { width: 40px; height: 40px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; margin: 4px; border: 1px solid #cbd5e1; cursor: pointer; color: #333; background: #fff;}
+        /* Custom Exam Portal CSS (App-Like Style) */
+        .app-header { background-color: #1e293b; color: #fff; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; }
+        .app-subheader { background-color: #f8fafc; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; color: #64748b; }
+        .q-circle { width: 28px; height: 28px; background-color: #94a3b8; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .opt-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 15px; background: #fff; transition: all 0.2s; font-size: 1.05rem; }
+        .opt-card:hover { border-color: #cbd5e1; background-color: #f8fafc; }
+        .opt-card.selected { border-color: #3b82f6; background-color: #eff6ff; color: #1d4ed8;}
+        .opt-card input { display: none; }
+        .opt-num { font-weight: bold; color: #94a3b8; }
+        
+        .bottom-action-bar { padding: 12px 15px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 10px; }
+        .q-palette-btn { width: 35px; height: 35px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; margin: 4px; border: 1px solid #cbd5e1; cursor: pointer; color: #333; background: #fff;}
         .q-palette-btn.answered { background: #22c55e; color: #fff; border-color: #22c55e; }
         .q-palette-btn.not-answered { background: #ef4444; color: #fff; border-color: #ef4444; }
         .q-palette-btn.marked { background: #a855f7; color: #fff; border-color: #a855f7; }
         .q-palette-btn.marked-answered { background: #a855f7; color: #fff; border-color: #a855f7; position: relative; }
-        .q-palette-btn.marked-answered::after { content: '✔'; position: absolute; bottom: -4px; right: -2px; color: #22c55e; font-size: 14px; background: #fff; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid #22c55e;}
+        .q-palette-btn.marked-answered::after { content: '✔'; position: absolute; bottom: -4px; right: -2px; color: #22c55e; font-size: 10px; background: #fff; border-radius: 50%; width: 12px; height: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #22c55e;}
         .q-palette-btn.active-q { border: 2px solid #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        .exam-radio { transform: scale(1.3); margin-right: 15px; cursor: pointer; }
-        .exam-option-label { cursor: pointer; display: flex; align-items: center; padding: 12px; border-radius: 8px; transition: background 0.2s; border: 1px solid transparent;}
-        .exam-option-label:hover { background: #f1f5f9; border-color: #cbd5e1; }
-        .exam-sidebar { background: #e0f2fe; border-left: 2px solid #bae6fd; height: 100%; display: flex; flex-direction: column;}
-        .exam-footer-bar { position: sticky; bottom: 0; background: #f8fafc; border-top: 1px solid #cbd5e1; padding: 15px; z-index: 100;}
+        
+        .exam-sidebar { background: #f8fafc; border-left: 1px solid #e2e8f0; height: 100%; display: flex; flex-direction: column; }
+        
+        @media (max-width: 991px) {
+            #exam-panel .row.g-0 { flex-direction: column; }
+            .bottom-action-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1050; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+            .mobile-content-area { padding-bottom: 80px; }
+            .exam-sidebar { display: none; }
+            .exam-sidebar.show-mobile { display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; background: #fff; border-left: none;}
+        }
     </style>
 </head>
 <body>
@@ -412,7 +442,7 @@ async function buildUnifiedSite() {
                             </div>
                             <div class="col-md-6 col-lg-3">
                                 <label class="form-label fw-bold text-danger">5. Negative Marking (-)</label>
-                                <input type="number" id="ce-neg-mark" class="form-control form-control-lg fw-bold text-danger" value="0.25" step="0.25">
+                                <input type="number" id="ce-neg-mark" class="form-control form-control-lg fw-bold text-danger" value="0.33" step="0.01">
                             </div>
                         </div>
 
@@ -422,70 +452,97 @@ async function buildUnifiedSite() {
                     </div>
                 </div>
 
-                <!-- PORTAL PANEL (TCS iON Style) -->
-                <div id="exam-panel" class="d-none">
-                    <div class="card border border-dark rounded-0 shadow-lg overflow-hidden" style="min-height: 80vh;">
-                        <div class="portal-header d-flex flex-wrap justify-content-between align-items-center">
-                            <div class="fs-5">Test Portal</div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div><span class="marks-badge marks-plus" id="ui-pos-m">+1</span> <span class="marks-badge marks-minus" id="ui-neg-m">-0.25</span></div>
-                                <div class="bg-light px-3 py-1 border rounded text-danger fw-bold fs-5 font-monospace">Time Left: <span id="ui-timer">00:00</span></div>
+                <!-- PORTAL PANEL (MOBILE APP-LIKE STYLE) -->
+                <div id="exam-panel" class="d-none w-100 position-absolute top-0 start-0 bg-white" style="min-height: 100vh; z-index: 2000;">
+                    
+                    <!-- Mobile App Header -->
+                    <div class="app-header shadow-sm">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-pause-circle fs-3" style="cursor:pointer;" onclick="if(confirm('Quit Exam?')) location.reload();"></i>
+                            <div class="fw-bold fs-5 font-monospace" id="ui-timer">00:00:00</div>
+                        </div>
+                        <div class="fw-bold text-truncate px-2" style="max-width: 50%;">Custom Exam Portal</div>
+                        <i class="bi bi-list fs-1 cursor-pointer" onclick="document.getElementById('mobile-sidebar').classList.toggle('show-mobile')"></i>
+                    </div>
+
+                    <!-- Sub-Header -->
+                    <div class="app-subheader">
+                        <div class="q-circle" id="ui-q-circle">1</div>
+                        <div class="text-muted fw-medium d-none d-sm-block"><i class="bi bi-stopwatch"></i> <span id="ui-q-time">00:00</span></div>
+                        <div class="text-success fw-bold ms-auto ms-sm-0" id="ui-pos-m">+1.0</div>
+                        <div class="text-danger fw-bold me-auto me-sm-0" id="ui-neg-m">-0.33</div>
+                        <div class="d-flex gap-3 fs-5 text-muted">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <i class="bi bi-star"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-0">
+                        <!-- Left: Questions Area -->
+                        <div class="col-lg-8 col-xl-9 mobile-content-area">
+                            <div class="p-3 p-md-5 overflow-auto" style="height: calc(100vh - 180px);">
+                                <div class="mb-2 text-muted fw-bold small" id="ui-q-cat">Category</div>
+                                <h4 class="mb-4 text-dark lh-base fw-bold" style="line-height: 1.6 !important;" id="ui-q-text">Question loading...</h4>
+                                
+                                <div class="d-flex flex-column gap-2" id="ui-options">
+                                    <label class="opt-card" id="card-opt-A">
+                                        <span class="opt-num">1.</span>
+                                        <input type="radio" name="opt" value="A" class="exam-radio"> 
+                                        <span id="ui-opt-a" class="flex-grow-1"></span>
+                                    </label>
+                                    <label class="opt-card" id="card-opt-B">
+                                        <span class="opt-num">2.</span>
+                                        <input type="radio" name="opt" value="B" class="exam-radio"> 
+                                        <span id="ui-opt-b" class="flex-grow-1"></span>
+                                    </label>
+                                    <label class="opt-card" id="card-opt-C">
+                                        <span class="opt-num">3.</span>
+                                        <input type="radio" name="opt" value="C" class="exam-radio"> 
+                                        <span id="ui-opt-c" class="flex-grow-1"></span>
+                                    </label>
+                                    <label class="opt-card" id="card-opt-D">
+                                        <span class="opt-num">4.</span>
+                                        <input type="radio" name="opt" value="D" class="exam-radio"> 
+                                        <span id="ui-opt-d" class="flex-grow-1"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Action Bar (Fixed on Mobile) -->
+                            <div class="bottom-action-bar flex-wrap align-items-center">
+                                <div class="d-flex gap-2 mb-2 mb-sm-0">
+                                    <button class="btn btn-outline-secondary px-3 py-2 fw-bold bg-white" id="btn-mark-next" style="font-size: 0.85rem;">Mark & Next</button>
+                                    <button class="btn btn-outline-secondary px-3 py-2 fw-bold bg-white" id="btn-clear" style="font-size: 0.85rem;">Clear Response</button>
+                                </div>
+                                <button class="btn btn-primary px-4 py-2 fw-bold" id="btn-save-next" style="font-size: 0.95rem; width: 140px;">Save & Next</button>
                             </div>
                         </div>
-                        
-                        <div class="row g-0 flex-grow-1">
-                            <!-- Left: Questions Area -->
-                            <div class="col-lg-9 d-flex flex-column position-relative bg-white">
-                                <div class="p-3 border-bottom bg-light fw-bold fs-5 d-flex justify-content-between">
-                                    <span id="ui-q-num">Question No. 1</span>
-                                    <span id="ui-q-cat" class="badge bg-secondary"></span>
-                                </div>
-                                
-                                <div class="p-4 p-md-5 flex-grow-1 overflow-auto" style="max-height: 60vh;">
-                                    <h4 class="mb-4 text-dark lh-base fw-bold" id="ui-q-text">Question loading...</h4>
-                                    <div class="d-flex flex-column gap-2" id="ui-options">
-                                        <label class="exam-option-label"><input type="radio" name="opt" value="A" class="exam-radio"> <span id="ui-opt-a" class="fs-5"></span></label>
-                                        <label class="exam-option-label"><input type="radio" name="opt" value="B" class="exam-radio"> <span id="ui-opt-b" class="fs-5"></span></label>
-                                        <label class="exam-option-label"><input type="radio" name="opt" value="C" class="exam-radio"> <span id="ui-opt-c" class="fs-5"></span></label>
-                                        <label class="exam-option-label"><input type="radio" name="opt" value="D" class="exam-radio"> <span id="ui-opt-d" class="fs-5"></span></label>
-                                    </div>
-                                </div>
 
-                                <div class="exam-footer-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                    <div>
-                                        <button class="btn btn-outline-dark fw-bold px-4" id="btn-mark-next">Mark for Review & Next</button>
-                                        <button class="btn btn-outline-danger fw-bold px-4 ms-2" id="btn-clear">Clear Response</button>
-                                    </div>
-                                    <button class="btn btn-success fw-bold px-5" id="btn-save-next">Save & Next <i class="bi bi-chevron-right"></i></button>
+                        <!-- Right: Sidebar Palette -->
+                        <div class="col-lg-4 col-xl-3 exam-sidebar shadow-lg" id="mobile-sidebar">
+                            <div class="p-3 border-bottom d-flex align-items-center gap-3 bg-white justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person-circle fs-2 text-secondary"></i>
+                                    <div class="fw-bold text-dark lh-sm">Candidate<br><small class="text-muted fw-normal">Custom Exam</small></div>
+                                </div>
+                                <i class="bi bi-x-lg fs-3 d-lg-none cursor-pointer" onclick="document.getElementById('mobile-sidebar').classList.remove('show-mobile')"></i>
+                            </div>
+                            <div class="p-3 border-bottom bg-white small fw-bold">
+                                <div class="row g-2 text-center mb-2">
+                                    <div class="col-6"><span class="q-palette-btn answered" style="width:25px;height:25px;font-size:12px;" id="count-ans">0</span> Answered</div>
+                                    <div class="col-6"><span class="q-palette-btn not-answered" style="width:25px;height:25px;font-size:12px;" id="count-not-ans">0</span> Not Answered</div>
+                                </div>
+                                <div class="row g-2 text-center">
+                                    <div class="col-6"><span class="q-palette-btn not-visited" style="width:25px;height:25px;font-size:12px;" id="count-not-vis">0</span> Not Visited</div>
+                                    <div class="col-6"><span class="q-palette-btn marked" style="width:25px;height:25px;font-size:12px;" id="count-mark">0</span> Marked</div>
                                 </div>
                             </div>
-
-                            <!-- Right: Sidebar Palette -->
-                            <div class="col-lg-3 exam-sidebar">
-                                <div class="p-3 border-bottom d-flex align-items-center gap-3 bg-white">
-                                    <i class="bi bi-person-circle fs-1 text-secondary"></i>
-                                    <div>
-                                        <div class="fw-bold text-dark">Candidate</div>
-                                        <div class="small text-muted">Custom Exam</div>
-                                    </div>
-                                </div>
-                                <div class="p-3 border-bottom bg-white small fw-bold">
-                                    <div class="row g-2 text-center mb-2">
-                                        <div class="col-6"><span class="q-palette-btn answered" style="width:25px;height:25px;font-size:12px;" id="count-ans">0</span> Answered</div>
-                                        <div class="col-6"><span class="q-palette-btn not-answered" style="width:25px;height:25px;font-size:12px;" id="count-not-ans">0</span> Not Answered</div>
-                                    </div>
-                                    <div class="row g-2 text-center">
-                                        <div class="col-6"><span class="q-palette-btn not-visited" style="width:25px;height:25px;font-size:12px;" id="count-not-vis">0</span> Not Visited</div>
-                                        <div class="col-6"><span class="q-palette-btn marked" style="width:25px;height:25px;font-size:12px;" id="count-mark">0</span> Marked</div>
-                                    </div>
-                                </div>
-                                <div class="p-3 flex-grow-1 overflow-auto bg-light">
-                                    <div class="fw-bold mb-3 text-secondary">SECTION : Custom Selection</div>
-                                    <div id="ui-palette" class="d-flex flex-wrap"></div>
-                                </div>
-                                <div class="p-3 bg-white border-top text-center mt-auto">
-                                    <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" id="btn-submit-exam">Submit Exam</button>
-                                </div>
+                            <div class="p-3 flex-grow-1 overflow-auto bg-light">
+                                <div class="fw-bold mb-3 text-secondary border-bottom pb-2">Questions Palette</div>
+                                <div id="ui-palette" class="d-flex flex-wrap"></div>
+                            </div>
+                            <div class="p-3 bg-white border-top text-center mt-auto">
+                                <button class="btn btn-primary w-100 fw-bold py-3 shadow-sm" id="btn-submit-exam">Submit Final Exam</button>
                             </div>
                         </div>
                     </div>
@@ -522,9 +579,9 @@ async function buildUnifiedSite() {
                 <script>
                     let allDB = [];
                     let examData = [];
-                    let userState = []; // {status: 'not-visited'|'not-answered'|'answered'|'marked'|'marked-answered', selected: null}
+                    let userState = []; // {status, selected}
                     let currentQ = 0;
-                    let pMarks = 1, nMarks = 0.25;
+                    let pMarks = 1, nMarks = 0.33;
                     let timerInterval, timeLeft = 0;
                     
                     fetch('quiz-data.json').then(r=>r.json()).then(data => {
@@ -544,7 +601,7 @@ async function buildUnifiedSite() {
                         
                         const reqQCount = parseInt(document.getElementById('ce-qcount').value) || 20;
                         pMarks = parseFloat(document.getElementById('ce-pos-mark').value) || 1;
-                        nMarks = parseFloat(document.getElementById('ce-neg-mark').value) || 0.25;
+                        nMarks = parseFloat(document.getElementById('ce-neg-mark').value) || 0.33;
                         const reqTime = parseInt(document.getElementById('ce-time').value) || 20;
                         
                         filteredDB.sort(() => 0.5 - Math.random());
@@ -557,6 +614,10 @@ async function buildUnifiedSite() {
                         document.getElementById('ui-neg-m').innerText = '-' + nMarks;
                         document.getElementById('setup-panel').classList.add('d-none');
                         document.getElementById('exam-panel').classList.remove('d-none');
+                        
+                        // Hide Navbar and Footer for Full Screen Exam Mode
+                        document.querySelector('nav.navbar').style.display = 'none';
+                        document.querySelector('footer').style.display = 'none';
                         
                         buildPalette();
                         renderQ(0);
@@ -572,8 +633,10 @@ async function buildUnifiedSite() {
 
                     function updateTimerUI() {
                         if(timeLeft < 0) return;
-                        let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-                        document.getElementById('ui-timer').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
+                        let h = Math.floor(timeLeft / 3600);
+                        let m = Math.floor((timeLeft % 3600) / 60);
+                        let s = timeLeft % 60;
+                        document.getElementById('ui-timer').innerText = (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
                     }
 
                     function buildPalette() {
@@ -584,7 +647,10 @@ async function buildUnifiedSite() {
                             btn.className = 'q-palette-btn not-visited';
                             btn.id = 'pal-' + i;
                             btn.innerText = i + 1;
-                            btn.onclick = () => jumpToQ(i);
+                            btn.onclick = () => { 
+                                jumpToQ(i); 
+                                if(window.innerWidth < 991) document.getElementById('mobile-sidebar').classList.remove('show-mobile'); 
+                            };
                             pal.appendChild(btn);
                         });
                         updatePaletteStats();
@@ -611,17 +677,22 @@ async function buildUnifiedSite() {
                     function renderQ(idx) {
                         currentQ = idx;
                         const q = examData[idx];
-                        document.getElementById('ui-q-num').innerText = 'Question No. ' + (idx + 1);
+                        document.getElementById('ui-q-circle').innerText = (idx + 1);
                         document.getElementById('ui-q-cat').innerText = q.c;
                         document.getElementById('ui-q-text').innerText = q.q;
                         
                         const opts = ['A', 'B', 'C', 'D'];
                         const radios = document.querySelectorAll('.exam-radio');
+                        
+                        document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
                         radios.forEach(r => r.checked = false);
                         
                         opts.forEach((letter, i) => {
                             document.getElementById('ui-opt-' + letter.toLowerCase()).innerText = q.o[i];
-                            if(userState[idx].selected === letter) radios[i].checked = true;
+                            if(userState[idx].selected === letter) {
+                                radios[i].checked = true;
+                                document.getElementById('card-opt-' + letter).classList.add('selected');
+                            }
                         });
                         
                         updatePaletteStats();
@@ -633,6 +704,15 @@ async function buildUnifiedSite() {
                         if(userState[idx].status === 'not-visited') userState[idx].status = 'not-answered';
                         updatePaletteStats();
                     }
+
+                    // Card Click to Select Option
+                    document.querySelectorAll('.opt-card').forEach(card => {
+                        card.addEventListener('click', function() {
+                            document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
+                            this.classList.add('selected');
+                            this.querySelector('input').checked = true;
+                        });
+                    });
 
                     function getSelectedOption() {
                         const selected = document.querySelector('.exam-radio:checked');
@@ -657,6 +737,7 @@ async function buildUnifiedSite() {
 
                     document.getElementById('btn-clear').addEventListener('click', () => {
                         document.querySelectorAll('.exam-radio').forEach(r => r.checked = false);
+                        document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
                         userState[currentQ].selected = null;
                     });
 
@@ -666,7 +747,14 @@ async function buildUnifiedSite() {
 
                     function submitExam() {
                         clearInterval(timerInterval);
+                        
+                        // Show Navbar/Footer again
+                        document.querySelector('nav.navbar').style.display = 'block';
+                        document.querySelector('footer').style.display = 'block';
+                        
                         document.getElementById('exam-panel').classList.add('d-none');
+                        document.getElementById('exam-panel').classList.remove('position-absolute'); // remove full screen behavior
+                        
                         document.getElementById('result-panel').classList.remove('d-none');
                         
                         let c=0, ic=0, ua=0;
@@ -1039,6 +1127,7 @@ async function buildUnifiedSite() {
                             }
                         </script>
                     `;
+                    // 🔥 THIN CONTENT FIX: isThinPage = true
                     await fsAsync.writeFile(path.join(singleMcqDir, 'index.html'), getHtmlShell(`Q${q.quizId}: ${cat} MCQ`, mcqContent, 3, q.question, true));
                 });
             });
@@ -1349,7 +1438,7 @@ async function buildUnifiedSite() {
 
         await generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap);
 
-        console.log("✅ BUILD COMPLETE! Custom Exam Builder, Detailed Legal Policies, and Unified Navigation added.");
+        console.log("✅ BUILD COMPLETE!");
     } catch (error) { console.error("Build failed:", error); }
 }
 

@@ -329,7 +329,6 @@ async function buildUnifiedSite() {
             q.quizId = q.id || index; q.matchedCategory = matchedCat;
             quizCategoriesMap[matchedCat].push(q);
 
-            // Compress data for custom exam engine
             globalQuizDataForEngine.push({
                 c: matchedCat,
                 q: q.question,
@@ -355,13 +354,12 @@ async function buildUnifiedSite() {
         const masterPageTasks = [];
 
         // ======================================
-        // 2. GENERATE CUSTOM EXAM ENGINE (NEW!)
+        // 2. GENERATE CUSTOM EXAM ENGINE
         // ======================================
         console.log("2. Generating Custom Mock Test Engine...");
         const customExamDir = path.join(distDir, 'custom-exam');
         fs.mkdirSync(customExamDir, { recursive: true });
         
-        // Write lightweight JSON database for the client side engine
         fs.writeFileSync(path.join(customExamDir, 'quiz-data.json'), JSON.stringify(globalQuizDataForEngine));
 
         masterPageTasks.push(async () => {
@@ -383,7 +381,13 @@ async function buildUnifiedSite() {
                         
                         <div class="row g-4">
                             <div class="col-12">
-                                <label class="form-label fw-bold">1. Select Categories (Multiple allowed)</label>
+                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                                    <label class="form-label fw-bold mb-0">1. Select Categories (Multiple allowed)</label>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 me-2 fw-bold" onclick="document.querySelectorAll('.cat-checkbox').forEach(cb => cb.checked = true)"><i class="bi bi-check-all me-1"></i>Select All</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="document.querySelectorAll('.cat-checkbox').forEach(cb => cb.checked = false)"><i class="bi bi-x me-1"></i>Deselect All</button>
+                                    </div>
+                                </div>
                                 <div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">
                                     ${CATEGORY_LIST.map((cat, i) => `
                                         <div class="form-check">
@@ -523,7 +527,6 @@ async function buildUnifiedSite() {
                     let pMarks = 1, nMarks = 0.25;
                     let timerInterval, timeLeft = 0;
                     
-                    // Fetch Data on Load
                     fetch('quiz-data.json').then(r=>r.json()).then(data => {
                         allDB = data;
                         document.getElementById('loader-panel').classList.add('d-none');
@@ -532,9 +535,7 @@ async function buildUnifiedSite() {
                         document.getElementById('loader-panel').innerHTML = "<h3 class='text-danger'>Error loading database. Please refresh.</h3>";
                     });
 
-                    // Start Setup
                     document.getElementById('start-exam-btn').addEventListener('click', () => {
-                        // Gather setup
                         const selectedCats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
                         if(selectedCats.length === 0) { alert("Please select at least one category."); return; }
                         
@@ -546,15 +547,12 @@ async function buildUnifiedSite() {
                         nMarks = parseFloat(document.getElementById('ce-neg-mark').value) || 0.25;
                         const reqTime = parseInt(document.getElementById('ce-time').value) || 20;
                         
-                        // Shuffle and Slice
                         filteredDB.sort(() => 0.5 - Math.random());
                         examData = filteredDB.slice(0, Math.min(reqQCount, filteredDB.length));
                         
-                        // Init State
                         userState = examData.map(() => ({ status: 'not-visited', selected: null }));
-                        userState[0].status = 'not-answered'; // first question visited
+                        userState[0].status = 'not-answered';
                         
-                        // Setup UI
                         document.getElementById('ui-pos-m').innerText = '+' + pMarks;
                         document.getElementById('ui-neg-m').innerText = '-' + nMarks;
                         document.getElementById('setup-panel').classList.add('d-none');
@@ -563,7 +561,6 @@ async function buildUnifiedSite() {
                         buildPalette();
                         renderQ(0);
                         
-                        // Timer
                         timeLeft = reqTime * 60;
                         updateTimerUI();
                         timerInterval = setInterval(() => {
@@ -631,7 +628,6 @@ async function buildUnifiedSite() {
                     }
 
                     function jumpToQ(idx) {
-                        // Mark current as not-answered if it was not-visited and nothing selected
                         if(userState[currentQ].status === 'not-visited') userState[currentQ].status = 'not-answered';
                         renderQ(idx);
                         if(userState[idx].status === 'not-visited') userState[idx].status = 'not-answered';
@@ -643,7 +639,6 @@ async function buildUnifiedSite() {
                         return selected ? selected.value : null;
                     }
 
-                    // Button Actions
                     document.getElementById('btn-save-next').addEventListener('click', () => {
                         const sel = getSelectedOption();
                         userState[currentQ].selected = sel;
@@ -757,7 +752,6 @@ async function buildUnifiedSite() {
             masterPageTasks.push(async () => { await fsAsync.writeFile(path.join(postDir, 'index.html'), getHtmlShell(post.title, articleContent, 2, post.seo_description || post.title, false)); });
         });
 
-        // BLOG PAGINATION
         const blogPageDir = path.join(distDir, 'page');
         fs.mkdirSync(blogPageDir, { recursive: true });
         const totalBlogPages = Math.ceil(blogPosts.length / POSTS_PER_PAGE);
@@ -1045,7 +1039,6 @@ async function buildUnifiedSite() {
                             }
                         </script>
                     `;
-                    // 🔥 THIN CONTENT FIX: isThinPage = true
                     await fsAsync.writeFile(path.join(singleMcqDir, 'index.html'), getHtmlShell(`Q${q.quizId}: ${cat} MCQ`, mcqContent, 3, q.question, true));
                 });
             });

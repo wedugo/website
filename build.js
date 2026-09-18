@@ -59,13 +59,6 @@ function getDifficultyData(questionStr) {
     if (len > 120) return { label: 'Hard', time: '90 sec', color: 'danger' };
     return { label: 'Medium', time: '60 sec', color: 'warning' };
 }
-function getExamTarget(category) {
-    const techExams = ['Computer', 'Technology', 'Civil Engineering', 'Solid Mechanics'];
-    const medicalExams = ['Biology', 'Anatomy', 'Biochemistry', 'Microbiology', 'Pharmacology', 'Virus'];
-    if (techExams.includes(category)) return "GATE, SSC JE, and PSU exams";
-    if (medicalExams.includes(category)) return "NEET, AIIMS, and Medical tests";
-    return "UPSC, MPESB, SSC CGL, Banking, and State PSC examinations";
-}
 
 // ==========================================
 // ADVERTISEMENT & UI COMPONENTS
@@ -131,15 +124,14 @@ function getNavbar(depth) {
                 <ul class="navbar-nav ms-auto fw-semibold fs-6 gap-2">
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/index.html"><i class="bi bi-house-door me-1"></i>Blog Home</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/topic/index.html"><i class="bi bi-collection me-1"></i>Topics</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mcqs/index.html"><i class="bi bi-list-check me-1"></i>MCQs</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mock-tests/index.html"><i class="bi bi-ui-checks-grid me-1"></i>Mock Tests</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/about/index.html"><i class="bi bi-info-circle me-1"></i>About</a></li>
                 </ul>
             </div>
         </div>
     </nav>`;
 }
 
-// Added AdSense Required Footer Links
 function getFooter(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     return `
@@ -163,6 +155,7 @@ function getFooter(depth) {
 function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = false) {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
+    // AdSense Mitigation: Thin pages (like single MCQs) get noindex to keep the site High-Value.
     const metaRobots = isThinPage ? `<meta name="robots" content="noindex, follow">` : `<meta name="robots" content="index, follow">`;
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
 
@@ -218,15 +211,18 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
 </html>`;
 }
 
-function getBreadcrumbs(depth, category, safeName, currentTitle, isBlog = true) {
+function getBreadcrumbs(depth, category, safeName, currentTitle, type = 'blog') {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     let pathList = ``;
     
-    if (isBlog) {
+    if (type === 'blog') {
         if (category) pathList += `<li class="breadcrumb-item"><a href="${prefix}/topic/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>`;
-    } else {
+    } else if (type === 'mock') {
         pathList += `<li class="breadcrumb-item"><a href="${prefix}/mock-tests/index.html" class="text-decoration-none text-primary fw-medium">Mock Tests</a></li>`;
         if (category) pathList += `<li class="breadcrumb-item"><a href="${prefix}/mock-tests/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>`;
+    } else if (type === 'mcq') {
+        pathList += `<li class="breadcrumb-item"><a href="${prefix}/mcqs/index.html" class="text-decoration-none text-primary fw-medium">MCQs</a></li>`;
+        if (category) pathList += `<li class="breadcrumb-item"><a href="${prefix}/mcqs/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>`;
     }
     
     return `
@@ -238,50 +234,6 @@ function getBreadcrumbs(depth, category, safeName, currentTitle, isBlog = true) 
             </ol>
         </nav>
     `;
-}
-
-// ==========================================
-// UNIFIED SITEMAP GENERATOR
-// ==========================================
-async function generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap) {
-    const today = new Date().toISOString().split('T')[0];
-    const urls = [];
-
-    // Core Pages
-    urls.push({ loc: `${SITE_BASE_URL}/`, priority: '1.0', changefreq: 'daily' }); // Blog Home
-    urls.push({ loc: `${SITE_BASE_URL}/mock-tests/index.html`, priority: '0.9', changefreq: 'weekly' });
-    urls.push({ loc: `${SITE_BASE_URL}/topic/index.html`, priority: '0.9', changefreq: 'weekly' });
-    urls.push({ loc: `${SITE_BASE_URL}/about/index.html`, priority: '0.5', changefreq: 'monthly' });
-
-    // Blog Category & Posts
-    for (const [catName] of Object.entries(blogCategoriesMap)) {
-        const safeName = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        urls.push({ loc: `${SITE_BASE_URL}/topic/${safeName}/index.html`, priority: '0.8', changefreq: 'weekly' });
-    }
-    blogPosts.forEach(post => {
-        urls.push({ loc: `${SITE_BASE_URL}/post/${post.urlSlug}/index.html`, priority: '0.9', changefreq: 'monthly' });
-    });
-
-    // Quiz Category & Sets
-    const QUESTIONS_PER_PAGE = 10;
-    for (const [cat, quizzes] of Object.entries(quizCategoriesMap)) {
-        if (!quizzes || quizzes.length === 0) continue;
-        const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        urls.push({ loc: `${SITE_BASE_URL}/mock-tests/${safeName}/index.html`, priority: '0.7', changefreq: 'weekly' });
-
-        const totalSets = Math.ceil(quizzes.length / QUESTIONS_PER_PAGE);
-        for (let s = 1; s <= totalSets; s++) {
-            urls.push({ loc: `${SITE_BASE_URL}/mock-tests/${safeName}/set-${s}.html`, priority: '0.6', changefreq: 'monthly' });
-        }
-    }
-
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-    for (const u of urls) xml += `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>\n`;
-    xml += `</urlset>`;
-
-    await fsAsync.writeFile(path.join(distDir, 'sitemap.xml'), xml, 'utf8');
-    const robotsTxt = `User-agent: *\nAllow: /\n\n# Unified Fast Indexing Sitemap\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`;
-    await fsAsync.writeFile(path.join(distDir, 'robots.txt'), robotsTxt, 'utf8');
 }
 
 async function executeTasksInBatches(tasks, batchSize = 50) {
@@ -340,11 +292,9 @@ async function buildUnifiedSite() {
         const masterPageTasks = [];
 
         // ======================================
-        // GENERATE BLOG (NOW AT ROOT DIR)
+        // 2. GENERATE BLOG (ROOT)
         // ======================================
         console.log("2. Generating Blog (High-Value Content)...");
-        
-        // INDIVIDUAL POSTS (/post/[slug]/index.html)
         const postMainDir = path.join(distDir, 'post');
         fs.mkdirSync(postMainDir, { recursive: true });
 
@@ -353,7 +303,7 @@ async function buildUnifiedSite() {
             fs.mkdirSync(postDir, { recursive: true });
 
             const articleContent = `
-                ${getBreadcrumbs(2, post.cat, post.cat.toLowerCase().replace(/[^a-z0-9]+/g, '-'), post.title, true)}
+                ${getBreadcrumbs(2, post.cat, post.cat.toLowerCase().replace(/[^a-z0-9]+/g, '-'), post.title, 'blog')}
                 <div class="row justify-content-center mt-3">
                     <div class="col-lg-8">
                         <div class="mb-4 text-center">
@@ -365,24 +315,11 @@ async function buildUnifiedSite() {
                                 <span><i class="bi bi-calendar3 me-1"></i>${post.date || 'Recently Updated'}</span>
                             </div>
                         </div>
-                        
                         ${getAdBannerHtml("Sponsored")}
-
                         <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white">
-                            <article class="article-content">
-                                ${post.content}
-                            </article>
+                            <article class="article-content">${post.content}</article>
                         </div>
-                        
                         ${getAdBannerHtml("Sponsored")}
-
-                        <div class="card shadow-sm p-4 bg-light text-center mb-5 border-0 rounded-4">
-                            <h3 class="h5 fw-bold text-dark text-uppercase mb-3">Share & Discuss</h3>
-                            <div class="sharethis-inline-reaction-buttons mb-4"></div>
-                            <div class="text-start border-top pt-4 border-secondary border-opacity-25">
-                                ${getDisqusEmbed(`blog_${post.postId}`, `post/${post.urlSlug}/index.html`)}
-                            </div>
-                        </div>
                     </div>
                     ${getAdSidebar()}
                 </div>
@@ -390,45 +327,6 @@ async function buildUnifiedSite() {
             masterPageTasks.push(async () => { await fsAsync.writeFile(path.join(postDir, 'index.html'), getHtmlShell(post.title, articleContent, 2, post.seo_description || post.title, false)); });
         });
 
-        // BLOG PAGINATION (/page/X/)
-        const blogPageDir = path.join(distDir, 'page');
-        fs.mkdirSync(blogPageDir, { recursive: true });
-        const totalBlogPages = Math.ceil(blogPosts.length / POSTS_PER_PAGE);
-
-        for (let i = 1; i <= totalBlogPages; i++) {
-            const pageDir = path.join(blogPageDir, String(i));
-            fs.mkdirSync(pageDir, { recursive: true });
-            const startIndex = (i - 1) * POSTS_PER_PAGE;
-            const pagePosts = blogPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
-
-            let pageContent = `
-                ${getBreadcrumbs(2, '', '', `Articles - Page ${i}`, true)}
-                <h2 class="display-6 blog-title mb-4 text-dark mt-3">Latest Educational Guides</h2>
-                <div class="row g-4 mb-5">
-            `;
-            pagePosts.forEach(post => {
-                pageContent += `
-                    <div class="col-md-6">
-                        <a href="../../post/${post.urlSlug}/index.html" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white">
-                            <span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">${post.cat}</span>
-                            <h3 class="h5 fw-bold mb-3 text-dark lh-base">${post.title}</h3>
-                            <p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>${post.date || 'Updated recently'}</p>
-                        </a>
-                    </div>
-                `;
-            });
-            pageContent += `</div><nav><ul class="pagination justify-content-center pagination-lg">`;
-            if (i > 1) pageContent += `<li class="page-item"><a class="page-link" href="../${i - 1}/index.html">Prev</a></li>`;
-            for (let p = 1; p <= totalBlogPages; p++) {
-                pageContent += `<li class="page-item ${p === i ? 'active' : ''}"><a class="page-link" href="../${p}/index.html">${p}</a></li>`;
-            }
-            if (i < totalBlogPages) pageContent += `<li class="page-item"><a class="page-link" href="../${i + 1}/index.html">Next</a></li>`;
-            pageContent += `</ul></nav>`;
-
-            masterPageTasks.push(async () => { await fsAsync.writeFile(path.join(pageDir, 'index.html'), getHtmlShell(`Study Guides - Page ${i}`, pageContent, 2, "", false)); });
-        }
-
-        // BLOG TOPICS (/topic/[cat]/)
         const blogCatMainDir = path.join(distDir, 'topic');
         fs.mkdirSync(blogCatMainDir, { recursive: true });
         let blogCatGridHtml = '<div class="row g-4">';
@@ -439,7 +337,7 @@ async function buildUnifiedSite() {
             fs.mkdirSync(specificCatDir, { recursive: true });
 
             let catPageHtml = `
-                ${getBreadcrumbs(2, '', '', `Topic: ${catName}`, true)}
+                ${getBreadcrumbs(2, '', '', `Topic: ${catName}`, 'blog')}
                 <h2 class="blog-title mb-4 display-6 text-dark mt-3">Topic: ${catName}</h2>
                 <div class="row g-4 mb-5">
             `;
@@ -466,10 +364,9 @@ async function buildUnifiedSite() {
         }
         blogCatGridHtml += '</div>';
 
-        // TOPICS ROOT (/topic/index.html)
         masterPageTasks.push(async () => {
             await fsAsync.writeFile(path.join(blogCatMainDir, 'index.html'), getHtmlShell('Explore Study Topics', `
-                ${getBreadcrumbs(1, '', '', 'All Study Topics', true)}
+                ${getBreadcrumbs(1, '', '', 'All Study Topics', 'blog')}
                 <h2 class="display-6 blog-title mb-4 text-dark mt-3">Explore Editorial Topics</h2>
                 ${blogCatGridHtml}
             `, 1, "", false));
@@ -477,13 +374,13 @@ async function buildUnifiedSite() {
 
 
         // ======================================
-        // GENERATE MOCK TESTS (/mock-tests/)
+        // 3. GENERATE MOCK TESTS (/mock-tests/)
         // ======================================
         console.log("3. Generating Mock Tests (Utility Section)...");
         const mockTestsDir = path.join(distDir, 'mock-tests');
         fs.mkdirSync(mockTestsDir, { recursive: true });
 
-        let categoriesGridHtml = '<div class="row g-4">';
+        let mockCatGridHtml = '<div class="row g-4">';
         let globallyGeneratedSets = [];
 
         for (const [cat, quizzes] of Object.entries(quizCategoriesMap)) {
@@ -498,7 +395,6 @@ async function buildUnifiedSite() {
             sets.forEach((setQuizzes, setIndex) => {
                 const setNumber = setIndex + 1;
                 const setFileName = `set-${setNumber}.html`;
-                
                 if (globallyGeneratedSets.length < 6) {
                     globallyGeneratedSets.push({ category: cat, safeName: safeName, setNumber: setNumber, link: `./mock-tests/${safeName}/${setFileName}` });
                 }
@@ -525,26 +421,19 @@ async function buildUnifiedSite() {
                                 </div>
                             </article>
                         `;
-                        if (qIndex === 4) setQuestionsHtml += getAdBannerHtml("Ad");
                     });
 
                     const setPageContent = `
-                        ${getBreadcrumbs(2, cat, safeName, `Set ${setNumber}`, false)}
+                        ${getBreadcrumbs(2, cat, safeName, `Set ${setNumber}`, 'mock')}
                         <div class="row mt-3">
                             <div class="col-lg-8">
                                 ${getAdBannerHtml("Sponsored")}
                                 <div class="timer-header p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
-                                    <div>
-                                        <h1 class="h4 fw-bold text-dark mb-1">${cat} - Mock Test ${setNumber}</h1>
-                                        <p class="text-muted small mb-0">10 Questions</p>
-                                    </div>
-                                    <div class="text-center ms-auto bg-light px-4 py-2 rounded-3 border">
-                                        <div class="fs-4 fw-bold font-monospace text-danger" id="timer-display">10:00</div>
-                                    </div>
+                                    <div><h1 class="h4 fw-bold text-dark mb-1">${cat} - Mock Test ${setNumber}</h1><p class="text-muted small mb-0">10 Questions</p></div>
+                                    <div class="text-center ms-auto bg-light px-4 py-2 rounded-3 border"><div class="fs-4 fw-bold font-monospace text-danger" id="timer-display">10:00</div></div>
                                 </div>
                                 <div id="score-board" class="card shadow-lg border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10">
                                     <h2 class="text-success fw-bold display-6 mb-3">Test Completed!</h2>
-                                    <p class="fs-5 text-dark mb-2">Final Score:</p>
                                     <div class="display-2 fw-bold text-success mb-4" id="final-score">0 / 10</div>
                                     <a href="index.html" class="btn btn-success rounded-pill px-5 fw-bold">Back to ${cat} Hub</a>
                                 </div>
@@ -618,16 +507,15 @@ async function buildUnifiedSite() {
             if (CATEGORY_LIST.includes(cat)) {
                 masterPageTasks.push(async () => {
                     const catPageContent = `
-                        ${getBreadcrumbs(2, cat, safeName, '', false)}
+                        ${getBreadcrumbs(2, cat, safeName, '', 'mock')}
                         <h1 class="display-6 blog-title mb-4 text-dark mt-3">${cat} Mock Tests</h1>
-                        <p class="text-secondary fs-5 mb-5">Practice timed questions to improve your accuracy for ${cat}.</p>
                         ${getAdBannerHtml("Sponsored")}
                         ${practiceSetsHtml}
                     `;
                     await fsAsync.writeFile(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} Mock Tests`, catPageContent, 2, "", false));
                 });
 
-                categoriesGridHtml += `
+                mockCatGridHtml += `
                     <div class="col-md-6 col-lg-4">
                         <a href="./${safeName}/index.html" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
                             <h3 class="h5 fw-bold mb-2 text-dark">${cat}</h3>
@@ -637,28 +525,157 @@ async function buildUnifiedSite() {
                 `;
             }
         }
-        categoriesGridHtml += '</div>';
+        mockCatGridHtml += '</div>';
 
-        // MOCK TESTS ROOT (/mock-tests/index.html)
         masterPageTasks.push(async () => {
             await fsAsync.writeFile(path.join(mockTestsDir, 'index.html'), getHtmlShell('All Mock Tests', `
-                ${getBreadcrumbs(1, '', '', 'Mock Tests Hub', false)}
+                ${getBreadcrumbs(1, '', '', 'Mock Tests Hub', 'mock')}
                 <h1 class="display-6 blog-title mb-4 text-dark mt-3">Mock Test Subjects</h1>
-                <p class="text-secondary mb-5">Select a subject to begin a timed 10-question practice test.</p>
-                ${getAdBannerHtml("Sponsored")}
-                ${categoriesGridHtml}
+                ${mockCatGridHtml}
+            `, 1, "", false));
+        });
+
+
+        // ======================================
+        // 4. GENERATE SINGLE MCQs (/mcqs/)
+        // ======================================
+        console.log("4. Generating Single MCQs...");
+        const mcqsMainDir = path.join(distDir, 'mcqs');
+        fs.mkdirSync(mcqsMainDir, { recursive: true });
+
+        let mcqCatGridHtml = '<div class="row g-4">';
+
+        for (const [cat, quizzes] of Object.entries(quizCategoriesMap)) {
+            if (!quizzes || quizzes.length === 0) continue; 
+            const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const specificCatDir = path.join(mcqsMainDir, safeName);
+            fs.mkdirSync(specificCatDir, { recursive: true });
+
+            quizzes.forEach((q, i) => {
+                const singleMcqDir = path.join(specificCatDir, String(q.quizId));
+                
+                masterPageTasks.push(async () => {
+                    await fsAsync.mkdir(singleMcqDir, { recursive: true });
+                    const prevQ = quizzes[i - 1]; const nextQ = quizzes[i + 1];
+                    const diffData = getDifficultyData(q.question);
+                    const explanationText = q.answerdetail || `Understand the core concept of ${cat} to solve this easily.`;
+
+                    const navButtonsHtml = `
+                        <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                            ${prevQ ? `<a href="../${prevQ.quizId}/index.html" class="btn btn-outline-secondary fw-bold px-4 rounded-pill"><i class="bi bi-arrow-left me-2"></i>Prev</a>` : `<button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" disabled><i class="bi bi-arrow-left me-2"></i>Prev</button>`}
+                            ${nextQ ? `<a href="../${nextQ.quizId}/index.html" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm">Next<i class="bi bi-arrow-right ms-2"></i></a>` : `<button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" disabled>Next<i class="bi bi-arrow-right ms-2"></i></button>`}
+                        </div>
+                    `;
+
+                    const mcqContent = `
+                        ${getBreadcrumbs(3, cat, safeName, 'Question ' + q.quizId, 'mcq')}
+                        <div class="row">
+                            <div class="col-lg-8">
+                                ${getAdBannerHtml("Sponsored")}
+                                <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
+                                    <header class="mb-4 border-bottom pb-4">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                            <a href="../../${safeName}/index.html" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill"><i class="bi bi-folder2-open me-1"></i>${cat}</a>
+                                            <span class="badge bg-${diffData.color} bg-opacity-10 text-${diffData.color} border border-${diffData.color}-subtle px-3 py-2 rounded-pill">${diffData.label}</span>
+                                        </div>
+                                        <h1 class="h4 fw-bold text-dark lh-base mt-3">${q.question}</h1>
+                                    </header>
+
+                                    <div class="d-grid gap-3 mb-4" id="options-container">
+                                        <button class="btn option-btn" onclick="checkAnswer(this, 'A')">A) ${q.answer1 || ''}</button>
+                                        <button class="btn option-btn" onclick="checkAnswer(this, 'B')">B) ${q.answer2 || ''}</button>
+                                        <button class="btn option-btn" onclick="checkAnswer(this, 'C')">C) ${q.answer3 || ''}</button>
+                                        <button class="btn option-btn" onclick="checkAnswer(this, 'D')">D) ${q.answer4 || ''}</button>
+                                    </div>
+                                    
+                                    <div id="explanation-box" class="alert mt-4 d-none p-4 rounded-4 border">
+                                        <h5 class="alert-heading fw-bold mb-3" id="result-title"></h5>
+                                        <hr class="opacity-25">
+                                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6>
+                                        <p class="mb-0 text-dark lh-lg">${explanationText}</p>
+                                    </div>
+                                    
+                                    ${navButtonsHtml}
+                                </article>
+                            </div>
+                            ${getAdSidebar()}
+                        </div>
+                        <script>
+                            let hasAnswered = false;
+                            function checkAnswer(btnElement, selectedLetter) {
+                                if(hasAnswered) return;
+                                hasAnswered = true;
+                                const correctLetter = "${(q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase()}";
+                                const answerTexts = {
+                                    'A': "${(q.answer1 || '').replace(/'/g, "\\'")}", 'B': "${(q.answer2 || '').replace(/'/g, "\\'")}",
+                                    'C': "${(q.answer3 || '').replace(/'/g, "\\'")}", 'D': "${(q.answer4 || '').replace(/'/g, "\\'")}"
+                                };
+                                const explanationBox = document.getElementById('explanation-box');
+                                const resultTitle = document.getElementById('result-title');
+                                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                                explanationBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+                                if(selectedLetter === correctLetter) {
+                                    btnElement.classList.add('correct-show');
+                                    explanationBox.classList.add('alert-success', 'border-success');
+                                    resultTitle.innerHTML = "✨ Correct Answer!";
+                                } else {
+                                    btnElement.classList.add('incorrect-show');
+                                    explanationBox.classList.add('alert-danger', 'border-danger');
+                                    resultTitle.innerHTML = "❌ Incorrect. The right answer is " + correctLetter + ") " + answerTexts[correctLetter];
+                                }
+                            }
+                        </script>
+                    `;
+                    // SETTING isThinPage = true TO PREVENT LOW VALUE CONTENT PENALTY
+                    await fsAsync.writeFile(path.join(singleMcqDir, 'index.html'), getHtmlShell(`Q${q.quizId}: ${cat} MCQ`, mcqContent, 3, q.question, true));
+                });
+            });
+
+            if (CATEGORY_LIST.includes(cat)) {
+                masterPageTasks.push(async () => {
+                    let mcqListHtml = '<div class="list-group shadow-sm border-0 rounded-4 mb-5">';
+                    quizzes.forEach((q, i) => {
+                        mcqListHtml += `<a href="./${q.quizId}/index.html" class="list-group-item list-group-item-action p-4 border-light"><strong>Q${i+1}.</strong> ${q.question.substring(0, 80)}...</a>`;
+                    });
+                    mcqListHtml += '</div>';
+
+                    const catPageContent = `
+                        ${getBreadcrumbs(2, cat, safeName, '', 'mcq')}
+                        <h1 class="display-6 blog-title mb-4 text-dark mt-3">${cat} Single MCQs</h1>
+                        ${getAdBannerHtml("Sponsored")}
+                        ${mcqListHtml}
+                    `;
+                    await fsAsync.writeFile(path.join(specificCatDir, 'index.html'), getHtmlShell(`${cat} Single MCQs List`, catPageContent, 2, "", false));
+                });
+
+                mcqCatGridHtml += `
+                    <div class="col-md-6 col-lg-4">
+                        <a href="./${safeName}/index.html" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
+                            <h3 class="h5 fw-bold mb-2 text-dark">${cat}</h3>
+                            <p class="text-secondary small mb-0">Browse Single Questions</p>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+        mcqCatGridHtml += '</div>';
+
+        masterPageTasks.push(async () => {
+            await fsAsync.writeFile(path.join(mcqsMainDir, 'index.html'), getHtmlShell('Browse All MCQs', `
+                ${getBreadcrumbs(1, '', '', 'MCQs Hub', 'mcq')}
+                <h1 class="display-6 blog-title mb-4 text-dark mt-3">Browse MCQs by Topic</h1>
+                ${mcqCatGridHtml}
             `, 1, "", false));
         });
 
         // ======================================
-        // HOMEPAGE (/index.html) -> FLIPPED TO BLOG
+        // 5. HOMEPAGE (/index.html) -> BLOG ROOT
         // ======================================
-        console.log("4. Generating Blog Root Homepage...");
+        console.log("5. Generating Blog Root Homepage...");
         masterPageTasks.push(async () => {
             let topBlogHtml = '<div class="row g-4 mb-5">';
             blogPosts.slice(0, 6).forEach((post, index) => {
                 if(index === 0) {
-                    // Featured Post
                     topBlogHtml += `
                         <div class="col-12 mb-2">
                             <a href="./post/${post.urlSlug}/index.html" class="card shadow border-0 rounded-4 overflow-hidden text-decoration-none bg-dark text-white card-hover p-4 p-md-5">
@@ -686,7 +703,7 @@ async function buildUnifiedSite() {
             const homeContent = `
                 <div class="mt-4 mb-5 text-center">
                     <h1 class="display-3 blog-title text-dark mb-3">Learn & Master Your Exams</h1>
-                    <p class="lead text-secondary col-md-8 mx-auto">High-quality editorial guides, deep concepts, and extensive mock tests for modern competitive examinations.</p>
+                    <p class="lead text-secondary col-md-8 mx-auto">High-quality editorial guides, deep concepts, and extensive practice tools for modern competitive examinations.</p>
                 </div>
                 ${topBlogHtml}
                 ${getAdBannerHtml("Ad")}
@@ -697,16 +714,18 @@ async function buildUnifiedSite() {
                 <div class="mt-5 pt-5 border-top">
                     <div class="d-flex justify-content-between align-items-end mb-4">
                         <h2 class="blog-title text-dark mb-0">Ready to Practice?</h2>
-                        <a href="./mock-tests/index.html" class="text-primary fw-bold text-decoration-none">All Tests &rarr;</a>
                     </div>
-                    <div class="row g-3">
-                        ${globallyGeneratedSets.map(set => `
-                            <div class="col-6 col-md-4 col-lg-2">
-                                <a href="${set.link}" class="card bg-light border-0 text-center p-3 text-decoration-none card-hover">
-                                    <span class="d-block fw-bold text-dark small text-truncate">${set.category}</span>
-                                </a>
-                            </div>
-                        `).join('')}
+                    <div class="row g-3 text-center">
+                        <div class="col-md-6">
+                            <a href="./mock-tests/index.html" class="card bg-primary text-white border-0 p-4 text-decoration-none card-hover rounded-4">
+                                <h4 class="fw-bold mb-0"><i class="bi bi-stopwatch me-2"></i>Timed Mock Tests</h4>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="./mcqs/index.html" class="card bg-light text-dark border-0 p-4 text-decoration-none card-hover rounded-4">
+                                <h4 class="fw-bold mb-0"><i class="bi bi-list-check me-2"></i>Browse Single MCQs</h4>
+                            </a>
+                        </div>
                     </div>
                 </div>
             `;
@@ -714,7 +733,7 @@ async function buildUnifiedSite() {
         });
 
         // ======================================
-        // ABOUT PAGE
+        // 6. POLICIES & ABOUT
         // ======================================
         const aboutDir = path.join(distDir, 'about');
         fs.mkdirSync(aboutDir, { recursive: true });
@@ -739,27 +758,61 @@ async function buildUnifiedSite() {
             await fsAsync.writeFile(path.join(aboutDir, 'index.html'), getHtmlShell('About Us: Editorial Mission', aboutContent, 1, "", false));
         });
 
-        // STUB PAGES FOR ADSENSE COMPLIANCE (Privacy, Terms)
         masterPageTasks.push(async () => {
-            const genericContent = (title) => `
-                <div class="card shadow-sm p-5 border-0 rounded-4 bg-white mt-5 text-center">
-                    <h1 class="blog-title mb-4">${title}</h1>
-                    <p class="text-muted">Please update this page with your official ${title} text.</p>
+            const privacyContent = `
+                <div class="card shadow-sm p-5 border-0 rounded-4 bg-white mt-5">
+                    <h1 class="blog-title mb-4">Privacy Policy for Wedugo Education</h1>
+                    <p>At Wedugo Education, accessible from wedugo.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wedugo Education and how we use it.</p>
+                    
+                    <h3 class="mt-4">Google DoubleClick DART Cookie</h3>
+                    <p>Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to www.website.com and other sites on the internet. However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy at the following URL – <a href="https://policies.google.com/technologies/ads">https://policies.google.com/technologies/ads</a></p>
+
+                    <h3 class="mt-4">Our Advertising Partners</h3>
+                    <p>Some of advertisers on our site may use cookies and web beacons. Our advertising partners are listed below. Each of our advertising partners has their own Privacy Policy for their policies on user data.</p>
+                    <ul><li>Google AdSense</li></ul>
+
+                    <h3 class="mt-4">Log Files</h3>
+                    <p>Wedugo Education follows a standard procedure of using log files. These files log visitors when they visit websites. The information collected by log files include internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks.</p>
+                    
+                    <h3 class="mt-4">Consent</h3>
+                    <p>By using our website, you hereby consent to our Privacy Policy and agree to its Terms and Conditions.</p>
                 </div>
             `;
-            await fsAsync.writeFile(path.join(distDir, 'privacy.html'), getHtmlShell('Privacy Policy', genericContent('Privacy Policy'), 0, "", true));
-            await fsAsync.writeFile(path.join(distDir, 'terms.html'), getHtmlShell('Terms of Service', genericContent('Terms of Service'), 0, "", true));
+            await fsAsync.writeFile(path.join(distDir, 'privacy.html'), getHtmlShell('Privacy Policy', privacyContent, 0, "", false));
+            
+            const termsContent = `
+                <div class="card shadow-sm p-5 border-0 rounded-4 bg-white mt-5">
+                    <h1 class="blog-title mb-4">Terms and Conditions</h1>
+                    <p>Welcome to Wedugo Education!</p>
+                    <p>These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website, located at wedugo.com.</p>
+                    
+                    <h3 class="mt-4">Cookies</h3>
+                    <p>We employ the use of cookies. By accessing Wedugo Education, you agreed to use cookies in agreement with the Wedugo Education's Privacy Policy.</p>
+                    
+                    <h3 class="mt-4">License</h3>
+                    <p>Unless otherwise stated, Wedugo Education and/or its licensors own the intellectual property rights for all material on Wedugo Education. All intellectual property rights are reserved. You may access this from Wedugo Education for your own personal use subjected to restrictions set in these terms and conditions.</p>
+                    <ul>
+                        <li>You must not republish material from Wedugo Education</li>
+                        <li>You must not sell, rent or sub-license material from Wedugo Education</li>
+                        <li>You must not reproduce, duplicate or copy material from Wedugo Education</li>
+                    </ul>
+
+                    <h3 class="mt-4">User Comments</h3>
+                    <p>Parts of this website offer an opportunity for users to post and exchange opinions and information in certain areas of the website. Wedugo Education does not filter, edit, publish or review Comments prior to their presence on the website. Comments do not reflect the views and opinions of Wedugo Education, its agents and/or affiliates.</p>
+                </div>
+            `;
+            await fsAsync.writeFile(path.join(distDir, 'terms.html'), getHtmlShell('Terms of Conditions', termsContent, 0, "", false));
         });
 
         await executeTasksInBatches(masterPageTasks, 10);
 
-        console.log("5. Finalizing Build...");
+        console.log("6. Finalizing Build...");
         ['tools', 'main_images'].forEach(dir => { const s = path.join(__dirname, dir); if (fs.existsSync(s)) fs.cpSync(s, path.join(distDir, dir), { recursive: true }); });
         ['Ads.txt', 'CNAME', '404.html'].forEach(f => { const s = path.join(__dirname, f); if (fs.existsSync(s)) fs.copyFileSync(s, path.join(distDir, f === 'Ads.txt' ? 'ads.txt' : f)); });
 
         await generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap);
 
-        console.log("✅ FLIP SUCCESSFUL! Site is now Blog-First, High-Value, AdSense-Ready.");
+        console.log("✅ BUILD COMPLETE! All sections (Blog, Mock Tests, Single MCQs) and Policies added successfully.");
     } catch (error) { console.error("Build failed:", error); }
 }
 

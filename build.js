@@ -51,16 +51,6 @@ function chunkArray(array, size) {
 }
 
 // ==========================================
-// HELPER FUNCTIONS
-// ==========================================
-function getDifficultyData(questionStr) {
-    const len = (questionStr || "").length;
-    if (len < 50) return { label: 'Easy', time: '30 sec', color: 'success' };
-    if (len > 120) return { label: 'Hard', time: '90 sec', color: 'danger' };
-    return { label: 'Medium', time: '60 sec', color: 'warning' };
-}
-
-// ==========================================
 // ADVERTISEMENT & UI COMPONENTS
 // ==========================================
 function getAdBannerHtml(label = "Advertisement") {
@@ -68,7 +58,7 @@ function getAdBannerHtml(label = "Advertisement") {
         <div class="ad-banner-wrapper my-4 text-center">
             <span class="text-muted d-block small mb-1" style="font-size: 0.70rem; letter-spacing: 0.5px; text-transform: uppercase;">${label}</span>
             <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #fafafa; border-radius: 8px;">
-                <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins>
                 <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
             </div>
         </div>
@@ -82,14 +72,14 @@ function getAdSidebar() {
                 <div class="card shadow-sm border-0 rounded-4 bg-white p-3 mb-4 text-center">
                     <span class="text-muted small fw-bold text-uppercase mb-2 d-block" style="font-size: 0.75rem;">Sponsored</span>
                     <div class="ad-container shadow-none border-0 mb-0" style="min-height: 280px; background: #f8fafc;">
-                        <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                        <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="0987654321" data-ad-format="auto" data-full-width-responsive="true"></ins>
                         <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
                     </div>
                 </div>
                 <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
-                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Study Resources</h5>
-                    <p class="text-secondary small mb-3 lh-lg">Enhance your preparation with our curated articles and timed mock tests. Master the concepts before taking the exams.</p>
-                    <a href="/categories/index.html" class="btn btn-outline-primary btn-sm w-100 rounded-pill fw-bold">Explore Categories</a>
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-gear-wide-connected text-primary me-2"></i>Custom Exam</h5>
+                    <p class="text-secondary small mb-3 lh-lg">Create your own test environment. Choose categories, set negative marking, and practice like the real exam.</p>
+                    <a href="/custom-exam/index.html" class="btn btn-outline-primary btn-sm w-100 rounded-pill fw-bold">Build Custom Test</a>
                 </div>
             </div>
         </div>
@@ -107,7 +97,7 @@ function getDisqusEmbed(identifierId, prefix) {
     `;
 }
 
-// FIXED: Navbar with all Tabs including About and Categories
+// 🟢 UNIVERSAL NAVBAR
 function getNavbar(depth) {
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
     const cacheBuster = new Date().getTime(); 
@@ -126,8 +116,8 @@ function getNavbar(depth) {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/categories/index.html"><i class="bi bi-grid me-1"></i>Categories</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mock-tests/index.html"><i class="bi bi-stopwatch me-1"></i>Mock Tests</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mcqs/index.html"><i class="bi bi-list-check me-1"></i>MCQs</a></li>
+                    <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="${prefix}/custom-exam/index.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/topic/index.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/about/index.html"><i class="bi bi-info-circle me-1"></i>About</a></li>
                 </ul>
             </div>
         </div>
@@ -153,12 +143,10 @@ function getFooter(depth) {
     </footer>`;
 }
 
-// UNIFIED HTML SHELL (Thin Content Mitigation included)
+// 🟢 THIN CONTENT MITIGATION & HTML SHELL
 function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = false) {
-    const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
+    const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
-    
-    // THIN CONTENT FIX: Single MCQs get No-Index so Google doesn't penalize the site.
     const metaRobots = isThinPage ? `<meta name="robots" content="noindex, follow">` : `<meta name="robots" content="index, follow">`;
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
 
@@ -173,8 +161,6 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
     <title>${displayTitle}</title>
     <meta name="description" content="${cleanDesc}">
     <link rel="icon" href="${prefix}/main_images/icon.png" type="image/png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -187,20 +173,35 @@ function getHtmlShell(title, content, depth, seoDescription = "", isThinPage = f
         .card { border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .card-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important; }
         
-        /* High-Value Blog Styles */
         .blog-title { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; }
         .article-content { font-family: 'Merriweather', serif; font-size: 1.15rem; color: #1e293b; line-height: 1.9; }
         .article-content h2, .article-content h3 { font-family: 'Inter', sans-serif; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #0f172a; }
         .article-content img { max-width: 100%; height: auto; border-radius: 12px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .badge-cat { font-size: 0.75rem; padding: 0.5em 1em; letter-spacing: 0.5px; border-radius: 6px; text-transform: uppercase; font-weight: 700;}
         
-        /* Quiz Styles */
         .option-btn { text-align: left; padding: 16px 24px; font-weight: 500; font-size: 1.05rem; border-radius: 12px; border: 2px solid #e2e8f0; background: #ffffff; transition: all 0.2s; color: #475569; }
         .option-btn:hover:not(:disabled) { background-color: #f8fafc; border-color: #cbd5e1; transform: translateX(5px); }
         .option-btn.selected { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
         .option-btn.correct-show { background-color: #f0fdf4 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 600; }
         .option-btn.incorrect-show { background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .timer-header { position: sticky; top: 70px; z-index: 1020; border-bottom: 4px solid #3b82f6; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
+
+        /* Custom Exam Portal CSS (TCS iON Style) */
+        .portal-header { border-bottom: 1px solid #ddd; background: #fff; padding: 10px 20px; font-weight: bold; }
+        .marks-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; color: #fff;}
+        .marks-plus { background: #22c55e; } .marks-minus { background: #ef4444; }
+        .q-palette-btn { width: 40px; height: 40px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; margin: 4px; border: 1px solid #cbd5e1; cursor: pointer; color: #333; background: #fff;}
+        .q-palette-btn.answered { background: #22c55e; color: #fff; border-color: #22c55e; }
+        .q-palette-btn.not-answered { background: #ef4444; color: #fff; border-color: #ef4444; }
+        .q-palette-btn.marked { background: #a855f7; color: #fff; border-color: #a855f7; }
+        .q-palette-btn.marked-answered { background: #a855f7; color: #fff; border-color: #a855f7; position: relative; }
+        .q-palette-btn.marked-answered::after { content: '✔'; position: absolute; bottom: -4px; right: -2px; color: #22c55e; font-size: 14px; background: #fff; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid #22c55e;}
+        .q-palette-btn.active-q { border: 2px solid #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .exam-radio { transform: scale(1.3); margin-right: 15px; cursor: pointer; }
+        .exam-option-label { cursor: pointer; display: flex; align-items: center; padding: 12px; border-radius: 8px; transition: background 0.2s; border: 1px solid transparent;}
+        .exam-option-label:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .exam-sidebar { background: #e0f2fe; border-left: 2px solid #bae6fd; height: 100%; display: flex; flex-direction: column;}
+        .exam-footer-bar { position: sticky; bottom: 0; background: #f8fafc; border-top: 1px solid #cbd5e1; padding: 15px; z-index: 100;}
     </style>
 </head>
 <body>
@@ -228,6 +229,8 @@ function getBreadcrumbs(depth, category, safeName, currentTitle, type = 'blog') 
     } else if (type === 'mcq') {
         pathList += `<li class="breadcrumb-item"><a href="${prefix}/mcqs/index.html" class="text-decoration-none text-primary fw-medium">MCQs</a></li>`;
         if (category) pathList += `<li class="breadcrumb-item"><a href="${prefix}/categories/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>`;
+    } else if (type === 'custom') {
+        pathList += `<li class="breadcrumb-item"><a href="${prefix}/custom-exam/index.html" class="text-decoration-none text-primary fw-medium">Custom Exam</a></li>`;
     }
     
     return `
@@ -241,22 +244,18 @@ function getBreadcrumbs(depth, category, safeName, currentTitle, type = 'blog') 
     `;
 }
 
-// ==========================================
-// UNIFIED SITEMAP GENERATOR
-// ==========================================
 async function generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap) {
     const today = new Date().toISOString().split('T')[0];
     const urls = [];
 
-    // Core Pages
     urls.push({ loc: `${SITE_BASE_URL}/`, priority: '1.0', changefreq: 'daily' }); 
     urls.push({ loc: `${SITE_BASE_URL}/categories/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/mock-tests/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/mcqs/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/topic/index.html`, priority: '0.9', changefreq: 'weekly' });
+    urls.push({ loc: `${SITE_BASE_URL}/custom-exam/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/about/index.html`, priority: '0.5', changefreq: 'monthly' });
 
-    // Blog Category & Posts
     for (const [catName] of Object.entries(blogCategoriesMap)) {
         const safeName = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         urls.push({ loc: `${SITE_BASE_URL}/topic/${safeName}/index.html`, priority: '0.8', changefreq: 'weekly' });
@@ -265,17 +264,18 @@ async function generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, b
         urls.push({ loc: `${SITE_BASE_URL}/post/${post.urlSlug}/index.html`, priority: '0.9', changefreq: 'monthly' });
     });
 
-    // Quiz Categories, Sets & MCQ Lists
     const QUESTIONS_PER_PAGE = 10;
     for (const [cat, quizzes] of Object.entries(quizCategoriesMap)) {
         if (!quizzes || quizzes.length === 0) continue;
         const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         urls.push({ loc: `${SITE_BASE_URL}/categories/${safeName}/index.html`, priority: '0.8', changefreq: 'weekly' });
-        urls.push({ loc: `${SITE_BASE_URL}/mcqs/${safeName}/index.html`, priority: '0.7', changefreq: 'weekly' });
 
         const totalSets = Math.ceil(quizzes.length / QUESTIONS_PER_PAGE);
         for (let s = 1; s <= totalSets; s++) {
             urls.push({ loc: `${SITE_BASE_URL}/mock-tests/${safeName}/set-${s}.html`, priority: '0.6', changefreq: 'monthly' });
+        }
+        for (let p = 1; p <= totalSets; p++) {
+            urls.push({ loc: `${SITE_BASE_URL}/mcqs/${safeName}/page-${p}.html`, priority: '0.6', changefreq: 'monthly' });
         }
     }
 
@@ -309,11 +309,13 @@ async function buildUnifiedSite() {
         const allQuizRows = parseFullCSV(await quizRes.text());
         const allBlogRows = parseFullCSV(await blogRes.text());
 
-        // --- PREPARE DATA ---
         const quizHeaders = allQuizRows[0].map(h => h.toLowerCase());
         const quizCategoriesMap = {};
         CATEGORY_LIST.forEach(cat => quizCategoriesMap[cat] = []);
         quizCategoriesMap['Uncategorized'] = [];
+
+        // For Custom Exam Builder Engine
+        const globalQuizDataForEngine = [];
 
         allQuizRows.slice(1).reverse().forEach((values, index) => {
             if (values.length < quizHeaders.length) return;
@@ -326,6 +328,15 @@ async function buildUnifiedSite() {
             }
             q.quizId = q.id || index; q.matchedCategory = matchedCat;
             quizCategoriesMap[matchedCat].push(q);
+
+            // Compress data for custom exam engine
+            globalQuizDataForEngine.push({
+                c: matchedCat,
+                q: q.question,
+                o: [q.answer1, q.answer2, q.answer3, q.answer4],
+                a: (q.mainanswer||'').toString().replace(/[^A-D]/gi, '').toUpperCase(),
+                d: q.answerdetail
+            });
         });
 
         const blogHeaders = allBlogRows[0].map(h => h.toLowerCase());
@@ -344,9 +355,369 @@ async function buildUnifiedSite() {
         const masterPageTasks = [];
 
         // ======================================
-        // 2. GENERATE BLOG 
+        // 2. GENERATE CUSTOM EXAM ENGINE (NEW!)
         // ======================================
-        console.log("2. Generating Blog (High-Value Content)...");
+        console.log("2. Generating Custom Mock Test Engine...");
+        const customExamDir = path.join(distDir, 'custom-exam');
+        fs.mkdirSync(customExamDir, { recursive: true });
+        
+        // Write lightweight JSON database for the client side engine
+        fs.writeFileSync(path.join(customExamDir, 'quiz-data.json'), JSON.stringify(globalQuizDataForEngine));
+
+        masterPageTasks.push(async () => {
+            const customExamHTML = `
+                ${getBreadcrumbs(1, '', '', 'Custom Mock Test Builder', 'custom')}
+                
+                <div id="loader-panel" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <h3 class="mt-3 text-secondary">Loading Question Database...</h3>
+                </div>
+
+                <!-- SETUP PANEL -->
+                <div id="setup-panel" class="d-none">
+                    <div class="card shadow-sm border-0 rounded-4 bg-white p-4 p-md-5 mb-5">
+                        <div class="text-center mb-5">
+                            <h1 class="blog-title display-5 text-dark mb-3"><i class="bi bi-gear-wide-connected text-primary me-2"></i>Custom Exam Builder</h1>
+                            <p class="text-muted fs-5">Configure your own live mock test portal.</p>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">1. Select Categories (Multiple allowed)</label>
+                                <div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">
+                                    ${CATEGORY_LIST.map((cat, i) => `
+                                        <div class="form-check">
+                                            <input class="form-check-input cat-checkbox" type="checkbox" value="${cat}" id="cat${i}" checked>
+                                            <label class="form-check-label" for="cat${i}">${cat}</label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-bold">2. Number of Questions</label>
+                                <input type="number" id="ce-qcount" class="form-control form-control-lg fw-bold" value="20" min="5" max="100">
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-bold">3. Time (Minutes)</label>
+                                <input type="number" id="ce-time" class="form-control form-control-lg fw-bold" value="20" min="1" max="180">
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-bold text-success">4. Plus Marking (+)</label>
+                                <input type="number" id="ce-pos-mark" class="form-control form-control-lg fw-bold text-success" value="1" step="0.5">
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-bold text-danger">5. Negative Marking (-)</label>
+                                <input type="number" id="ce-neg-mark" class="form-control form-control-lg fw-bold text-danger" value="0.25" step="0.25">
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-5">
+                            <button id="start-exam-btn" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow"><i class="bi bi-play-circle-fill me-2"></i>Start Custom Test Portal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PORTAL PANEL (TCS iON Style) -->
+                <div id="exam-panel" class="d-none">
+                    <div class="card border border-dark rounded-0 shadow-lg overflow-hidden" style="min-height: 80vh;">
+                        <div class="portal-header d-flex flex-wrap justify-content-between align-items-center">
+                            <div class="fs-5">Test Portal</div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div><span class="marks-badge marks-plus" id="ui-pos-m">+1</span> <span class="marks-badge marks-minus" id="ui-neg-m">-0.25</span></div>
+                                <div class="bg-light px-3 py-1 border rounded text-danger fw-bold fs-5 font-monospace">Time Left: <span id="ui-timer">00:00</span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-0 flex-grow-1">
+                            <!-- Left: Questions Area -->
+                            <div class="col-lg-9 d-flex flex-column position-relative bg-white">
+                                <div class="p-3 border-bottom bg-light fw-bold fs-5 d-flex justify-content-between">
+                                    <span id="ui-q-num">Question No. 1</span>
+                                    <span id="ui-q-cat" class="badge bg-secondary"></span>
+                                </div>
+                                
+                                <div class="p-4 p-md-5 flex-grow-1 overflow-auto" style="max-height: 60vh;">
+                                    <h4 class="mb-4 text-dark lh-base fw-bold" id="ui-q-text">Question loading...</h4>
+                                    <div class="d-flex flex-column gap-2" id="ui-options">
+                                        <label class="exam-option-label"><input type="radio" name="opt" value="A" class="exam-radio"> <span id="ui-opt-a" class="fs-5"></span></label>
+                                        <label class="exam-option-label"><input type="radio" name="opt" value="B" class="exam-radio"> <span id="ui-opt-b" class="fs-5"></span></label>
+                                        <label class="exam-option-label"><input type="radio" name="opt" value="C" class="exam-radio"> <span id="ui-opt-c" class="fs-5"></span></label>
+                                        <label class="exam-option-label"><input type="radio" name="opt" value="D" class="exam-radio"> <span id="ui-opt-d" class="fs-5"></span></label>
+                                    </div>
+                                </div>
+
+                                <div class="exam-footer-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <div>
+                                        <button class="btn btn-outline-dark fw-bold px-4" id="btn-mark-next">Mark for Review & Next</button>
+                                        <button class="btn btn-outline-danger fw-bold px-4 ms-2" id="btn-clear">Clear Response</button>
+                                    </div>
+                                    <button class="btn btn-success fw-bold px-5" id="btn-save-next">Save & Next <i class="bi bi-chevron-right"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Right: Sidebar Palette -->
+                            <div class="col-lg-3 exam-sidebar">
+                                <div class="p-3 border-bottom d-flex align-items-center gap-3 bg-white">
+                                    <i class="bi bi-person-circle fs-1 text-secondary"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark">Candidate</div>
+                                        <div class="small text-muted">Custom Exam</div>
+                                    </div>
+                                </div>
+                                <div class="p-3 border-bottom bg-white small fw-bold">
+                                    <div class="row g-2 text-center mb-2">
+                                        <div class="col-6"><span class="q-palette-btn answered" style="width:25px;height:25px;font-size:12px;" id="count-ans">0</span> Answered</div>
+                                        <div class="col-6"><span class="q-palette-btn not-answered" style="width:25px;height:25px;font-size:12px;" id="count-not-ans">0</span> Not Answered</div>
+                                    </div>
+                                    <div class="row g-2 text-center">
+                                        <div class="col-6"><span class="q-palette-btn not-visited" style="width:25px;height:25px;font-size:12px;" id="count-not-vis">0</span> Not Visited</div>
+                                        <div class="col-6"><span class="q-palette-btn marked" style="width:25px;height:25px;font-size:12px;" id="count-mark">0</span> Marked</div>
+                                    </div>
+                                </div>
+                                <div class="p-3 flex-grow-1 overflow-auto bg-light">
+                                    <div class="fw-bold mb-3 text-secondary">SECTION : Custom Selection</div>
+                                    <div id="ui-palette" class="d-flex flex-wrap"></div>
+                                </div>
+                                <div class="p-3 bg-white border-top text-center mt-auto">
+                                    <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" id="btn-submit-exam">Submit Exam</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RESULT PANEL -->
+                <div id="result-panel" class="d-none">
+                    <div class="card shadow-lg border-success text-center p-4 p-md-5 rounded-4 bg-success bg-opacity-10 border-2">
+                        <h2 class="text-success fw-bold display-6 mb-4"><i class="bi bi-check-circle-fill me-3"></i>Exam Submitted Successfully!</h2>
+                        
+                        <div class="row justify-content-center mb-5 mt-4">
+                            <div class="col-md-8">
+                                <div class="card border-0 shadow-sm bg-white p-4">
+                                    <h3 class="fw-bold text-dark mb-4 border-bottom pb-2">Score Card</h3>
+                                    <div class="d-flex justify-content-between mb-2 fs-5"><span>Total Questions:</span> <strong id="res-total">0</strong></div>
+                                    <div class="d-flex justify-content-between mb-2 fs-5 text-success"><span>Correct Attempts:</span> <strong id="res-correct">0</strong></div>
+                                    <div class="d-flex justify-content-between mb-2 fs-5 text-danger"><span>Incorrect Attempts:</span> <strong id="res-incorrect">0</strong></div>
+                                    <div class="d-flex justify-content-between mb-2 fs-5 text-secondary"><span>Unattempted:</span> <strong id="res-unatt">0</strong></div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fs-3 fw-bold text-primary mt-3"><span>Final Marks:</span> <span id="res-marks">0</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold" onclick="location.reload()">Create New Custom Exam</button>
+                    </div>
+                    
+                    <div class="mt-5" id="solution-container">
+                        <h3 class="fw-bold border-bottom pb-3 mb-4">Detailed Solutions</h3>
+                        <div id="solution-list"></div>
+                    </div>
+                </div>
+
+                <script>
+                    let allDB = [];
+                    let examData = [];
+                    let userState = []; // {status: 'not-visited'|'not-answered'|'answered'|'marked'|'marked-answered', selected: null}
+                    let currentQ = 0;
+                    let pMarks = 1, nMarks = 0.25;
+                    let timerInterval, timeLeft = 0;
+                    
+                    // Fetch Data on Load
+                    fetch('quiz-data.json').then(r=>r.json()).then(data => {
+                        allDB = data;
+                        document.getElementById('loader-panel').classList.add('d-none');
+                        document.getElementById('setup-panel').classList.remove('d-none');
+                    }).catch(err => {
+                        document.getElementById('loader-panel').innerHTML = "<h3 class='text-danger'>Error loading database. Please refresh.</h3>";
+                    });
+
+                    // Start Setup
+                    document.getElementById('start-exam-btn').addEventListener('click', () => {
+                        // Gather setup
+                        const selectedCats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
+                        if(selectedCats.length === 0) { alert("Please select at least one category."); return; }
+                        
+                        let filteredDB = allDB.filter(q => selectedCats.includes(q.c));
+                        if(filteredDB.length === 0) { alert("No questions found in selected categories."); return; }
+                        
+                        const reqQCount = parseInt(document.getElementById('ce-qcount').value) || 20;
+                        pMarks = parseFloat(document.getElementById('ce-pos-mark').value) || 1;
+                        nMarks = parseFloat(document.getElementById('ce-neg-mark').value) || 0.25;
+                        const reqTime = parseInt(document.getElementById('ce-time').value) || 20;
+                        
+                        // Shuffle and Slice
+                        filteredDB.sort(() => 0.5 - Math.random());
+                        examData = filteredDB.slice(0, Math.min(reqQCount, filteredDB.length));
+                        
+                        // Init State
+                        userState = examData.map(() => ({ status: 'not-visited', selected: null }));
+                        userState[0].status = 'not-answered'; // first question visited
+                        
+                        // Setup UI
+                        document.getElementById('ui-pos-m').innerText = '+' + pMarks;
+                        document.getElementById('ui-neg-m').innerText = '-' + nMarks;
+                        document.getElementById('setup-panel').classList.add('d-none');
+                        document.getElementById('exam-panel').classList.remove('d-none');
+                        
+                        buildPalette();
+                        renderQ(0);
+                        
+                        // Timer
+                        timeLeft = reqTime * 60;
+                        updateTimerUI();
+                        timerInterval = setInterval(() => {
+                            timeLeft--;
+                            updateTimerUI();
+                            if(timeLeft <= 0) submitExam();
+                        }, 1000);
+                    });
+
+                    function updateTimerUI() {
+                        if(timeLeft < 0) return;
+                        let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+                        document.getElementById('ui-timer').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
+                    }
+
+                    function buildPalette() {
+                        const pal = document.getElementById('ui-palette');
+                        pal.innerHTML = '';
+                        examData.forEach((_, i) => {
+                            const btn = document.createElement('div');
+                            btn.className = 'q-palette-btn not-visited';
+                            btn.id = 'pal-' + i;
+                            btn.innerText = i + 1;
+                            btn.onclick = () => jumpToQ(i);
+                            pal.appendChild(btn);
+                        });
+                        updatePaletteStats();
+                    }
+
+                    function updatePaletteStats() {
+                        let ans=0, notAns=0, marked=0, notVis=0;
+                        userState.forEach((st, i) => {
+                            const btn = document.getElementById('pal-'+i);
+                            btn.className = 'q-palette-btn ' + st.status;
+                            if(i === currentQ) btn.classList.add('active-q');
+                            
+                            if(st.status === 'answered') ans++;
+                            else if(st.status === 'not-answered') notAns++;
+                            else if(st.status.includes('marked')) marked++;
+                            else notVis++;
+                        });
+                        document.getElementById('count-ans').innerText = ans;
+                        document.getElementById('count-not-ans').innerText = notAns;
+                        document.getElementById('count-mark').innerText = marked;
+                        document.getElementById('count-not-vis').innerText = notVis;
+                    }
+
+                    function renderQ(idx) {
+                        currentQ = idx;
+                        const q = examData[idx];
+                        document.getElementById('ui-q-num').innerText = 'Question No. ' + (idx + 1);
+                        document.getElementById('ui-q-cat').innerText = q.c;
+                        document.getElementById('ui-q-text').innerText = q.q;
+                        
+                        const opts = ['A', 'B', 'C', 'D'];
+                        const radios = document.querySelectorAll('.exam-radio');
+                        radios.forEach(r => r.checked = false);
+                        
+                        opts.forEach((letter, i) => {
+                            document.getElementById('ui-opt-' + letter.toLowerCase()).innerText = q.o[i];
+                            if(userState[idx].selected === letter) radios[i].checked = true;
+                        });
+                        
+                        updatePaletteStats();
+                    }
+
+                    function jumpToQ(idx) {
+                        // Mark current as not-answered if it was not-visited and nothing selected
+                        if(userState[currentQ].status === 'not-visited') userState[currentQ].status = 'not-answered';
+                        renderQ(idx);
+                        if(userState[idx].status === 'not-visited') userState[idx].status = 'not-answered';
+                        updatePaletteStats();
+                    }
+
+                    function getSelectedOption() {
+                        const selected = document.querySelector('.exam-radio:checked');
+                        return selected ? selected.value : null;
+                    }
+
+                    // Button Actions
+                    document.getElementById('btn-save-next').addEventListener('click', () => {
+                        const sel = getSelectedOption();
+                        userState[currentQ].selected = sel;
+                        userState[currentQ].status = sel ? 'answered' : 'not-answered';
+                        if(currentQ < examData.length - 1) jumpToQ(currentQ + 1);
+                        else updatePaletteStats();
+                    });
+
+                    document.getElementById('btn-mark-next').addEventListener('click', () => {
+                        const sel = getSelectedOption();
+                        userState[currentQ].selected = sel;
+                        userState[currentQ].status = sel ? 'marked-answered' : 'marked';
+                        if(currentQ < examData.length - 1) jumpToQ(currentQ + 1);
+                        else updatePaletteStats();
+                    });
+
+                    document.getElementById('btn-clear').addEventListener('click', () => {
+                        document.querySelectorAll('.exam-radio').forEach(r => r.checked = false);
+                        userState[currentQ].selected = null;
+                    });
+
+                    document.getElementById('btn-submit-exam').addEventListener('click', () => {
+                        if(confirm("Are you sure you want to submit the exam?")) submitExam();
+                    });
+
+                    function submitExam() {
+                        clearInterval(timerInterval);
+                        document.getElementById('exam-panel').classList.add('d-none');
+                        document.getElementById('result-panel').classList.remove('d-none');
+                        
+                        let c=0, ic=0, ua=0;
+                        let solHtml = '';
+
+                        examData.forEach((q, i) => {
+                            const uAns = userState[i].selected;
+                            const isCorrect = uAns === q.a;
+                            
+                            if(!uAns) ua++;
+                            else if(isCorrect) c++;
+                            else ic++;
+
+                            let bgClass = !uAns ? 'bg-warning bg-opacity-10 border-warning' : (isCorrect ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger');
+                            let statusIco = !uAns ? '⚠️ Unattempted' : (isCorrect ? '✅ Correct' : '❌ Incorrect');
+
+                            solHtml += \`
+                                <div class="card mb-4 p-4 \${bgClass}">
+                                    <h5 class="fw-bold mb-3">Q\${i+1}. \${q.q}</h5>
+                                    <p class="mb-2 fw-bold \${!uAns ? 'text-warning' : (isCorrect ? 'text-success' : 'text-danger')}">\${statusIco} (Your Answer: \${uAns || 'None'})</p>
+                                    <p class="mb-3 text-dark fw-bold">Right Answer: \${q.a}</p>
+                                    <div class="p-3 bg-white border rounded shadow-sm small text-secondary"><strong>Explanation:</strong> \${q.d || 'Refer to standard textbooks for this concept.'}</div>
+                                </div>
+                            \`;
+                        });
+
+                        const totalMarks = (c * pMarks) - (ic * nMarks);
+                        
+                        document.getElementById('res-total').innerText = examData.length;
+                        document.getElementById('res-correct').innerText = c;
+                        document.getElementById('res-incorrect').innerText = ic;
+                        document.getElementById('res-unatt').innerText = ua;
+                        document.getElementById('res-marks').innerText = totalMarks.toFixed(2);
+                        
+                        document.getElementById('solution-list').innerHTML = solHtml;
+                        window.scrollTo(0,0);
+                    }
+                </script>
+            `;
+            await fsAsync.writeFile(path.join(customExamDir, 'index.html'), getHtmlShell('Custom Exam Builder', customExamHTML, 1, "", false));
+        });
+
+        // ======================================
+        // 3. GENERATE BLOG 
+        // ======================================
+        console.log("3. Generating Editorial Blog Content...");
         const postMainDir = path.join(distDir, 'post');
         fs.mkdirSync(postMainDir, { recursive: true });
 
@@ -469,11 +840,10 @@ async function buildUnifiedSite() {
             `, 1, "", false));
         });
 
-
         // ======================================
-        // 3. GENERATE CATEGORIES & MOCK TESTS & MCQs
+        // 4. GENERATE CATEGORIES, MOCK TESTS & MCQs
         // ======================================
-        console.log("3. Generating Categories, Mock Tests, and Single MCQs...");
+        console.log("4. Generating Categories, Mock Tests, and Paginated MCQs...");
         
         const catMainDir = path.join(distDir, 'categories');
         const mockTestsDir = path.join(distDir, 'mock-tests');
@@ -484,13 +854,11 @@ async function buildUnifiedSite() {
         fs.mkdirSync(mcqsMainDir, { recursive: true });
 
         let allCategoriesGridHtml = '<div class="row g-4">';
-        let globallyGeneratedSets = [];
 
         for (const [cat, quizzes] of Object.entries(quizCategoriesMap)) {
             if (!quizzes || quizzes.length === 0) continue; 
             const safeName = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             
-            // Dirs
             const catSubjectDir = path.join(catMainDir, safeName);
             const mockSubjectDir = path.join(mockTestsDir, safeName);
             const mcqSubjectDir = path.join(mcqsMainDir, safeName);
@@ -506,9 +874,6 @@ async function buildUnifiedSite() {
             sets.forEach((setQuizzes, setIndex) => {
                 const setNumber = setIndex + 1;
                 const setFileName = `set-${setNumber}.html`;
-                if (globallyGeneratedSets.length < 6) {
-                    globallyGeneratedSets.push({ category: cat, safeName: safeName, setNumber: setNumber, link: `../mock-tests/${safeName}/${setFileName}` });
-                }
 
                 masterPageTasks.push(async () => {
                     let setQuestionsHtml = ''; let answersMapScript = [];
@@ -615,12 +980,9 @@ async function buildUnifiedSite() {
             });
             practiceSetsHtml += '</div>';
 
-            // B) Single MCQs
-            let mcqListHtml = '<div class="list-group shadow-sm border-0 rounded-4 mb-5">';
+            // B) Single MCQs Generation (Thin content noindex)
             quizzes.forEach((q, i) => {
                 const singleMcqDir = path.join(mcqSubjectDir, String(q.quizId));
-                mcqListHtml += `<a href="../../mcqs/${safeName}/${q.quizId}/index.html" class="list-group-item list-group-item-action p-4 border-light"><strong>Q${i+1}.</strong> ${q.question.substring(0, 80)}...</a>`;
-
                 masterPageTasks.push(async () => {
                     await fsAsync.mkdir(singleMcqDir, { recursive: true });
                     const prevQ = quizzes[i - 1]; const nextQ = quizzes[i + 1];
@@ -683,13 +1045,69 @@ async function buildUnifiedSite() {
                             }
                         </script>
                     `;
-                    // 🔥 THIN CONTENT FIX: isThinPage = true (NoIndex for single questions)
+                    // 🔥 THIN CONTENT FIX: isThinPage = true
                     await fsAsync.writeFile(path.join(singleMcqDir, 'index.html'), getHtmlShell(`Q${q.quizId}: ${cat} MCQ`, mcqContent, 3, q.question, true));
                 });
             });
-            mcqListHtml += '</div>';
 
-            // C) Category Study Hub (/categories/[cat]/index.html)
+            // C) SMART PAGINATION FOR MCQs LIST
+            const QUESTIONS_PER_MCQ_PAGE = 10;
+            const mcqPages = chunkArray(quizzes, QUESTIONS_PER_MCQ_PAGE);
+            
+            mcqPages.forEach((pageQuizzes, pageIndex) => {
+                const pageNumber = pageIndex + 1;
+                
+                masterPageTasks.push(async () => {
+                    let mcqListHtml = '<div class="list-group shadow-sm border-0 rounded-4 mb-5">';
+                    pageQuizzes.forEach((q, idx) => {
+                        const overallIndex = (pageIndex * QUESTIONS_PER_MCQ_PAGE) + idx + 1;
+                        mcqListHtml += `<a href="./${q.quizId}/index.html" class="list-group-item list-group-item-action p-4 border-light"><strong>Q${overallIndex}.</strong> ${q.question.substring(0, 80)}...</a>`;
+                    });
+                    mcqListHtml += '</div>';
+
+                    let paginationHtml = '<nav><ul class="pagination justify-content-center pagination-lg flex-wrap">';
+                    if (pageNumber > 1) {
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="page-${pageNumber - 1}.html">Prev</a></li>`;
+                    }
+                    
+                    let startPage = Math.max(1, pageNumber - 2);
+                    let endPage = Math.min(mcqPages.length, pageNumber + 2);
+                    
+                    if(startPage > 1) {
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="page-1.html">1</a></li>`;
+                        if(startPage > 2) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+
+                    for (let p = startPage; p <= endPage; p++) {
+                        paginationHtml += `<li class="page-item ${p === pageNumber ? 'active' : ''}"><a class="page-link" href="page-${p}.html">${p}</a></li>`;
+                    }
+                    
+                    if(endPage < mcqPages.length) {
+                        if(endPage < mcqPages.length - 1) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="page-${mcqPages.length}.html">${mcqPages.length}</a></li>`;
+                    }
+
+                    if (pageNumber < mcqPages.length) {
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="page-${pageNumber + 1}.html">Next</a></li>`;
+                    }
+                    paginationHtml += '</ul></nav>';
+
+                    const mcqCatPageContent = `
+                        ${getBreadcrumbs(2, cat, safeName, '', 'mcq')}
+                        <h1 class="display-6 blog-title mb-4 text-dark mt-3">${cat} - Single MCQs (Page ${pageNumber})</h1>
+                        ${getAdBannerHtml("Sponsored")}
+                        ${mcqListHtml}
+                        ${paginationHtml}
+                    `;
+                    
+                    await fsAsync.writeFile(path.join(mcqSubjectDir, `page-${pageNumber}.html`), getHtmlShell(`${cat} Single MCQs - Page ${pageNumber}`, mcqCatPageContent, 2, "", false));
+                    if (pageNumber === 1) {
+                        await fsAsync.writeFile(path.join(mcqSubjectDir, 'index.html'), getHtmlShell(`${cat} Single MCQs`, mcqCatPageContent, 2, "", false));
+                    }
+                });
+            });
+
+            // D) Category Study Hub (/categories/[cat]/index.html)
             masterPageTasks.push(async () => {
                 const catPageContent = `
                     ${getBreadcrumbs(2, cat, safeName, '', 'cat')}
@@ -721,17 +1139,6 @@ async function buildUnifiedSite() {
                 await fsAsync.writeFile(path.join(catSubjectDir, 'index.html'), getHtmlShell(`${cat} MCQs & Mock Tests`, catPageContent, 2, "", false));
             });
 
-            // D) MCQs Subject List Page (/mcqs/[cat]/index.html)
-            masterPageTasks.push(async () => {
-                const mcqCatPageContent = `
-                    ${getBreadcrumbs(2, cat, safeName, '', 'mcq')}
-                    <h1 class="display-6 blog-title mb-4 text-dark mt-3">${cat} - All MCQs</h1>
-                    ${getAdBannerHtml("Sponsored")}
-                    ${mcqListHtml}
-                `;
-                await fsAsync.writeFile(path.join(mcqSubjectDir, 'index.html'), getHtmlShell(`${cat} Single MCQs List`, mcqCatPageContent, 2, "", false));
-            });
-
             allCategoriesGridHtml += `
                 <div class="col-md-6 col-lg-4">
                     <a href="./${safeName}/index.html" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
@@ -745,7 +1152,6 @@ async function buildUnifiedSite() {
 
         // Root Pages for the 3 Hubs
         masterPageTasks.push(async () => {
-            // /categories/index.html
             await fsAsync.writeFile(path.join(catMainDir, 'index.html'), getHtmlShell('All MCQ Categories', `
                 ${getBreadcrumbs(1, '', '', 'Categories Hub', 'cat')}
                 <h1 class="display-6 blog-title mb-4 text-dark mt-3">All MCQ Categories</h1>
@@ -754,7 +1160,6 @@ async function buildUnifiedSite() {
                 ${allCategoriesGridHtml}
             `, 1, "", false));
             
-            // /mock-tests/index.html
             await fsAsync.writeFile(path.join(mockTestsDir, 'index.html'), getHtmlShell('Mock Tests Hub', `
                 ${getBreadcrumbs(1, '', '', 'Mock Tests Hub', 'mock')}
                 <h1 class="display-6 blog-title mb-4 text-dark mt-3">Mock Test Subjects</h1>
@@ -763,7 +1168,6 @@ async function buildUnifiedSite() {
                 ${allCategoriesGridHtml.replace(/\.\/([\w-]+)\/index\.html/g, '../categories/$1/index.html')}
             `, 1, "", false));
 
-            // /mcqs/index.html
             await fsAsync.writeFile(path.join(mcqsMainDir, 'index.html'), getHtmlShell('Browse All MCQs', `
                 ${getBreadcrumbs(1, '', '', 'MCQs Hub', 'mcq')}
                 <h1 class="display-6 blog-title mb-4 text-dark mt-3">Browse MCQs by Topic</h1>
@@ -774,9 +1178,9 @@ async function buildUnifiedSite() {
         });
 
         // ======================================
-        // 4. HOMEPAGE (/index.html) -> BLOG ROOT
+        // 5. HOMEPAGE (/index.html) -> BLOG ROOT
         // ======================================
-        console.log("4. Generating Blog Root Homepage...");
+        console.log("5. Generating Homepage...");
         masterPageTasks.push(async () => {
             let topBlogHtml = '<div class="row g-4 mb-5">';
             blogPosts.slice(0, 6).forEach((post, index) => {
@@ -821,17 +1225,22 @@ async function buildUnifiedSite() {
                         <h2 class="blog-title text-dark mb-0">Ready to Practice?</h2>
                     </div>
                     <div class="row g-3 text-center">
-                        <div class="col-md-4">
-                            <a href="./categories/index.html" class="card bg-primary text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
-                                <h4 class="fw-bold mb-0"><i class="bi bi-grid me-2"></i>All Categories</h4>
+                        <div class="col-md-3">
+                            <a href="./custom-exam/index.html" class="card bg-dark text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
+                                <h4 class="fw-bold mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Custom Exam</h4>
                             </a>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <a href="./categories/index.html" class="card bg-primary text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
+                                <h4 class="fw-bold mb-0"><i class="bi bi-grid me-2"></i>Categories</h4>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
                             <a href="./mock-tests/index.html" class="card bg-success text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
                                 <h4 class="fw-bold mb-0"><i class="bi bi-stopwatch me-2"></i>Mock Tests</h4>
                             </a>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <a href="./mcqs/index.html" class="card bg-light text-dark border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
                                 <h4 class="fw-bold mb-0"><i class="bi bi-list-check me-2"></i>Single MCQs</h4>
                             </a>
@@ -843,8 +1252,9 @@ async function buildUnifiedSite() {
         });
 
         // ======================================
-        // 5. POLICIES & ABOUT
+        // 6. POLICIES & ABOUT
         // ======================================
+        console.log("6. Generating Legal Policies & About...");
         const aboutDir = path.join(distDir, 'about');
         fs.mkdirSync(aboutDir, { recursive: true });
         masterPageTasks.push(async () => {
@@ -859,8 +1269,8 @@ async function buildUnifiedSite() {
                             <p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p>
                         </div>
                         <div class="col-md-6">
-                            <h3 class="h4 fw-bold mb-3 text-dark">Contact Us</h3>
-                            <p class="text-secondary lh-lg">For inquiries, partnerships, or editorial feedback, please reach out to us via our primary contact channels.</p>
+                            <h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3>
+                            <p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p>
                         </div>
                     </div>
                 </div>
@@ -874,13 +1284,29 @@ async function buildUnifiedSite() {
                 <div class="card shadow-sm p-4 p-md-5 border-0 rounded-4 bg-white mt-4">
                     <h1 class="blog-title mb-4">Privacy Policy for Wedugo Education</h1>
                     <p class="text-secondary lh-lg">At Wedugo Education, accessible from wedugo.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wedugo Education and how we use it.</p>
+                    <p class="text-secondary lh-lg">If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us.</p>
+                    
+                    <h3 class="mt-4 fw-bold">Log Files</h3>
+                    <p class="text-secondary lh-lg">Wedugo Education follows a standard procedure of using log files. These files log visitors when they visit websites. All hosting companies do this and a part of hosting services' analytics. The information collected by log files include internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks. These are not linked to any information that is personally identifiable. The purpose of the information is for analyzing trends, administering the site, tracking users' movement on the website, and gathering demographic information.</p>
+                    
+                    <h3 class="mt-4 fw-bold">Cookies and Web Beacons</h3>
+                    <p class="text-secondary lh-lg">Like any other website, Wedugo Education uses "cookies". These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited. The information is used to optimize the users' experience by customizing our web page content based on visitors' browser type and/or other information.</p>
+                    
                     <h3 class="mt-4 fw-bold">Google DoubleClick DART Cookie</h3>
                     <p class="text-secondary lh-lg">Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to www.website.com and other sites on the internet. However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy at the following URL – <a href="https://policies.google.com/technologies/ads">https://policies.google.com/technologies/ads</a></p>
-                    <h3 class="mt-4 fw-bold">Our Advertising Partners</h3>
-                    <p class="text-secondary lh-lg">Some of advertisers on our site may use cookies and web beacons. Our advertising partners are listed below. Each of our advertising partners has their own Privacy Policy for their policies on user data.</p>
-                    <ul><li class="text-secondary">Google AdSense</li></ul>
-                    <h3 class="mt-4 fw-bold">Log Files</h3>
-                    <p class="text-secondary lh-lg">Wedugo Education follows a standard procedure of using log files. These files log visitors when they visit websites. The information collected by log files include internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks.</p>
+                    
+                    <h3 class="mt-4 fw-bold">Advertising Partners Privacy Policies</h3>
+                    <p class="text-secondary lh-lg">You may consult this list to find the Privacy Policy for each of the advertising partners of Wedugo Education.</p>
+                    <p class="text-secondary lh-lg">Third-party ad servers or ad networks uses technologies like cookies, JavaScript, or Web Beacons that are used in their respective advertisements and links that appear on Wedugo Education, which are sent directly to users' browser. They automatically receive your IP address when this occurs. These technologies are used to measure the effectiveness of their advertising campaigns and/or to personalize the advertising content that you see on websites that you visit.</p>
+                    <p class="text-secondary lh-lg">Note that Wedugo Education has no access to or control over these cookies that are used by third-party advertisers.</p>
+                    
+                    <h3 class="mt-4 fw-bold">Third Party Privacy Policies</h3>
+                    <p class="text-secondary lh-lg">Wedugo Education's Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information. It may include their practices and instructions about how to opt-out of certain options.</p>
+                    
+                    <h3 class="mt-4 fw-bold">Children's Information</h3>
+                    <p class="text-secondary lh-lg">Another part of our priority is adding protection for children while using the internet. We encourage parents and guardians to observe, participate in, and/or monitor and guide their online activity.</p>
+                    <p class="text-secondary lh-lg">Wedugo Education does not knowingly collect any Personal Identifiable Information from children under the age of 13. If you think that your child provided this kind of information on our website, we strongly encourage you to contact us immediately and we will do our best efforts to promptly remove such information from our records.</p>
+                    
                     <h3 class="mt-4 fw-bold">Consent</h3>
                     <p class="text-secondary lh-lg">By using our website, you hereby consent to our Privacy Policy and agree to its Terms and Conditions.</p>
                 </div>
@@ -893,17 +1319,30 @@ async function buildUnifiedSite() {
                     <h1 class="blog-title mb-4">Terms and Conditions</h1>
                     <p class="text-secondary lh-lg">Welcome to Wedugo Education!</p>
                     <p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website, located at wedugo.com.</p>
+                    <p class="text-secondary lh-lg">By accessing this website we assume you accept these terms and conditions. Do not continue to use Wedugo Education if you do not agree to take all of the terms and conditions stated on this page.</p>
+                    
                     <h3 class="mt-4 fw-bold">Cookies</h3>
                     <p class="text-secondary lh-lg">We employ the use of cookies. By accessing Wedugo Education, you agreed to use cookies in agreement with the Wedugo Education's Privacy Policy.</p>
+                    <p class="text-secondary lh-lg">Most interactive websites use cookies to let us retrieve the user’s details for each visit. Cookies are used by our website to enable the functionality of certain areas to make it easier for people visiting our website.</p>
+                    
                     <h3 class="mt-4 fw-bold">License</h3>
                     <p class="text-secondary lh-lg">Unless otherwise stated, Wedugo Education and/or its licensors own the intellectual property rights for all material on Wedugo Education. All intellectual property rights are reserved. You may access this from Wedugo Education for your own personal use subjected to restrictions set in these terms and conditions.</p>
                     <ul class="text-secondary lh-lg">
                         <li>You must not republish material from Wedugo Education</li>
                         <li>You must not sell, rent or sub-license material from Wedugo Education</li>
                         <li>You must not reproduce, duplicate or copy material from Wedugo Education</li>
+                        <li>You must not redistribute content from Wedugo Education</li>
                     </ul>
+                    
                     <h3 class="mt-4 fw-bold">User Comments</h3>
-                    <p class="text-secondary lh-lg">Parts of this website offer an opportunity for users to post and exchange opinions and information in certain areas of the website. Wedugo Education does not filter, edit, publish or review Comments prior to their presence on the website. Comments do not reflect the views and opinions of Wedugo Education, its agents and/or affiliates.</p>
+                    <p class="text-secondary lh-lg">Parts of this website offer an opportunity for users to post and exchange opinions and information in certain areas of the website. Wedugo Education does not filter, edit, publish or review Comments prior to their presence on the website. Comments do not reflect the views and opinions of Wedugo Education, its agents and/or affiliates. Comments reflect the views and opinions of the person who post their views and opinions.</p>
+                    <p class="text-secondary lh-lg">Wedugo Education reserves the right to monitor all Comments and to remove any Comments which can be considered inappropriate, offensive or causes breach of these Terms and Conditions.</p>
+
+                    <h3 class="mt-4 fw-bold">Hyperlinking to our Content</h3>
+                    <p class="text-secondary lh-lg">Government agencies, Search engines, and News organizations may link to our Website without prior written approval. We may consider and approve other link requests from commonly-known consumer and/or business information sources.</p>
+                    
+                    <h3 class="mt-4 fw-bold">Disclaimer</h3>
+                    <p class="text-secondary lh-lg">To the maximum extent permitted by applicable law, we exclude all representations, warranties and conditions relating to our website and the use of this website. Nothing in this disclaimer will limit or exclude our or your liability for death or personal injury, fraud, or limit any of our or your liabilities in any way that is not permitted under applicable law.</p>
                 </div>
             `;
             await fsAsync.writeFile(path.join(distDir, 'terms.html'), getHtmlShell('Terms and Conditions', termsContent, 0, "", false));
@@ -911,13 +1350,13 @@ async function buildUnifiedSite() {
 
         await executeTasksInBatches(masterPageTasks, 10);
 
-        console.log("6. Finalizing Build...");
+        console.log("7. Finalizing Build & Assets...");
         ['tools', 'main_images'].forEach(dir => { const s = path.join(__dirname, dir); if (fs.existsSync(s)) fs.cpSync(s, path.join(distDir, dir), { recursive: true }); });
         ['Ads.txt', 'CNAME', '404.html'].forEach(f => { const s = path.join(__dirname, f); if (fs.existsSync(s)) fs.copyFileSync(s, path.join(distDir, f === 'Ads.txt' ? 'ads.txt' : f)); });
 
         await generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap);
 
-        console.log("✅ BUILD COMPLETE! All sections (Blog, Categories, Mock Tests, Single MCQs) added successfully with No-Index on Thin Content.");
+        console.log("✅ BUILD COMPLETE! Custom Exam Builder, Detailed Legal Policies, and Unified Navigation added.");
     } catch (error) { console.error("Build failed:", error); }
 }
 

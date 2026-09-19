@@ -5,8 +5,8 @@ const path = require('path');
 // ==========================================
 // CONFIGURATION & URLS
 // ==========================================
-const QUIZ_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSnJP6ImRuS24j_tOTKA_i1QG_K-DKutrWxjjSbi4WszrZxR90g_1uNaXQqOjnxR2tX9flEFXy7qfY/pub?gid=0&single=true&output=csv";
-const BLOG_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrpdugY1OXmb7Pzer-sjOixONsm2wix3Xg29fl6WGVEaNmvL_U0aKv21RKpZRtedHHpqp4l7C-Mk7m/pub?output=csv";
+const QUIZ_SHEET_CSV_URL = "";
+const BLOG_SHEET_CSV_URL = "";
 const SITE_BASE_URL = "https://www.wedugo.com"; 
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const POSTS_PER_PAGE = 10;

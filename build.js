@@ -5,8 +5,8 @@ const path = require('path');
 // ==========================================
 // CONFIGURATION & URLS
 // ==========================================
-const QUIZ_SHEET_CSV_URL = QUIZURL;
-const BLOG_SHEET_CSV_URL = BLOGURL;
+const QUIZ_SHEET_CSV_URL = process.env.QUIZURL;
+const BLOG_SHEET_CSV_URL = process.env.BLOGURL;
 const SITE_BASE_URL = "https://www.wedugo.com"; 
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const POSTS_PER_PAGE = 10;

@@ -31,6 +31,9 @@ jobs:
 
       - name: Generate Pages from Google Sheet
         run: node build.js
+        env:
+          QUIZURL: ${{ vars.QUIZURL }}
+          BLOGURL: ${{ vars.BLOGURL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -60,6 +60,11 @@ function getDifficultyData(questionStr) {
     return { label: 'Medium', time: '60 sec', color: 'warning' };
 }
 
+function getRandomItems(arr, count) {
+    const shuffled = arr.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+}
+
 // ==========================================
 // ADVERTISEMENT & UI COMPONENTS
 // ==========================================
@@ -127,6 +132,7 @@ function getNavbar(depth) {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mock-tests/index.html"><i class="bi bi-stopwatch me-1"></i>Mock Tests</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/mcqs/index.html"><i class="bi bi-list-check me-1"></i>MCQs</a></li>
                     <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="${prefix}/custom-exam/index.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/tools/index.html"><i class="bi bi-tools me-1"></i>Tools</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/topic/index.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="${prefix}/about/index.html"><i class="bi bi-info-circle me-1"></i>About</a></li>
                 </ul>
@@ -145,6 +151,7 @@ function getFooter(depth) {
                     <p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
+                    <a href="${prefix}/tools/index.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">Study Tools</a>
                     <a href="${prefix}/about/index.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">About Us</a>
                     <a href="${prefix}/privacy.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">Privacy Policy</a>
                     <a href="${prefix}/terms.html" class="text-secondary text-decoration-none small hover-text-primary">Terms of Service</a>
@@ -261,6 +268,8 @@ function getBreadcrumbs(depth, category, safeName, currentTitle, type = 'blog') 
         if (category) pathList += `<li class="breadcrumb-item"><a href="${prefix}/categories/${safeName}/index.html" class="text-decoration-none text-primary fw-medium">${category}</a></li>`;
     } else if (type === 'custom') {
         pathList += `<li class="breadcrumb-item"><a href="${prefix}/custom-exam/index.html" class="text-decoration-none text-primary fw-medium">Custom Exam</a></li>`;
+    } else if (type === 'tools') {
+        pathList += `<li class="breadcrumb-item"><a href="${prefix}/tools/index.html" class="text-decoration-none text-primary fw-medium">Tools</a></li>`;
     }
     
     return `
@@ -274,6 +283,187 @@ function getBreadcrumbs(depth, category, safeName, currentTitle, type = 'blog') 
     `;
 }
 
+// 🟢 RANDOM QUIZ GENERATOR FOR HOMEPAGE & BLOGS
+function getRandomQuizBlockHtml(randomQuizzes) {
+    if (!randomQuizzes || randomQuizzes.length === 0) return '';
+    let quizHtml = '<div class="row g-4 my-4">';
+    randomQuizzes.forEach((q, idx) => {
+        const correctLetter = (q.mainanswer || '').toString().replace(/[^A-D]/gi, '').toUpperCase();
+        const escape = str => (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
+        quizHtml += `
+        <div class="col-12" id="rand-q-${q.quizId}">
+            <div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover">
+                <div class="d-flex flex-wrap gap-2 justify-content-between mb-4">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-3 py-2 rounded-pill"><i class="bi bi-folder2-open me-1"></i>${q.matchedCategory || 'General'}</span>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-2 rounded-pill"><i class="bi bi-lightning-charge-fill me-1"></i>Quick Quiz</span>
+                </div>
+                <h3 class="h4 fw-bold text-dark mb-4 lh-base" style="line-height: 1.6 !important;">${q.question}</h3>
+                <div class="d-grid gap-2 ps-md-3 mb-3">
+                    <button class="btn option-btn" data-letter="A" onclick="checkRandAnswer('${q.quizId}', 'A', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}', this)">A) ${q.answer1}</button>
+                    <button class="btn option-btn" data-letter="B" onclick="checkRandAnswer('${q.quizId}', 'B', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}', this)">B) ${q.answer2}</button>
+                    <button class="btn option-btn" data-letter="C" onclick="checkRandAnswer('${q.quizId}', 'C', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}', this)">C) ${q.answer3}</button>
+                    <button class="btn option-btn" data-letter="D" onclick="checkRandAnswer('${q.quizId}', 'D', '${correctLetter}', '${escape(q.answer1)}', '${escape(q.answer2)}', '${escape(q.answer3)}', '${escape(q.answer4)}', this)">D) ${q.answer4}</button>
+                </div>
+                <div id="rand-exp-${q.quizId}" class="alert mt-4 d-none p-4 rounded-4 border bg-light">
+                    <h5 class="alert-heading fw-bold fs-5 mb-3" id="rand-res-${q.quizId}"></h5>
+                    <hr class="opacity-25 mb-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Solution Breakdown:</h6>
+                    <p class="mb-0 text-dark lh-lg" style="font-size: 1.05rem;">${q.answerdetail || 'Consistent practice is key to mastering these topics.'}</p>
+                </div>
+            </div>
+        </div>`;
+    });
+    quizHtml += `</div>
+        <script>
+            function checkRandAnswer(quizId, selectedLetter, correctLetter, aTxt, bTxt, cTxt, dTxt, btnElement) {
+                const container = document.getElementById('rand-q-' + quizId);
+                const explanationBox = document.getElementById('rand-exp-' + quizId);
+                const resultTitle = document.getElementById('rand-res-' + quizId);
+                
+                container.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                explanationBox.classList.remove('d-none', 'alert-success', 'alert-danger', 'border-success', 'border-danger');
+                
+                const answerTexts = { 'A': aTxt, 'B': bTxt, 'C': cTxt, 'D': dTxt };
+                
+                if(selectedLetter === correctLetter) {
+                    btnElement.classList.add('correct-show');
+                    explanationBox.classList.add('alert-success', 'border-success', 'border-opacity-25');
+                    resultTitle.innerHTML = "✨ Correct Answer!";
+                } else {
+                    btnElement.classList.add('incorrect-show');
+                    explanationBox.classList.add('alert-danger', 'border-danger', 'border-opacity-25');
+                    resultTitle.innerHTML = "❌ Incorrect. Correct Option: " + correctLetter + ") " + answerTexts[correctLetter];
+                }
+            }
+        </script>
+    `;
+    return quizHtml;
+}
+
+// 🟢 5 ADVANCED TOOLS HTML
+function getToolsHtml(depth) {
+    const prefix = depth === 0 ? '.' : '../'.repeat(depth).slice(0, -1);
+    return `
+    <div class="row g-4 mt-3 mb-5">
+        <!-- Tool 1: Exam Score Estimator -->
+        <div class="col-md-6">
+            <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
+                <h4 class="fw-bold text-primary mb-3"><i class="bi bi-calculator me-2"></i>Exam Score Estimator</h4>
+                <p class="text-muted small mb-3">Calculate your expected score with negative marking.</p>
+                <div class="mb-2"><label class="form-label small fw-bold">Total Correct Questions</label><input type="number" id="tool-c" class="form-control" value="0"></div>
+                <div class="mb-2"><label class="form-label small fw-bold">Total Incorrect Questions</label><input type="number" id="tool-w" class="form-control" value="0"></div>
+                <div class="mb-3"><label class="form-label small fw-bold">Negative Marking (e.g., 0.25, 0.33)</label><input type="number" id="tool-n" class="form-control" value="0.25" step="0.01"></div>
+                <button class="btn btn-primary w-100 fw-bold" onclick="calcScore()">Calculate Score</button>
+                <div class="mt-3 text-center d-none" id="tool-res-box"><h5 class="fw-bold text-success mb-0">Estimated Score: <span id="tool-score"></span></h5></div>
+                <script>
+                    function calcScore() {
+                        const c = parseFloat(document.getElementById('tool-c').value) || 0;
+                        const w = parseFloat(document.getElementById('tool-w').value) || 0;
+                        const n = parseFloat(document.getElementById('tool-n').value) || 0;
+                        const score = c - (w * n);
+                        document.getElementById('tool-score').innerText = score.toFixed(2);
+                        document.getElementById('tool-res-box').classList.remove('d-none');
+                    }
+                </script>
+            </div>
+        </div>
+
+        <!-- Tool 2: Study Planner -->
+        <div class="col-md-6">
+            <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
+                <h4 class="fw-bold text-success mb-3"><i class="bi bi-calendar-check me-2"></i>Syllabus Planner</h4>
+                <p class="text-muted small mb-3">Calculate how many days you need to finish your syllabus.</p>
+                <div class="mb-2"><label class="form-label small fw-bold">Total Chapters to Study</label><input type="number" id="plan-t" class="form-control" value="0"></div>
+                <div class="mb-3"><label class="form-label small fw-bold">Chapters you can study per day</label><input type="number" id="plan-d" class="form-control" value="0"></div>
+                <button class="btn btn-success w-100 fw-bold" onclick="calcPlan()">Plan My Study</button>
+                <div class="mt-3 text-center d-none" id="plan-res-box"><h5 class="fw-bold text-success mb-0">Days Required: <span id="plan-days"></span> Days</h5></div>
+                <script>
+                    function calcPlan() {
+                        const t = parseFloat(document.getElementById('plan-t').value) || 0;
+                        const d = parseFloat(document.getElementById('plan-d').value) || 0;
+                        if(d <= 0) return alert('Enter valid chapters per day');
+                        document.getElementById('plan-days').innerText = Math.ceil(t / d);
+                        document.getElementById('plan-res-box').classList.remove('d-none');
+                    }
+                </script>
+            </div>
+        </div>
+
+        <!-- Tool 3: Pomodoro Timer -->
+        <div class="col-md-6">
+            <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4 text-center">
+                <h4 class="fw-bold text-danger mb-3"><i class="bi bi-stopwatch me-2"></i>Pomodoro Timer</h4>
+                <p class="text-muted small mb-4">Focus for 25 minutes, then take a short break.</p>
+                <div class="display-3 fw-bold font-monospace text-danger mb-4" id="pomo-display">25:00</div>
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-danger px-4 fw-bold" onclick="startPomo()">Start</button>
+                    <button class="btn btn-outline-secondary px-4 fw-bold" onclick="resetPomo()">Reset</button>
+                </div>
+                <script>
+                    let pomoTime = 1500, pomoInt;
+                    function updatePomo() {
+                        let m = Math.floor(pomoTime / 60), s = pomoTime % 60;
+                        document.getElementById('pomo-display').innerText = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+                    }
+                    function startPomo() {
+                        clearInterval(pomoInt);
+                        pomoInt = setInterval(() => {
+                            if(pomoTime > 0) { pomoTime--; updatePomo(); }
+                            else { clearInterval(pomoInt); alert('Time up! Take a 5-minute break.'); resetPomo(); }
+                        }, 1000);
+                    }
+                    function resetPomo() { clearInterval(pomoInt); pomoTime = 1500; updatePomo(); }
+                </script>
+            </div>
+        </div>
+
+        <!-- Tool 4: Quick Scratchpad -->
+        <div class="col-md-6">
+            <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
+                <h4 class="fw-bold text-warning mb-3"><i class="bi bi-journal-text me-2"></i>Quick Notes</h4>
+                <p class="text-muted small mb-3">Jot down formulas or thoughts. Saves automatically in your browser.</p>
+                <textarea id="scratchpad" class="form-control mb-3 flex-grow-1" style="min-height:120px;" placeholder="Type your notes here..."></textarea>
+                <button class="btn btn-outline-warning text-dark fw-bold w-100" onclick="document.getElementById('scratchpad').value=''; localStorage.removeItem('wedugo_notes');">Clear Notes</button>
+                <script>
+                    const pad = document.getElementById('scratchpad');
+                    pad.value = localStorage.getItem('wedugo_notes') || '';
+                    pad.addEventListener('input', () => localStorage.setItem('wedugo_notes', pad.value));
+                </script>
+            </div>
+        </div>
+
+        <!-- Tool 5: Age Calculator for Exams -->
+        <div class="col-md-12">
+            <div class="card bg-white shadow-sm border-0 p-4 rounded-4">
+                <h4 class="fw-bold text-info mb-3"><i class="bi bi-person-badge me-2"></i>Exam Age Eligibility Calculator</h4>
+                <p class="text-muted small mb-3">Check your exact age as of a specific cut-off date required by examination boards.</p>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-5"><label class="form-label small fw-bold">Date of Birth</label><input type="date" id="age-dob" class="form-control"></div>
+                    <div class="col-md-5"><label class="form-label small fw-bold">Exam Cut-off Date</label><input type="date" id="age-cut" class="form-control"></div>
+                    <div class="col-md-2 d-flex align-items-end"><button class="btn btn-info text-white w-100 fw-bold" onclick="calcAge()">Check Age</button></div>
+                </div>
+                <div class="alert alert-info d-none mb-0 fw-bold text-center" id="age-res"></div>
+                <script>
+                    function calcAge() {
+                        const dob = new Date(document.getElementById('age-dob').value);
+                        const cut = new Date(document.getElementById('age-cut').value);
+                        if(!dob || !cut || isNaN(dob) || isNaN(cut)) return alert('Enter valid dates');
+                        let years = cut.getFullYear() - dob.getFullYear();
+                        let months = cut.getMonth() - dob.getMonth();
+                        let days = cut.getDate() - dob.getDate();
+                        if (days < 0) { months--; days += new Date(cut.getFullYear(), cut.getMonth(), 0).getDate(); }
+                        if (months < 0) { years--; months += 12; }
+                        document.getElementById('age-res').innerText = \`Exact Age: \${years} Years, \${months} Months, \${days} Days\`;
+                        document.getElementById('age-res').classList.remove('d-none');
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
 async function generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap) {
     const today = new Date().toISOString().split('T')[0];
     const urls = [];
@@ -284,6 +474,7 @@ async function generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, b
     urls.push({ loc: `${SITE_BASE_URL}/mcqs/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/topic/index.html`, priority: '0.9', changefreq: 'weekly' });
     urls.push({ loc: `${SITE_BASE_URL}/custom-exam/index.html`, priority: '0.9', changefreq: 'weekly' });
+    urls.push({ loc: `${SITE_BASE_URL}/tools/index.html`, priority: '0.8', changefreq: 'monthly' });
     urls.push({ loc: `${SITE_BASE_URL}/about/index.html`, priority: '0.5', changefreq: 'monthly' });
 
     for (const [catName] of Object.entries(blogCategoriesMap)) {
@@ -344,8 +535,8 @@ async function buildUnifiedSite() {
         CATEGORY_LIST.forEach(cat => quizCategoriesMap[cat] = []);
         quizCategoriesMap['Uncategorized'] = [];
 
-        // For Custom Exam Builder Engine
         const globalQuizDataForEngine = [];
+        const allValidQuizzesForRandomizer = [];
 
         allQuizRows.slice(1).reverse().forEach((values, index) => {
             if (values.length < quizHeaders.length) return;
@@ -358,6 +549,7 @@ async function buildUnifiedSite() {
             }
             q.quizId = q.id || index; q.matchedCategory = matchedCat;
             quizCategoriesMap[matchedCat].push(q);
+            allValidQuizzesForRandomizer.push(q);
 
             globalQuizDataForEngine.push({
                 c: matchedCat,
@@ -579,7 +771,7 @@ async function buildUnifiedSite() {
                 <script>
                     let allDB = [];
                     let examData = [];
-                    let userState = []; // {status, selected}
+                    let userState = []; 
                     let currentQ = 0;
                     let pMarks = 1, nMarks = 0.33;
                     let timerInterval, timeLeft = 0;
@@ -615,7 +807,6 @@ async function buildUnifiedSite() {
                         document.getElementById('setup-panel').classList.add('d-none');
                         document.getElementById('exam-panel').classList.remove('d-none');
                         
-                        // Hide Navbar and Footer for Full Screen Exam Mode
                         document.querySelector('nav.navbar').style.display = 'none';
                         document.querySelector('footer').style.display = 'none';
                         
@@ -705,7 +896,6 @@ async function buildUnifiedSite() {
                         updatePaletteStats();
                     }
 
-                    // Card Click to Select Option
                     document.querySelectorAll('.opt-card').forEach(card => {
                         card.addEventListener('click', function() {
                             document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
@@ -748,12 +938,11 @@ async function buildUnifiedSite() {
                     function submitExam() {
                         clearInterval(timerInterval);
                         
-                        // Show Navbar/Footer again
                         document.querySelector('nav.navbar').style.display = 'block';
                         document.querySelector('footer').style.display = 'block';
                         
                         document.getElementById('exam-panel').classList.add('d-none');
-                        document.getElementById('exam-panel').classList.remove('position-absolute'); // remove full screen behavior
+                        document.getElementById('exam-panel').classList.remove('position-absolute'); 
                         
                         document.getElementById('result-panel').classList.remove('d-none');
                         
@@ -798,7 +987,7 @@ async function buildUnifiedSite() {
         });
 
         // ======================================
-        // 3. GENERATE BLOG 
+        // 3. GENERATE BLOG & INJECT RANDOM QUIZZES
         // ======================================
         console.log("3. Generating Editorial Blog Content...");
         const postMainDir = path.join(distDir, 'post');
@@ -807,6 +996,9 @@ async function buildUnifiedSite() {
         blogPosts.forEach((post) => {
             const postDir = path.join(postMainDir, post.urlSlug);
             fs.mkdirSync(postDir, { recursive: true });
+
+            // INJECT THICK CONTENT: Random Quizzes inside Blog
+            const randomQuizBlocks = getRandomQuizBlockHtml(getRandomItems(allValidQuizzesForRandomizer, 3));
 
             const articleContent = `
                 ${getBreadcrumbs(2, post.cat, post.cat.toLowerCase().replace(/[^a-z0-9]+/g, '-'), post.title, 'blog')}
@@ -825,6 +1017,14 @@ async function buildUnifiedSite() {
                         <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white">
                             <article class="article-content">${post.content}</article>
                         </div>
+                        
+                        <!-- DYNAMIC CONTENT INJECTION TO COMBAT THIN CONTENT -->
+                        <div class="mt-5 mb-5 pt-4 border-top">
+                            <h3 class="fw-bold mb-4"><i class="bi bi-lightning-fill text-warning me-2"></i>Quick Revision Quiz</h3>
+                            <p class="text-secondary mb-4">Test your knowledge right here while you read.</p>
+                            ${randomQuizBlocks}
+                        </div>
+
                         ${getAdBannerHtml("Sponsored")}
                         <div class="card shadow-sm p-4 bg-light text-center mb-5 border-0 rounded-4">
                             <h3 class="h5 fw-bold text-dark text-uppercase mb-3">Share & Discuss</h3>
@@ -1074,6 +1274,8 @@ async function buildUnifiedSite() {
                             ${nextQ ? `<a href="../${nextQ.quizId}/index.html" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm">Next<i class="bi bi-arrow-right ms-2"></i></a>` : `<button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" disabled>Next<i class="bi bi-arrow-right ms-2"></i></button>`}
                         </div>
                     `;
+                    
+                    const randomQuizBlocks = getRandomQuizBlockHtml(getRandomItems(allValidQuizzesForRandomizer, 3));
 
                     const mcqContent = `
                         ${getBreadcrumbs(3, cat, safeName, 'Question ' + q.quizId, 'mcq')}
@@ -1101,6 +1303,11 @@ async function buildUnifiedSite() {
                                     </div>
                                     ${navButtonsHtml}
                                 </article>
+                                
+                                <div class="mt-5 mb-5 pt-4 border-top">
+                                    <h3 class="fw-bold mb-4"><i class="bi bi-shuffle text-primary me-2"></i>More Practice Questions</h3>
+                                    ${randomQuizBlocks}
+                                </div>
                             </div>
                             ${getAdSidebar()}
                         </div>
@@ -1127,7 +1334,6 @@ async function buildUnifiedSite() {
                             }
                         </script>
                     `;
-                    // 🔥 THIN CONTENT FIX: isThinPage = true
                     await fsAsync.writeFile(path.join(singleMcqDir, 'index.html'), getHtmlShell(`Q${q.quizId}: ${cat} MCQ`, mcqContent, 3, q.question, true));
                 });
             });
@@ -1138,7 +1344,6 @@ async function buildUnifiedSite() {
             
             mcqPages.forEach((pageQuizzes, pageIndex) => {
                 const pageNumber = pageIndex + 1;
-                
                 masterPageTasks.push(async () => {
                     let mcqListHtml = '<div class="list-group shadow-sm border-0 rounded-4 mb-5">';
                     pageQuizzes.forEach((q, idx) => {
@@ -1148,30 +1353,21 @@ async function buildUnifiedSite() {
                     mcqListHtml += '</div>';
 
                     let paginationHtml = '<nav><ul class="pagination justify-content-center pagination-lg flex-wrap">';
-                    if (pageNumber > 1) {
-                        paginationHtml += `<li class="page-item"><a class="page-link" href="page-${pageNumber - 1}.html">Prev</a></li>`;
-                    }
-                    
+                    if (pageNumber > 1) { paginationHtml += `<li class="page-item"><a class="page-link" href="page-${pageNumber - 1}.html">Prev</a></li>`; }
                     let startPage = Math.max(1, pageNumber - 2);
                     let endPage = Math.min(mcqPages.length, pageNumber + 2);
-                    
                     if(startPage > 1) {
                         paginationHtml += `<li class="page-item"><a class="page-link" href="page-1.html">1</a></li>`;
                         if(startPage > 2) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                     }
-
                     for (let p = startPage; p <= endPage; p++) {
                         paginationHtml += `<li class="page-item ${p === pageNumber ? 'active' : ''}"><a class="page-link" href="page-${p}.html">${p}</a></li>`;
                     }
-                    
                     if(endPage < mcqPages.length) {
                         if(endPage < mcqPages.length - 1) paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                         paginationHtml += `<li class="page-item"><a class="page-link" href="page-${mcqPages.length}.html">${mcqPages.length}</a></li>`;
                     }
-
-                    if (pageNumber < mcqPages.length) {
-                        paginationHtml += `<li class="page-item"><a class="page-link" href="page-${pageNumber + 1}.html">Next</a></li>`;
-                    }
+                    if (pageNumber < mcqPages.length) { paginationHtml += `<li class="page-item"><a class="page-link" href="page-${pageNumber + 1}.html">Next</a></li>`; }
                     paginationHtml += '</ul></nav>';
 
                     const mcqCatPageContent = `
@@ -1183,9 +1379,7 @@ async function buildUnifiedSite() {
                     `;
                     
                     await fsAsync.writeFile(path.join(mcqSubjectDir, `page-${pageNumber}.html`), getHtmlShell(`${cat} Single MCQs - Page ${pageNumber}`, mcqCatPageContent, 2, "", false));
-                    if (pageNumber === 1) {
-                        await fsAsync.writeFile(path.join(mcqSubjectDir, 'index.html'), getHtmlShell(`${cat} Single MCQs`, mcqCatPageContent, 2, "", false));
-                    }
+                    if (pageNumber === 1) { await fsAsync.writeFile(path.join(mcqSubjectDir, 'index.html'), getHtmlShell(`${cat} Single MCQs`, mcqCatPageContent, 2, "", false)); }
                 });
             });
 
@@ -1260,9 +1454,27 @@ async function buildUnifiedSite() {
         });
 
         // ======================================
-        // 5. HOMEPAGE (/index.html) -> BLOG ROOT
+        // 5. GENERATE ADVANCED TOOLS PAGE
         // ======================================
-        console.log("5. Generating Homepage...");
+        console.log("5. Generating Advanced Tools...");
+        const toolsDir = path.join(distDir, 'tools');
+        fs.mkdirSync(toolsDir, { recursive: true });
+        masterPageTasks.push(async () => {
+            const toolsContent = `
+                ${getBreadcrumbs(1, '', '', 'Study Tools', 'tools')}
+                <div class="mb-4 text-center mt-3">
+                    <h1 class="display-5 blog-title text-dark mb-3"><i class="bi bi-tools text-primary me-2"></i>Advanced Study Tools</h1>
+                    <p class="lead text-secondary">Free interactive utilities to optimize your competitive exam preparation.</p>
+                </div>
+                ${getToolsHtml(1)}
+            `;
+            await fsAsync.writeFile(path.join(toolsDir, 'index.html'), getHtmlShell('Free Study Tools & Calculators', toolsContent, 1, "", false));
+        });
+
+        // ======================================
+        // 6. HOMEPAGE (/index.html) -> BLOG ROOT
+        // ======================================
+        console.log("6. Generating Homepage...");
         masterPageTasks.push(async () => {
             let topBlogHtml = '<div class="row g-4 mb-5">';
             blogPosts.slice(0, 6).forEach((post, index) => {
@@ -1291,40 +1503,45 @@ async function buildUnifiedSite() {
             });
             topBlogHtml += '</div>';
 
+            const homeRandomQsHtml = getRandomQuizBlockHtml(getRandomItems(allValidQuizzesForRandomizer, 5));
+
             const homeContent = `
                 <div class="mt-4 mb-5 text-center">
                     <h1 class="display-3 blog-title text-dark mb-3">Learn & Master Your Exams</h1>
                     <p class="lead text-secondary col-md-8 mx-auto">High-quality editorial guides, deep concepts, and extensive practice tools for modern competitive examinations.</p>
                 </div>
                 ${topBlogHtml}
-                ${getAdBannerHtml("Ad")}
-                <div class="text-center mt-5 mb-5">
+                <div class="text-center mt-4 mb-5">
                     <a href="./page/1/index.html" class="btn btn-outline-dark btn-lg rounded-pill px-5 fw-bold">View All Articles</a>
+                </div>
+                
+                ${getAdBannerHtml("Ad")}
+                
+                <div class="mt-5 pt-5 border-top">
+                    <div class="d-flex justify-content-between align-items-end mb-4">
+                        <h2 class="blog-title text-dark mb-0"><i class="bi bi-lightning-fill text-warning me-2"></i>Quick Knowledge Check</h2>
+                    </div>
+                    ${homeRandomQsHtml}
                 </div>
                 
                 <div class="mt-5 pt-5 border-top">
                     <div class="d-flex justify-content-between align-items-end mb-4">
-                        <h2 class="blog-title text-dark mb-0">Ready to Practice?</h2>
+                        <h2 class="blog-title text-dark mb-0">Explore Platforms</h2>
                     </div>
                     <div class="row g-3 text-center">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <a href="./custom-exam/index.html" class="card bg-dark text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
                                 <h4 class="fw-bold mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Custom Exam</h4>
                             </a>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <a href="./categories/index.html" class="card bg-primary text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
                                 <h4 class="fw-bold mb-0"><i class="bi bi-grid me-2"></i>Categories</h4>
                             </a>
                         </div>
-                        <div class="col-md-3">
-                            <a href="./mock-tests/index.html" class="card bg-success text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
-                                <h4 class="fw-bold mb-0"><i class="bi bi-stopwatch me-2"></i>Mock Tests</h4>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="./mcqs/index.html" class="card bg-light text-dark border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
-                                <h4 class="fw-bold mb-0"><i class="bi bi-list-check me-2"></i>Single MCQs</h4>
+                        <div class="col-md-4">
+                            <a href="./tools/index.html" class="card bg-success text-white border-0 p-4 text-decoration-none card-hover rounded-4 h-100">
+                                <h4 class="fw-bold mb-0"><i class="bi bi-tools me-2"></i>Study Tools</h4>
                             </a>
                         </div>
                     </div>
@@ -1334,9 +1551,9 @@ async function buildUnifiedSite() {
         });
 
         // ======================================
-        // 6. POLICIES & ABOUT
+        // 7. POLICIES & ABOUT
         // ======================================
-        console.log("6. Generating Legal Policies & About...");
+        console.log("7. Generating Legal Policies & About...");
         const aboutDir = path.join(distDir, 'about');
         fs.mkdirSync(aboutDir, { recursive: true });
         masterPageTasks.push(async () => {
@@ -1366,29 +1583,8 @@ async function buildUnifiedSite() {
                 <div class="card shadow-sm p-4 p-md-5 border-0 rounded-4 bg-white mt-4">
                     <h1 class="blog-title mb-4">Privacy Policy for Wedugo Education</h1>
                     <p class="text-secondary lh-lg">At Wedugo Education, accessible from wedugo.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wedugo Education and how we use it.</p>
-                    <p class="text-secondary lh-lg">If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us.</p>
-                    
-                    <h3 class="mt-4 fw-bold">Log Files</h3>
-                    <p class="text-secondary lh-lg">Wedugo Education follows a standard procedure of using log files. These files log visitors when they visit websites. All hosting companies do this and a part of hosting services' analytics. The information collected by log files include internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks. These are not linked to any information that is personally identifiable. The purpose of the information is for analyzing trends, administering the site, tracking users' movement on the website, and gathering demographic information.</p>
-                    
                     <h3 class="mt-4 fw-bold">Cookies and Web Beacons</h3>
                     <p class="text-secondary lh-lg">Like any other website, Wedugo Education uses "cookies". These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited. The information is used to optimize the users' experience by customizing our web page content based on visitors' browser type and/or other information.</p>
-                    
-                    <h3 class="mt-4 fw-bold">Google DoubleClick DART Cookie</h3>
-                    <p class="text-secondary lh-lg">Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to www.website.com and other sites on the internet. However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy at the following URL – <a href="https://policies.google.com/technologies/ads">https://policies.google.com/technologies/ads</a></p>
-                    
-                    <h3 class="mt-4 fw-bold">Advertising Partners Privacy Policies</h3>
-                    <p class="text-secondary lh-lg">You may consult this list to find the Privacy Policy for each of the advertising partners of Wedugo Education.</p>
-                    <p class="text-secondary lh-lg">Third-party ad servers or ad networks uses technologies like cookies, JavaScript, or Web Beacons that are used in their respective advertisements and links that appear on Wedugo Education, which are sent directly to users' browser. They automatically receive your IP address when this occurs. These technologies are used to measure the effectiveness of their advertising campaigns and/or to personalize the advertising content that you see on websites that you visit.</p>
-                    <p class="text-secondary lh-lg">Note that Wedugo Education has no access to or control over these cookies that are used by third-party advertisers.</p>
-                    
-                    <h3 class="mt-4 fw-bold">Third Party Privacy Policies</h3>
-                    <p class="text-secondary lh-lg">Wedugo Education's Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information. It may include their practices and instructions about how to opt-out of certain options.</p>
-                    
-                    <h3 class="mt-4 fw-bold">Children's Information</h3>
-                    <p class="text-secondary lh-lg">Another part of our priority is adding protection for children while using the internet. We encourage parents and guardians to observe, participate in, and/or monitor and guide their online activity.</p>
-                    <p class="text-secondary lh-lg">Wedugo Education does not knowingly collect any Personal Identifiable Information from children under the age of 13. If you think that your child provided this kind of information on our website, we strongly encourage you to contact us immediately and we will do our best efforts to promptly remove such information from our records.</p>
-                    
                     <h3 class="mt-4 fw-bold">Consent</h3>
                     <p class="text-secondary lh-lg">By using our website, you hereby consent to our Privacy Policy and agree to its Terms and Conditions.</p>
                 </div>
@@ -1402,29 +1598,6 @@ async function buildUnifiedSite() {
                     <p class="text-secondary lh-lg">Welcome to Wedugo Education!</p>
                     <p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website, located at wedugo.com.</p>
                     <p class="text-secondary lh-lg">By accessing this website we assume you accept these terms and conditions. Do not continue to use Wedugo Education if you do not agree to take all of the terms and conditions stated on this page.</p>
-                    
-                    <h3 class="mt-4 fw-bold">Cookies</h3>
-                    <p class="text-secondary lh-lg">We employ the use of cookies. By accessing Wedugo Education, you agreed to use cookies in agreement with the Wedugo Education's Privacy Policy.</p>
-                    <p class="text-secondary lh-lg">Most interactive websites use cookies to let us retrieve the user’s details for each visit. Cookies are used by our website to enable the functionality of certain areas to make it easier for people visiting our website.</p>
-                    
-                    <h3 class="mt-4 fw-bold">License</h3>
-                    <p class="text-secondary lh-lg">Unless otherwise stated, Wedugo Education and/or its licensors own the intellectual property rights for all material on Wedugo Education. All intellectual property rights are reserved. You may access this from Wedugo Education for your own personal use subjected to restrictions set in these terms and conditions.</p>
-                    <ul class="text-secondary lh-lg">
-                        <li>You must not republish material from Wedugo Education</li>
-                        <li>You must not sell, rent or sub-license material from Wedugo Education</li>
-                        <li>You must not reproduce, duplicate or copy material from Wedugo Education</li>
-                        <li>You must not redistribute content from Wedugo Education</li>
-                    </ul>
-                    
-                    <h3 class="mt-4 fw-bold">User Comments</h3>
-                    <p class="text-secondary lh-lg">Parts of this website offer an opportunity for users to post and exchange opinions and information in certain areas of the website. Wedugo Education does not filter, edit, publish or review Comments prior to their presence on the website. Comments do not reflect the views and opinions of Wedugo Education, its agents and/or affiliates. Comments reflect the views and opinions of the person who post their views and opinions.</p>
-                    <p class="text-secondary lh-lg">Wedugo Education reserves the right to monitor all Comments and to remove any Comments which can be considered inappropriate, offensive or causes breach of these Terms and Conditions.</p>
-
-                    <h3 class="mt-4 fw-bold">Hyperlinking to our Content</h3>
-                    <p class="text-secondary lh-lg">Government agencies, Search engines, and News organizations may link to our Website without prior written approval. We may consider and approve other link requests from commonly-known consumer and/or business information sources.</p>
-                    
-                    <h3 class="mt-4 fw-bold">Disclaimer</h3>
-                    <p class="text-secondary lh-lg">To the maximum extent permitted by applicable law, we exclude all representations, warranties and conditions relating to our website and the use of this website. Nothing in this disclaimer will limit or exclude our or your liability for death or personal injury, fraud, or limit any of our or your liabilities in any way that is not permitted under applicable law.</p>
                 </div>
             `;
             await fsAsync.writeFile(path.join(distDir, 'terms.html'), getHtmlShell('Terms and Conditions', termsContent, 0, "", false));
@@ -1432,13 +1605,13 @@ async function buildUnifiedSite() {
 
         await executeTasksInBatches(masterPageTasks, 10);
 
-        console.log("7. Finalizing Build & Assets...");
+        console.log("8. Finalizing Build & Assets...");
         ['tools', 'main_images'].forEach(dir => { const s = path.join(__dirname, dir); if (fs.existsSync(s)) fs.cpSync(s, path.join(distDir, dir), { recursive: true }); });
         ['Ads.txt', 'CNAME', '404.html'].forEach(f => { const s = path.join(__dirname, f); if (fs.existsSync(s)) fs.copyFileSync(s, path.join(distDir, f === 'Ads.txt' ? 'ads.txt' : f)); });
 
         await generateSitemapAndRobots(distDir, quizCategoriesMap, blogPosts, blogCategoriesMap);
 
-        console.log("✅ BUILD COMPLETE!");
+        console.log("✅ BUILD COMPLETE (Thin Content Solved & Advanced Tools Added)");
     } catch (error) { console.error("Build failed:", error); }
 }
 

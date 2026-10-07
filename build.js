@@ -97,7 +97,7 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL (SUPABASE GLOBAL INIT INCLUDED)
+// 🟢 MASTER HTML SHELL
 function getHtmlShell(title, content, seoDescription = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
@@ -130,19 +130,16 @@ function getHtmlShell(title, content, seoDescription = "") {
         .hover-text-primary:hover { color: #0d6efd !important; }
         .card { border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.3s ease; }
         .card-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important; }
-        
         .blog-title { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; }
         .article-content { font-family: 'Merriweather', serif; font-size: 1.15rem; color: #1e293b; line-height: 1.9; }
         .article-content img { max-width: 100%; height: auto; border-radius: 12px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .badge-cat { font-size: 0.75rem; padding: 0.5em 1em; letter-spacing: 0.5px; border-radius: 6px; text-transform: uppercase; font-weight: 700;}
-        
         .option-btn { text-align: left; padding: 16px 24px; font-weight: 500; font-size: 1.05rem; border-radius: 12px; border: 2px solid #e2e8f0; background: #ffffff; transition: all 0.2s; color: #475569; margin-bottom: 8px;}
         .option-btn:hover:not(:disabled) { background-color: #f8fafc; border-color: #cbd5e1; transform: translateX(5px); }
         .option-btn.selected { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
         .option-btn.correct-show { background-color: #f0fdf4 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 600; }
         .option-btn.incorrect-show { background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .timer-header { position: sticky; top: 70px; z-index: 1020; border-bottom: 4px solid #3b82f6; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
-
         .module-locked-overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); backdrop-filter: blur(5px); z-index: 1000; display: flex; align-items: center; justify-content: center; border-radius: 16px; }
         
         /* Custom Exam Portal CSS */
@@ -175,7 +172,6 @@ function getHtmlShell(title, content, seoDescription = "") {
 <body>
     ${getNavbar()}
 
-    <!-- Auth Modal -->
     <div class="modal fade" id="authModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow-lg p-3">
@@ -209,7 +205,6 @@ function getHtmlShell(title, content, seoDescription = "") {
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // HARDCODED KEYS IN FRONTEND FOR GUARANTEED CONNECTION
         const _SU_URL = "${SUPABASE_URL}";
         const _SU_KEY = "${SUPABASE_KEY}";
         let supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
@@ -320,10 +315,6 @@ function getBreadcrumbs(pathArray) {
     return `<nav aria-label="breadcrumb" class="mb-4 mt-2"><ol class="breadcrumb bg-transparent p-0 mb-0">${list}</ol></nav>`;
 }
 
-// ==========================================
-// DYNAMIC PAGE TEMPLATES (CLIENT-SIDE FETCH)
-// ==========================================
-
 function getIndexTemplate() {
     return getHtmlShell("Wedugo Education: Master Your Exams", `
         <div class="mt-4 mb-5 text-center">
@@ -395,24 +386,17 @@ function getCategoriesTemplate() {
 
 function getCustomExamTemplate() {
     const catsOptions = CATEGORY_LIST.map((cat, i) => `
-        <div class="form-check">
-            <input class="form-check-input cat-checkbox" type="checkbox" value="${cat}" id="cat${i}" checked>
-            <label class="form-check-label" for="cat${i}">${cat}</label>
-        </div>
+        <div class="form-check"><input class="form-check-input cat-checkbox" type="checkbox" value="${cat}" id="cat${i}" checked><label class="form-check-label" for="cat${i}">${cat}</label></div>
     `).join('');
 
     return getHtmlShell("Custom Exam Builder", `
         ${getBreadcrumbs([{name: 'Custom Exam', url: '/custom-exam.html'}])}
         <div id="loader-panel" class="text-center py-5 d-none"><div class="spinner-border text-primary"></div><h3 class="mt-3 text-secondary">Loading Database...</h3></div>
-        
         <div id="setup-panel">
             <div class="card shadow-sm border-0 rounded-4 bg-white p-4 p-md-5 mb-5">
                 <div class="text-center mb-5"><h1 class="blog-title display-5 text-dark mb-3"><i class="bi bi-gear-wide-connected text-primary me-2"></i>Custom Exam Builder</h1></div>
                 <div class="row g-4">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between mb-2 gap-2"><label class="form-label fw-bold">1. Select Categories</label><div><button class="btn btn-sm btn-primary rounded-pill px-3 me-2 fw-bold" onclick="document.querySelectorAll('.cat-checkbox').forEach(cb=>cb.checked=true)">Select All</button></div></div>
-                        <div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">${catsOptions}</div>
-                    </div>
+                    <div class="col-12"><div class="d-flex justify-content-between mb-2 gap-2"><label class="form-label fw-bold">1. Select Categories</label><div><button class="btn btn-sm btn-primary rounded-pill px-3 me-2 fw-bold" onclick="document.querySelectorAll('.cat-checkbox').forEach(cb=>cb.checked=true)">Select All</button></div></div><div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">${catsOptions}</div></div>
                     <div class="col-md-6 col-lg-3"><label class="form-label fw-bold">2. No. of Questions</label><input type="number" id="ce-qcount" class="form-control form-control-lg fw-bold" value="20" min="5" max="100"></div>
                     <div class="col-md-6 col-lg-3"><label class="form-label fw-bold">3. Time (Mins)</label><input type="number" id="ce-time" class="form-control form-control-lg fw-bold" value="20" min="1" max="180"></div>
                     <div class="col-md-6 col-lg-3"><label class="form-label fw-bold text-success">4. Plus Marking (+)</label><input type="number" id="ce-pos-mark" class="form-control form-control-lg fw-bold text-success" value="1" step="0.5"></div>
@@ -421,286 +405,71 @@ function getCustomExamTemplate() {
                 <div class="text-center mt-5"><button id="start-exam-btn" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow"><i class="bi bi-play-circle-fill me-2"></i>Start Portal</button></div>
             </div>
         </div>
-
         <div id="exam-panel" class="d-none w-100 position-absolute top-0 start-0 bg-white" style="min-height: 100vh; z-index: 2000;">
-            <div class="app-header shadow-sm">
-                <div class="d-flex align-items-center gap-2"><i class="bi bi-pause-circle fs-3 cursor-pointer" onclick="location.reload();"></i><div class="fw-bold fs-5 font-monospace" id="ui-timer">00:00:00</div></div>
-                <div class="fw-bold text-truncate px-2">Custom Exam Portal</div>
-                <i class="bi bi-list fs-1 cursor-pointer" onclick="document.getElementById('mobile-sidebar').classList.toggle('show-mobile')"></i>
-            </div>
-            <div class="app-subheader">
-                <div class="q-circle" id="ui-q-circle">1</div>
-                <div class="text-success fw-bold ms-auto ms-sm-0" id="ui-pos-m">+1.0</div>
-                <div class="text-danger fw-bold me-auto me-sm-0" id="ui-neg-m">-0.33</div>
-            </div>
+            <div class="app-header shadow-sm"><div class="d-flex align-items-center gap-2"><i class="bi bi-pause-circle fs-3 cursor-pointer" onclick="location.reload();"></i><div class="fw-bold fs-5 font-monospace" id="ui-timer">00:00:00</div></div><div class="fw-bold text-truncate px-2">Custom Exam Portal</div><i class="bi bi-list fs-1 cursor-pointer" onclick="document.getElementById('mobile-sidebar').classList.toggle('show-mobile')"></i></div>
+            <div class="app-subheader"><div class="q-circle" id="ui-q-circle">1</div><div class="text-success fw-bold ms-auto ms-sm-0" id="ui-pos-m">+1.0</div><div class="text-danger fw-bold me-auto me-sm-0" id="ui-neg-m">-0.33</div></div>
             <div class="row g-0">
                 <div class="col-lg-8 col-xl-9 mobile-content-area">
-                    <div class="p-3 p-md-5 overflow-auto" style="height: calc(100vh - 180px);">
-                        <div class="mb-2 text-muted fw-bold small" id="ui-q-cat">Category</div>
-                        <h4 class="mb-4 text-dark lh-base fw-bold" id="ui-q-text">Loading...</h4>
-                        <div class="d-flex flex-column gap-2" id="ui-options">
-                            <label class="opt-card" id="card-opt-A"><span class="opt-num">1.</span><input type="radio" name="opt" value="A" class="exam-radio"> <span id="ui-opt-a" class="flex-grow-1"></span></label>
-                            <label class="opt-card" id="card-opt-B"><span class="opt-num">2.</span><input type="radio" name="opt" value="B" class="exam-radio"> <span id="ui-opt-b" class="flex-grow-1"></span></label>
-                            <label class="opt-card" id="card-opt-C"><span class="opt-num">3.</span><input type="radio" name="opt" value="C" class="exam-radio"> <span id="ui-opt-c" class="flex-grow-1"></span></label>
-                            <label class="opt-card" id="card-opt-D"><span class="opt-num">4.</span><input type="radio" name="opt" value="D" class="exam-radio"> <span id="ui-opt-d" class="flex-grow-1"></span></label>
-                        </div>
-                    </div>
-                    <div class="bottom-action-bar flex-wrap align-items-center">
-                        <div class="d-flex gap-2"><button class="btn btn-outline-secondary px-3 py-2 fw-bold" id="btn-mark-next">Mark & Next</button><button class="btn btn-outline-secondary px-3 py-2 fw-bold" id="btn-clear">Clear</button></div>
-                        <button class="btn btn-primary px-4 py-2 fw-bold" id="btn-save-next">Save & Next</button>
-                    </div>
+                    <div class="p-3 p-md-5 overflow-auto" style="height: calc(100vh - 180px);"><div class="mb-2 text-muted fw-bold small" id="ui-q-cat">Category</div><h4 class="mb-4 text-dark lh-base fw-bold" id="ui-q-text">Loading...</h4><div class="d-flex flex-column gap-2" id="ui-options"><label class="opt-card" id="card-opt-A"><span class="opt-num">1.</span><input type="radio" name="opt" value="A" class="exam-radio"> <span id="ui-opt-a" class="flex-grow-1"></span></label><label class="opt-card" id="card-opt-B"><span class="opt-num">2.</span><input type="radio" name="opt" value="B" class="exam-radio"> <span id="ui-opt-b" class="flex-grow-1"></span></label><label class="opt-card" id="card-opt-C"><span class="opt-num">3.</span><input type="radio" name="opt" value="C" class="exam-radio"> <span id="ui-opt-c" class="flex-grow-1"></span></label><label class="opt-card" id="card-opt-D"><span class="opt-num">4.</span><input type="radio" name="opt" value="D" class="exam-radio"> <span id="ui-opt-d" class="flex-grow-1"></span></label></div></div>
+                    <div class="bottom-action-bar flex-wrap align-items-center"><div class="d-flex gap-2"><button class="btn btn-outline-secondary px-3 py-2 fw-bold" id="btn-mark-next">Mark & Next</button><button class="btn btn-outline-secondary px-3 py-2 fw-bold" id="btn-clear">Clear</button></div><button class="btn btn-primary px-4 py-2 fw-bold" id="btn-save-next">Save & Next</button></div>
                 </div>
-                <div class="col-lg-4 col-xl-3 exam-sidebar shadow-lg" id="mobile-sidebar">
-                    <div class="p-3 border-bottom bg-white small fw-bold">
-                        <div class="row g-2 text-center mb-2"><div class="col-6"><span class="q-palette-btn answered" id="count-ans">0</span> Answered</div><div class="col-6"><span class="q-palette-btn not-answered" id="count-not-ans">0</span> Not Answered</div></div>
-                    </div>
-                    <div class="p-3 flex-grow-1 overflow-auto bg-light"><div class="fw-bold mb-3 text-secondary border-bottom pb-2">Questions Palette</div><div id="ui-palette" class="d-flex flex-wrap"></div></div>
-                    <div class="p-3 bg-white border-top text-center mt-auto"><button class="btn btn-primary w-100 fw-bold py-3 shadow-sm" id="btn-submit-exam">Submit Final Exam</button></div>
-                </div>
+                <div class="col-lg-4 col-xl-3 exam-sidebar shadow-lg" id="mobile-sidebar"><div class="p-3 border-bottom bg-white small fw-bold"><div class="row g-2 text-center mb-2"><div class="col-6"><span class="q-palette-btn answered" id="count-ans">0</span> Answered</div><div class="col-6"><span class="q-palette-btn not-answered" id="count-not-ans">0</span> Not Answered</div></div></div><div class="p-3 flex-grow-1 overflow-auto bg-light"><div class="fw-bold mb-3 text-secondary border-bottom pb-2">Questions Palette</div><div id="ui-palette" class="d-flex flex-wrap"></div></div><div class="p-3 bg-white border-top text-center mt-auto"><button class="btn btn-primary w-100 fw-bold py-3 shadow-sm" id="btn-submit-exam">Submit Final Exam</button></div></div>
             </div>
         </div>
-
         <div id="result-panel" class="d-none">
-            <div class="card shadow-lg border-success text-center p-4 p-md-5 rounded-4 bg-success bg-opacity-10 border-2">
-                <h2 class="text-success fw-bold display-6 mb-4">Exam Submitted!</h2>
-                <div class="row justify-content-center mb-5 mt-4">
-                    <div class="col-md-8">
-                        <div class="card border-0 shadow-sm bg-white p-4">
-                            <div class="d-flex justify-content-between mb-2 fs-5"><span>Total Questions:</span> <strong id="res-total">0</strong></div>
-                            <div class="d-flex justify-content-between mb-2 fs-5 text-success"><span>Correct:</span> <strong id="res-correct">0</strong></div>
-                            <div class="d-flex justify-content-between mb-2 fs-5 text-danger"><span>Incorrect:</span> <strong id="res-incorrect">0</strong></div>
-                            <div class="d-flex justify-content-between fs-3 fw-bold text-primary mt-3 border-top pt-2"><span>Final Marks:</span> <span id="res-marks">0</span></div>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold" onclick="location.reload()">Create New Custom Exam</button>
-            </div>
+            <div class="card shadow-lg border-success text-center p-4 p-md-5 rounded-4 bg-success bg-opacity-10 border-2"><h2 class="text-success fw-bold display-6 mb-4">Exam Submitted!</h2><div class="row justify-content-center mb-5 mt-4"><div class="col-md-8"><div class="card border-0 shadow-sm bg-white p-4"><div class="d-flex justify-content-between mb-2 fs-5"><span>Total Questions:</span> <strong id="res-total">0</strong></div><div class="d-flex justify-content-between mb-2 fs-5 text-success"><span>Correct:</span> <strong id="res-correct">0</strong></div><div class="d-flex justify-content-between mb-2 fs-5 text-danger"><span>Incorrect:</span> <strong id="res-incorrect">0</strong></div><div class="d-flex justify-content-between fs-3 fw-bold text-primary mt-3 border-top pt-2"><span>Final Marks:</span> <span id="res-marks">0</span></div></div></div></div><button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold" onclick="location.reload()">Create New Custom Exam</button></div>
             <div class="mt-5" id="solution-container"><h3 class="fw-bold border-bottom pb-3 mb-4">Detailed Solutions</h3><div id="solution-list"></div></div>
         </div>
-
         <script>
             let examData = [], userState = [], currentQ = 0, pMarks = 1, nMarks = 0.33, timerInterval, timeLeft = 0;
             document.getElementById('start-exam-btn').addEventListener('click', async () => {
                 const cats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
                 if(cats.length === 0) return alert("Select at least one category.");
-                
-                document.getElementById('setup-panel').classList.add('d-none');
-                document.getElementById('loader-panel').classList.remove('d-none');
-
-                const reqQCount = parseInt(document.getElementById('ce-qcount').value) || 20;
-                pMarks = parseFloat(document.getElementById('ce-pos-mark').value) || 1;
-                nMarks = parseFloat(document.getElementById('ce-neg-mark').value) || 0.33;
-
+                document.getElementById('setup-panel').classList.add('d-none'); document.getElementById('loader-panel').classList.remove('d-none');
+                const reqQCount = parseInt(document.getElementById('ce-qcount').value) || 20; pMarks = parseFloat(document.getElementById('ce-pos-mark').value) || 1; nMarks = parseFloat(document.getElementById('ce-neg-mark').value) || 0.33;
                 const { data, error } = await supabaseClient.from('questions').select('*').in('qcategory', cats).limit(300);
-                if(error || !data || data.length === 0) {
-                    alert("No questions found.");
-                    location.reload();
-                    return;
-                }
-
+                if(error || !data || data.length === 0) { alert("No questions found."); location.reload(); return; }
                 examData = data.sort(() => 0.5 - Math.random()).slice(0, Math.min(reqQCount, data.length));
-                userState = examData.map(() => ({ status: 'not-visited', selected: null }));
-                userState[0].status = 'not-answered';
-                
-                document.getElementById('ui-pos-m').innerText = '+' + pMarks;
-                document.getElementById('ui-neg-m').innerText = '-' + nMarks;
-                document.getElementById('loader-panel').classList.add('d-none');
-                document.getElementById('exam-panel').classList.remove('d-none');
+                userState = examData.map(() => ({ status: 'not-visited', selected: null })); userState[0].status = 'not-answered';
+                document.getElementById('ui-pos-m').innerText = '+' + pMarks; document.getElementById('ui-neg-m').innerText = '-' + nMarks;
+                document.getElementById('loader-panel').classList.add('d-none'); document.getElementById('exam-panel').classList.remove('d-none');
                 document.querySelector('nav.navbar').style.display = 'none'; document.querySelector('footer').style.display = 'none';
-                
                 buildPalette(); renderQ(0);
-                
-                timeLeft = (parseInt(document.getElementById('ce-time').value) || 20) * 60;
-                updateTimerUI();
+                timeLeft = (parseInt(document.getElementById('ce-time').value) || 20) * 60; updateTimerUI();
                 timerInterval = setInterval(() => { timeLeft--; updateTimerUI(); if(timeLeft <= 0) submitExam(); }, 1000);
             });
-
-            function updateTimerUI() {
-                if(timeLeft < 0) return;
-                let h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60;
-                document.getElementById('ui-timer').innerText = (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-            }
-
-            function buildPalette() {
-                const pal = document.getElementById('ui-palette'); pal.innerHTML = '';
-                examData.forEach((_, i) => {
-                    const btn = document.createElement('div'); btn.className = 'q-palette-btn not-visited'; btn.id = 'pal-' + i; btn.innerText = i + 1;
-                    btn.onclick = () => { jumpToQ(i); if(window.innerWidth < 991) document.getElementById('mobile-sidebar').classList.remove('show-mobile'); };
-                    pal.appendChild(btn);
-                });
-                updatePaletteStats();
-            }
-
-            function updatePaletteStats() {
-                let ans=0, notAns=0;
-                userState.forEach((st, i) => {
-                    const btn = document.getElementById('pal-'+i); btn.className = 'q-palette-btn ' + st.status;
-                    if(i === currentQ) btn.classList.add('active-q');
-                    if(st.status === 'answered') ans++; else if(st.status === 'not-answered') notAns++;
-                });
-                document.getElementById('count-ans').innerText = ans; document.getElementById('count-not-ans').innerText = notAns;
-            }
-
-            function renderQ(idx) {
-                currentQ = idx; const q = examData[idx];
-                document.getElementById('ui-q-circle').innerText = (idx + 1);
-                document.getElementById('ui-q-cat').innerText = q.qcategory;
-                document.getElementById('ui-q-text').innerText = q.question;
-                const opts = ['A', 'B', 'C', 'D'];
-                const texts = [q.answer1, q.answer2, q.answer3, q.answer4];
-                document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
-                document.querySelectorAll('.exam-radio').forEach(r => r.checked = false);
-                opts.forEach((letter, i) => {
-                    document.getElementById('ui-opt-' + letter.toLowerCase()).innerText = texts[i];
-                    if(userState[idx].selected === letter) { document.querySelectorAll('.exam-radio')[i].checked = true; document.getElementById('card-opt-' + letter).classList.add('selected'); }
-                });
-                updatePaletteStats();
-            }
-
-            function jumpToQ(idx) {
-                if(userState[currentQ].status === 'not-visited') userState[currentQ].status = 'not-answered';
-                renderQ(idx);
-                if(userState[idx].status === 'not-visited') userState[idx].status = 'not-answered';
-                updatePaletteStats();
-            }
-
+            function updateTimerUI() { if(timeLeft < 0) return; let h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60; document.getElementById('ui-timer').innerText = (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
+            function buildPalette() { const pal = document.getElementById('ui-palette'); pal.innerHTML = ''; examData.forEach((_, i) => { const btn = document.createElement('div'); btn.className = 'q-palette-btn not-visited'; btn.id = 'pal-' + i; btn.innerText = i + 1; btn.onclick = () => { jumpToQ(i); if(window.innerWidth < 991) document.getElementById('mobile-sidebar').classList.remove('show-mobile'); }; pal.appendChild(btn); }); updatePaletteStats(); }
+            function updatePaletteStats() { let ans=0, notAns=0; userState.forEach((st, i) => { const btn = document.getElementById('pal-'+i); btn.className = 'q-palette-btn ' + st.status; if(i === currentQ) btn.classList.add('active-q'); if(st.status === 'answered') ans++; else if(st.status === 'not-answered') notAns++; }); document.getElementById('count-ans').innerText = ans; document.getElementById('count-not-ans').innerText = notAns; }
+            function renderQ(idx) { currentQ = idx; const q = examData[idx]; document.getElementById('ui-q-circle').innerText = (idx + 1); document.getElementById('ui-q-cat').innerText = q.qcategory; document.getElementById('ui-q-text').innerText = q.question; const opts = ['A', 'B', 'C', 'D']; const texts = [q.answer1, q.answer2, q.answer3, q.answer4]; document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); document.querySelectorAll('.exam-radio').forEach(r => r.checked = false); opts.forEach((letter, i) => { document.getElementById('ui-opt-' + letter.toLowerCase()).innerText = texts[i]; if(userState[idx].selected === letter) { document.querySelectorAll('.exam-radio')[i].checked = true; document.getElementById('card-opt-' + letter).classList.add('selected'); } }); updatePaletteStats(); }
+            function jumpToQ(idx) { if(userState[currentQ].status === 'not-visited') userState[currentQ].status = 'not-answered'; renderQ(idx); if(userState[idx].status === 'not-visited') userState[idx].status = 'not-answered'; updatePaletteStats(); }
             document.querySelectorAll('.opt-card').forEach(card => { card.addEventListener('click', function() { document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); this.classList.add('selected'); this.querySelector('input').checked = true; }); });
             function getSelectedOption() { const selected = document.querySelector('.exam-radio:checked'); return selected ? selected.value : null; }
-
             document.getElementById('btn-save-next').addEventListener('click', () => { const sel = getSelectedOption(); userState[currentQ].selected = sel; userState[currentQ].status = sel ? 'answered' : 'not-answered'; if(currentQ < examData.length - 1) jumpToQ(currentQ + 1); else updatePaletteStats(); });
             document.getElementById('btn-mark-next').addEventListener('click', () => { const sel = getSelectedOption(); userState[currentQ].selected = sel; userState[currentQ].status = sel ? 'marked-answered' : 'marked'; if(currentQ < examData.length - 1) jumpToQ(currentQ + 1); else updatePaletteStats(); });
             document.getElementById('btn-clear').addEventListener('click', () => { document.querySelectorAll('.exam-radio').forEach(r => r.checked = false); document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); userState[currentQ].selected = null; });
             document.getElementById('btn-submit-exam').addEventListener('click', () => { if(confirm("Submit the exam?")) submitExam(); });
-
-            function submitExam() {
-                clearInterval(timerInterval);
-                document.querySelector('nav.navbar').style.display = 'block'; document.querySelector('footer').style.display = 'block';
-                document.getElementById('exam-panel').classList.add('d-none'); document.getElementById('exam-panel').classList.remove('position-absolute'); 
-                document.getElementById('result-panel').classList.remove('d-none');
-                
-                let c=0, ic=0, ua=0, solHtml = '';
-                examData.forEach((q, i) => {
-                    const uAns = userState[i].selected, correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase(), isCorrect = uAns === correct;
-                    if(!uAns) ua++; else if(isCorrect) c++; else ic++;
-                    let bgClass = !uAns ? 'bg-warning bg-opacity-10 border-warning' : (isCorrect ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger');
-                    let statusIco = !uAns ? '⚠️ Unattempted' : (isCorrect ? '✅ Correct' : '❌ Incorrect');
-                    solHtml += \`<div class="card mb-4 p-4 \${bgClass}"><h5 class="fw-bold mb-3">Q\${i+1}. \${q.question}</h5><p class="mb-2 fw-bold \${!uAns ? 'text-warning' : (isCorrect ? 'text-success' : 'text-danger')}">\${statusIco} (Your Answer: \${uAns || 'None'})</p><p class="mb-3 text-dark fw-bold">Right Answer: \${correct}</p><div class="p-3 bg-white border rounded shadow-sm small text-secondary"><strong>Explanation:</strong> \${q.answerdetail || ''}</div></div>\`;
-                });
-                document.getElementById('res-total').innerText = examData.length; document.getElementById('res-correct').innerText = c; document.getElementById('res-incorrect').innerText = ic;
-                document.getElementById('res-marks').innerText = ((c * pMarks) - (ic * nMarks)).toFixed(2);
-                document.getElementById('solution-list').innerHTML = solHtml; window.scrollTo(0,0);
-            }
+            function submitExam() { clearInterval(timerInterval); document.querySelector('nav.navbar').style.display = 'block'; document.querySelector('footer').style.display = 'block'; document.getElementById('exam-panel').classList.add('d-none'); document.getElementById('exam-panel').classList.remove('position-absolute'); document.getElementById('result-panel').classList.remove('d-none'); let c=0, ic=0, ua=0, solHtml = ''; examData.forEach((q, i) => { const uAns = userState[i].selected, correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase(), isCorrect = uAns === correct; if(!uAns) ua++; else if(isCorrect) c++; else ic++; let bgClass = !uAns ? 'bg-warning bg-opacity-10 border-warning' : (isCorrect ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger'); let statusIco = !uAns ? '⚠️ Unattempted' : (isCorrect ? '✅ Correct' : '❌ Incorrect'); solHtml += \`<div class="card mb-4 p-4 \${bgClass}"><h5 class="fw-bold mb-3">Q\${i+1}. \${q.question}</h5><p class="mb-2 fw-bold \${!uAns ? 'text-warning' : (isCorrect ? 'text-success' : 'text-danger')}">\${statusIco} (Your Answer: \${uAns || 'None'})</p><p class="mb-3 text-dark fw-bold">Right Answer: \${correct}</p><div class="p-3 bg-white border rounded shadow-sm small text-secondary"><strong>Explanation:</strong> \${q.answerdetail || ''}</div></div>\`; }); document.getElementById('res-total').innerText = examData.length; document.getElementById('res-correct').innerText = c; document.getElementById('res-incorrect').innerText = ic; document.getElementById('res-marks').innerText = ((c * pMarks) - (ic * nMarks)).toFixed(2); document.getElementById('solution-list').innerHTML = solHtml; window.scrollTo(0,0); }
         </script>
     `);
 }
 
-function getToolsTemplate() {
+function getToolsTemplate(pluginHTML = "") {
     const toolsHTML = `
         <div class="row g-4 mt-3 mb-5">
             <div class="col-md-6">
                 <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
                     <h4 class="fw-bold text-primary mb-3"><i class="bi bi-calculator me-2"></i>Exam Score Estimator</h4>
                     <p class="text-muted small mb-3">Calculate your expected score with negative marking.</p>
-                    <div class="mb-2"><label class="form-label small fw-bold">Total Correct Questions</label><input type="number" id="tool-c" class="form-control" value="0"></div>
-                    <div class="mb-2"><label class="form-label small fw-bold">Total Incorrect Questions</label><input type="number" id="tool-w" class="form-control" value="0"></div>
-                    <div class="mb-3"><label class="form-label small fw-bold">Negative Marking (e.g., 0.25, 0.33)</label><input type="number" id="tool-n" class="form-control" value="0.25" step="0.01"></div>
+                    <div class="mb-2"><label class="form-label small fw-bold">Total Correct</label><input type="number" id="tool-c" class="form-control" value="0"></div>
+                    <div class="mb-2"><label class="form-label small fw-bold">Total Incorrect</label><input type="number" id="tool-w" class="form-control" value="0"></div>
+                    <div class="mb-3"><label class="form-label small fw-bold">Negative Marking</label><input type="number" id="tool-n" class="form-control" value="0.25" step="0.01"></div>
                     <button class="btn btn-primary w-100 fw-bold" onclick="calcScore()">Calculate Score</button>
                     <div class="mt-3 text-center d-none" id="tool-res-box"><h5 class="fw-bold text-success mb-0">Estimated Score: <span id="tool-score"></span></h5></div>
-                    <script>
-                        function calcScore() {
-                            const c = parseFloat(document.getElementById('tool-c').value) || 0;
-                            const w = parseFloat(document.getElementById('tool-w').value) || 0;
-                            const n = parseFloat(document.getElementById('tool-n').value) || 0;
-                            document.getElementById('tool-score').innerText = (c - (w * n)).toFixed(2);
-                            document.getElementById('tool-res-box').classList.remove('d-none');
-                        }
-                    </script>
+                    <script>function calcScore(){ document.getElementById('tool-score').innerText = ((parseFloat(document.getElementById('tool-c').value)||0) - ((parseFloat(document.getElementById('tool-w').value)||0) * (parseFloat(document.getElementById('tool-n').value)||0))).toFixed(2); document.getElementById('tool-res-box').classList.remove('d-none'); }</script>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
-                    <h4 class="fw-bold text-success mb-3"><i class="bi bi-calendar-check me-2"></i>Syllabus Planner</h4>
-                    <p class="text-muted small mb-3">Calculate how many days you need to finish your syllabus.</p>
-                    <div class="mb-2"><label class="form-label small fw-bold">Total Chapters to Study</label><input type="number" id="plan-t" class="form-control" value="0"></div>
-                    <div class="mb-3"><label class="form-label small fw-bold">Chapters you can study per day</label><input type="number" id="plan-d" class="form-control" value="0"></div>
-                    <button class="btn btn-success w-100 fw-bold" onclick="calcPlan()">Plan My Study</button>
-                    <div class="mt-3 text-center d-none" id="plan-res-box"><h5 class="fw-bold text-success mb-0">Days Required: <span id="plan-days"></span> Days</h5></div>
-                    <script>
-                        function calcPlan() {
-                            const t = parseFloat(document.getElementById('plan-t').value) || 0;
-                            const d = parseFloat(document.getElementById('plan-d').value) || 0;
-                            if(d <= 0) return alert('Enter valid chapters per day');
-                            document.getElementById('plan-days').innerText = Math.ceil(t / d);
-                            document.getElementById('plan-res-box').classList.remove('d-none');
-                        }
-                    </script>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4 text-center">
-                    <h4 class="fw-bold text-danger mb-3"><i class="bi bi-stopwatch me-2"></i>Pomodoro Timer</h4>
-                    <p class="text-muted small mb-4">Focus for 25 minutes, then take a short break.</p>
-                    <div class="display-3 fw-bold font-monospace text-danger mb-4" id="pomo-display">25:00</div>
-                    <div class="d-flex justify-content-center gap-2">
-                        <button class="btn btn-danger px-4 fw-bold" onclick="startPomo()">Start</button>
-                        <button class="btn btn-outline-secondary px-4 fw-bold" onclick="resetPomo()">Reset</button>
-                    </div>
-                    <script>
-                        let pomoTime = 1500, pomoInt;
-                        function updatePomo() {
-                            let m = Math.floor(pomoTime / 60), s = pomoTime % 60;
-                            document.getElementById('pomo-display').innerText = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-                        }
-                        function startPomo() {
-                            clearInterval(pomoInt);
-                            pomoInt = setInterval(() => {
-                                if(pomoTime > 0) { pomoTime--; updatePomo(); }
-                                else { clearInterval(pomoInt); alert('Time up! Take a 5-minute break.'); resetPomo(); }
-                            }, 1000);
-                        }
-                        function resetPomo() { clearInterval(pomoInt); pomoTime = 1500; updatePomo(); }
-                    </script>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
-                    <h4 class="fw-bold text-warning mb-3"><i class="bi bi-journal-text me-2"></i>Quick Notes</h4>
-                    <p class="text-muted small mb-3">Jot down formulas or thoughts. Saves automatically in your browser.</p>
-                    <textarea id="scratchpad" class="form-control mb-3 flex-grow-1" style="min-height:120px;" placeholder="Type your notes here..."></textarea>
-                    <button class="btn btn-outline-warning text-dark fw-bold w-100" onclick="document.getElementById('scratchpad').value=''; localStorage.removeItem('wedugo_notes');">Clear Notes</button>
-                    <script>
-                        const pad = document.getElementById('scratchpad');
-                        pad.value = localStorage.getItem('wedugo_notes') || '';
-                        pad.addEventListener('input', () => localStorage.setItem('wedugo_notes', pad.value));
-                    </script>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="card bg-white shadow-sm border-0 p-4 rounded-4">
-                    <h4 class="fw-bold text-info mb-3"><i class="bi bi-person-badge me-2"></i>Exam Age Eligibility Calculator</h4>
-                    <p class="text-muted small mb-3">Check your exact age as of a specific cut-off date required by examination boards.</p>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-5"><label class="form-label small fw-bold">Date of Birth</label><input type="date" id="age-dob" class="form-control"></div>
-                        <div class="col-md-5"><label class="form-label small fw-bold">Exam Cut-off Date</label><input type="date" id="age-cut" class="form-control"></div>
-                        <div class="col-md-2 d-flex align-items-end"><button class="btn btn-info text-white w-100 fw-bold" onclick="calcAge()">Check Age</button></div>
-                    </div>
-                    <div class="alert alert-info d-none mb-0 fw-bold text-center" id="age-res"></div>
-                    <script>
-                        function calcAge() {
-                            const dob = new Date(document.getElementById('age-dob').value);
-                            const cut = new Date(document.getElementById('age-cut').value);
-                            if(!dob || !cut || isNaN(dob) || isNaN(cut)) return alert('Enter valid dates');
-                            let years = cut.getFullYear() - dob.getFullYear();
-                            let months = cut.getMonth() - dob.getMonth();
-                            let days = cut.getDate() - dob.getDate();
-                            if (days < 0) { months--; days += new Date(cut.getFullYear(), cut.getMonth(), 0).getDate(); }
-                            if (months < 0) { years--; months += 12; }
-                            document.getElementById('age-res').innerText = \`Exact Age: \${years} Years, \${months} Months, \${days} Days\`;
-                            document.getElementById('age-res').classList.remove('d-none');
-                        }
-                    </script>
-                </div>
-            </div>
+            ${pluginHTML}
         </div>
     `;
 
@@ -727,14 +496,7 @@ function getBlogsTemplate() {
                 if(data) {
                     let html = '';
                     data.forEach(post => {
-                        html += \`
-                        <div class="col-md-6">
-                            <a href="/blog.html?slug=\${post.slug}" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white">
-                                <span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">\${post.category}</span>
-                                <h3 class="h5 fw-bold mb-3 text-dark lh-base">\${post.title}</h3>
-                                <p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>\${new Date(post.created_at).toLocaleDateString()}</p>
-                            </a>
-                        </div>\`;
+                        html += \`<div class="col-md-6"><a href="/blog.html?slug=\${post.slug}" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white"><span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">\${post.category}</span><h3 class="h5 fw-bold mb-3 text-dark lh-base">\${post.title}</h3><p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>\${new Date(post.created_at).toLocaleDateString()}</p></a></div>\`;
                     });
                     document.getElementById('blogs-container').innerHTML = html;
                     document.getElementById('blogs-loader').classList.add('d-none');
@@ -752,26 +514,16 @@ function getSingleBlogTemplate() {
                 <div class="mb-4 text-center">
                     <span id="blog-cat" class="badge bg-primary bg-opacity-10 text-primary badge-cat text-decoration-none mb-3 border border-primary-subtle">Category</span>
                     <h1 class="blog-title text-dark display-5 mb-4" id="blog-title">Title</h1>
-                    <div class="d-flex justify-content-center align-items-center text-muted small fw-medium">
-                        <span><i class="bi bi-calendar3 me-1"></i><span id="blog-date">Date</span></span>
-                    </div>
+                    <div class="d-flex justify-content-center align-items-center text-muted small fw-medium"><span><i class="bi bi-calendar3 me-1"></i><span id="blog-date">Date</span></span></div>
                 </div>
                 ${getAdBannerHtml("Sponsored")}
-                <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white">
-                    <article class="article-content" id="blog-body"></article>
-                </div>
-                ${getAdBannerHtml("Sponsored")}
-                <div class="card shadow-sm p-4 bg-light text-center mb-5 border-0 rounded-4">
-                    <h3 class="h5 fw-bold text-dark text-uppercase mb-3">Share & Discuss</h3>
-                    <div id="disqus-container" class="text-start border-top pt-4 border-secondary border-opacity-25"></div>
-                </div>
+                <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white"><article class="article-content" id="blog-body"></article></div>
             </div>
             ${getAdSidebar()}
         </div>
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
                 const slug = new URLSearchParams(window.location.search).get('slug');
-                if(!slug) return document.getElementById('blog-content').innerHTML = "Invalid URL";
                 const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', slug).single();
                 if(data) {
                     document.title = data.title + " | Wedugo";
@@ -779,11 +531,7 @@ function getSingleBlogTemplate() {
                     document.getElementById('blog-cat').innerText = data.category;
                     document.getElementById('blog-date').innerText = new Date(data.created_at).toLocaleDateString();
                     document.getElementById('blog-body').innerHTML = data.content;
-                    
-                    document.getElementById('disqus-container').innerHTML = \`<div id="disqus_thread"></div><script>var disqus_config = function () { this.page.url = window.location.href; this.page.identifier = 'blog_\${data.id}'; }; (function() { var d = document, s = d.createElement('script'); s.src = 'https://wedugo.disqus.com/embed.js'; s.setAttribute('data-timestamp', +new Date()); (d.head || d.body).appendChild(s); })();<\\/script>\`;
-
-                    document.getElementById('blog-loader').classList.add('d-none');
-                    document.getElementById('blog-content').classList.remove('d-none');
+                    document.getElementById('blog-loader').classList.add('d-none'); document.getElementById('blog-content').classList.remove('d-none');
                 }
             });
         </script>
@@ -797,80 +545,41 @@ function getMcqTemplate() {
             <div class="col-lg-8">
                 ${getAdBannerHtml("Sponsored")}
                 <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
-                    <header class="mb-4 border-bottom pb-4">
-                        <a id="mcq-cat-link" href="#" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill mb-3">Category</a>
-                        <h1 class="h4 fw-bold text-dark lh-base mt-3" id="mcq-qtext"></h1>
-                    </header>
+                    <header class="mb-4 border-bottom pb-4"><a id="mcq-cat-link" href="#" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill mb-3">Category</a><h1 class="h4 fw-bold text-dark lh-base mt-3" id="mcq-qtext"></h1></header>
                     <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
-                    <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border">
-                        <h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5>
-                        <hr class="opacity-25">
-                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6>
-                        <p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                        <button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" id="btn-prev">Prev Question</button>
-                        <button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" id="btn-next">Next Question</button>
-                    </div>
+                    <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top"><button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" id="btn-prev">Prev</button><button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" id="btn-next">Next</button></div>
                 </article>
-                <div class="mt-5 pt-5 border-top">
-                    <h3 class="fw-bold mb-4">Discussion</h3>
-                    <div id="disqus-container"></div>
-                </div>
             </div>
             ${getAdSidebar()}
         </div>
-
         <script>
-            let currentQ = null;
-            let hasAnswered = false;
-
+            let currentQ = null; let hasAnswered = false;
             document.addEventListener('DOMContentLoaded', async () => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const id = urlParams.get('id');
-                if(!id) return document.getElementById('mcq-content').innerHTML = "Invalid ID";
-
+                const id = new URLSearchParams(window.location.search).get('id');
                 const { data } = await supabaseClient.from('questions').select('*').eq('id', id).single();
                 if(data) {
                     currentQ = data;
                     document.getElementById('mcq-cat-link').innerText = data.qcategory;
                     document.getElementById('mcq-cat-link').href = "/category.html?name=" + encodeURIComponent(data.qcategory);
                     document.getElementById('mcq-qtext').innerText = data.question;
-                    document.title = "Q" + data.id + ": " + data.question.substring(0, 40) + " | Wedugo";
-                    
+                    document.title = "Q" + data.id + " | Wedugo";
                     const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
-                    let optHtml = '';
-                    for(let k in opts) {
-                        optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${opts[k]}</button>\`;
-                    }
+                    let optHtml = ''; for(let k in opts) { optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${opts[k]}</button>\`; }
                     document.getElementById('mcq-options').innerHTML = optHtml;
-                    
                     document.getElementById('btn-prev').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)-1);
                     document.getElementById('btn-next').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)+1);
-
-                    document.getElementById('disqus-container').innerHTML = \`<div id="disqus_thread"></div><script>var disqus_config = function () { this.page.url = window.location.href; this.page.identifier = 'mcq_\${data.id}'; }; (function() { var d = document, s = d.createElement('script'); s.src = 'https://wedugo.disqus.com/embed.js'; s.setAttribute('data-timestamp', +new Date()); (d.head || d.body).appendChild(s); })();<\\/script>\`;
-
-                    document.getElementById('mcq-loader').classList.add('d-none');
-                    document.getElementById('mcq-content').classList.remove('d-none');
+                    document.getElementById('mcq-loader').classList.add('d-none'); document.getElementById('mcq-content').classList.remove('d-none');
                 }
             });
-
             function checkAns(btn, selected) {
                 if(hasAnswered) return; hasAnswered = true;
                 const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
                 const expBox = document.getElementById('mcq-exp-box');
                 document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-                
                 expBox.classList.remove('d-none');
-                if(selected === correct) {
-                    btn.classList.add('correct-show');
-                    expBox.classList.add('alert-success', 'border-success');
-                    document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!";
-                } else {
-                    btn.classList.add('incorrect-show');
-                    expBox.classList.add('alert-danger', 'border-danger');
-                    document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct;
-                }
+                if(selected === correct) { btn.classList.add('correct-show'); expBox.classList.add('alert-success', 'border-success'); document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!"; }
+                else { btn.classList.add('incorrect-show'); expBox.classList.add('alert-danger', 'border-danger'); document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct; }
                 document.getElementById('mcq-exp-text').innerText = currentQ.answerdetail || "Practice makes perfect.";
             }
         </script>
@@ -882,51 +591,27 @@ function getCategoryTemplate() {
         <div id="cat-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="cat-content" class="d-none">
             <h1 class="display-6 blog-title mb-4 text-dark mt-3" id="cat-title">Category Hub</h1>
-            <div class="row mb-5 text-center g-4">
-                <div class="col-md-6">
-                    <div class="card bg-light border-0 p-4 h-100 rounded-4">
-                        <h3 class="fw-bold mb-3"><i class="bi bi-stopwatch text-primary me-2"></i>Timed Mock Tests</h3>
-                        <a id="btn-start-mock" href="#" class="btn btn-primary rounded-pill fw-bold px-4">Start 10-Q Mock Test</a>
-                    </div>
-                </div>
-            </div>
+            <div class="row mb-5 text-center g-4"><div class="col-md-6"><div class="card bg-light border-0 p-4 h-100 rounded-4"><h3 class="fw-bold mb-3"><i class="bi bi-stopwatch text-primary me-2"></i>Timed Mock Tests</h3><a id="btn-start-mock" href="#" class="btn btn-primary rounded-pill fw-bold px-4">Start 10-Q Mock Test</a></div></div></div>
             ${getAdBannerHtml("Sponsored")}
             <h3 class="fw-bold mb-4 mt-5">Question Bank</h3>
             <div id="mcq-list" class="list-group shadow-sm border-0 rounded-4 mb-5"></div>
             <div class="text-center"><button class="btn btn-outline-dark fw-bold rounded-pill px-4" id="btn-load-more">Load More</button></div>
         </div>
-
         <script>
-            let currentOffset = 0;
-            const limit = 20;
-            const urlParams = new URLSearchParams(window.location.search);
-            const catName = urlParams.get('name');
-
+            let currentOffset = 0; const limit = 20; const catName = new URLSearchParams(window.location.search).get('name');
             document.addEventListener('DOMContentLoaded', async () => {
                 if(!catName) return;
-                document.getElementById('cat-title').innerText = catName + " - Study Hub";
-                document.title = catName + " MCQs & Mock Tests | Wedugo";
-                document.getElementById('btn-start-mock').href = "/mock.html?cat=" + encodeURIComponent(catName);
-                
+                document.getElementById('cat-title').innerText = catName + " - Study Hub"; document.getElementById('btn-start-mock').href = "/mock.html?cat=" + encodeURIComponent(catName);
                 await loadMore();
-                document.getElementById('cat-loader').classList.add('d-none');
-                document.getElementById('cat-content').classList.remove('d-none');
+                document.getElementById('cat-loader').classList.add('d-none'); document.getElementById('cat-content').classList.remove('d-none');
             });
-
             document.getElementById('btn-load-more').onclick = loadMore;
-
             async function loadMore() {
                 const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1);
                 if(data && data.length > 0) {
-                    let html = '';
-                    data.forEach((q, i) => {
-                        html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${q.question.substring(0, 80)}...</a>\`;
-                    });
-                    document.getElementById('mcq-list').innerHTML += html;
-                    currentOffset += limit;
-                } else {
-                    document.getElementById('btn-load-more').style.display = 'none';
-                }
+                    let html = ''; data.forEach((q, i) => { html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${q.question.substring(0, 80)}...</a>\`; });
+                    document.getElementById('mcq-list').innerHTML += html; currentOffset += limit;
+                } else { document.getElementById('btn-load-more').style.display = 'none'; }
             }
         </script>
     `);
@@ -938,96 +623,39 @@ function getMockTemplate() {
         <div id="mock-content" class="row d-none">
             <div class="col-lg-8">
                 ${getAdBannerHtml("Sponsored")}
-                <div class="timer-header p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
-                    <div><h1 class="h4 fw-bold text-dark mb-1" id="mock-title">Mock Test</h1><p class="text-muted small mb-0">10 Questions</p></div>
-                    <div class="text-center ms-auto bg-light px-4 py-2 rounded-3 border"><div class="fs-4 fw-bold font-monospace text-danger" id="timer-display">10:00</div></div>
-                </div>
-                
-                <div id="score-board" class="card shadow-lg border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10">
-                    <h2 class="text-success fw-bold display-6 mb-3">Test Completed!</h2>
-                    <div class="display-2 fw-bold text-success mb-4" id="final-score">0 / 10</div>
-                    <a id="btn-back-cat" href="#" class="btn btn-success rounded-pill px-5 fw-bold">Back to Hub</a>
-                </div>
-
+                <div class="timer-header p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border"><div><h1 class="h4 fw-bold text-dark mb-1" id="mock-title">Mock Test</h1><p class="text-muted small mb-0">10 Questions</p></div><div class="text-center ms-auto bg-light px-4 py-2 rounded-3 border"><div class="fs-4 fw-bold font-monospace text-danger" id="timer-display">10:00</div></div></div>
+                <div id="score-board" class="card shadow-lg border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10"><h2 class="text-success fw-bold display-6 mb-3">Test Completed!</h2><div class="display-2 fw-bold text-success mb-4" id="final-score">0 / 10</div><a id="btn-back-cat" href="#" class="btn btn-success rounded-pill px-5 fw-bold">Back to Hub</a></div>
                 <div id="q-container"></div>
-                
-                <div class="text-center mt-5 mb-5" id="submit-container">
-                    <button class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow rounded-pill w-100" onclick="submitTest()">Submit Test & View Results</button>
-                </div>
+                <div class="text-center mt-5 mb-5" id="submit-container"><button class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow rounded-pill w-100" onclick="submitTest()">Submit Test & View Results</button></div>
             </div>
             ${getAdSidebar()}
         </div>
-
         <script>
             let mockData = []; let userAnswers = {}; let timeLeft = 600, timerInterval, testSubmitted = false;
-
             document.addEventListener('DOMContentLoaded', async () => {
                 const catName = new URLSearchParams(window.location.search).get('cat');
                 if(!catName) return;
-
-                document.getElementById('mock-title').innerText = catName + " Mock Test";
-                document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
-                
+                document.getElementById('mock-title').innerText = catName + " Mock Test"; document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
                 const { data } = await supabaseClient.from('questions').select('*').eq('qcategory', catName).limit(50);
                 if(data) {
-                    mockData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
-                    renderQuestions();
-                    document.getElementById('mock-loader').classList.add('d-none');
-                    document.getElementById('mock-content').classList.remove('d-none');
-                    
-                    timerInterval = setInterval(() => {
-                        if(testSubmitted) return;
-                        timeLeft--;
-                        let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-                        document.getElementById('timer-display').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
-                        if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); }
-                    }, 1000);
+                    mockData = data.sort(() => 0.5 - Math.random()).slice(0, 10); renderQuestions();
+                    document.getElementById('mock-loader').classList.add('d-none'); document.getElementById('mock-content').classList.remove('d-none');
+                    timerInterval = setInterval(() => { if(testSubmitted) return; timeLeft--; let m = Math.floor(timeLeft / 60), s = timeLeft % 60; document.getElementById('timer-display').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s; if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); } }, 1000);
                 }
             });
-
             function renderQuestions() {
-                let html = '';
-                mockData.forEach((q, i) => {
-                    html += \`<article class="card p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-\${q.id}"><div class="mb-4 pb-3 border-bottom"><span class="badge bg-dark rounded-pill px-3 py-2 fs-6">Question \${i+1}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${q.question}</h3><div class="d-grid gap-3 mb-4"><button class="btn option-btn" data-letter="A" onclick="selOpt('\${q.id}', 'A', this)">A) \${q.answer1}</button><button class="btn option-btn" data-letter="B" onclick="selOpt('\${q.id}', 'B', this)">B) \${q.answer2}</button><button class="btn option-btn" data-letter="C" onclick="selOpt('\${q.id}', 'C', this)">C) \${q.answer3}</button><button class="btn option-btn" data-letter="D" onclick="selOpt('\${q.id}', 'D', this)">D) \${q.answer4}</button></div><div id="exp-\${q.id}" class="alert mt-4 d-none p-4 border bg-light rounded-4"><h5 class="alert-heading fw-bold fs-5 mb-3" id="res-\${q.id}"></h5><hr class="opacity-25 mb-3"><p class="mb-0 text-dark">\${q.answerdetail || ''}</p></div></article>\`;
-                });
+                let html = ''; mockData.forEach((q, i) => { html += \`<article class="card p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-\${q.id}"><div class="mb-4 pb-3 border-bottom"><span class="badge bg-dark rounded-pill px-3 py-2 fs-6">Question \${i+1}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${q.question}</h3><div class="d-grid gap-3 mb-4"><button class="btn option-btn" data-letter="A" onclick="selOpt('\${q.id}', 'A', this)">A) \${q.answer1}</button><button class="btn option-btn" data-letter="B" onclick="selOpt('\${q.id}', 'B', this)">B) \${q.answer2}</button><button class="btn option-btn" data-letter="C" onclick="selOpt('\${q.id}', 'C', this)">C) \${q.answer3}</button><button class="btn option-btn" data-letter="D" onclick="selOpt('\${q.id}', 'D', this)">D) \${q.answer4}</button></div><div id="exp-\${q.id}" class="alert mt-4 d-none p-4 border bg-light rounded-4"><h5 class="alert-heading fw-bold fs-5 mb-3" id="res-\${q.id}"></h5><hr class="opacity-25 mb-3"><p class="mb-0 text-dark">\${q.answerdetail || ''}</p></div></article>\`; });
                 document.getElementById('q-container').innerHTML = html;
             }
-
-            function selOpt(qId, letter, btn) {
-                if(testSubmitted) return;
-                document.getElementById('quiz-block-' + qId).querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected'); userAnswers[qId] = letter;
-            }
-
+            function selOpt(qId, letter, btn) { if(testSubmitted) return; document.getElementById('quiz-block-' + qId).querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); userAnswers[qId] = letter; }
             function submitTest() {
-                if(testSubmitted) return;
-                testSubmitted = true; clearInterval(timerInterval);
-                document.getElementById('submit-container').style.display = 'none';
-                let score = 0;
-                
+                if(testSubmitted) return; testSubmitted = true; clearInterval(timerInterval); document.getElementById('submit-container').style.display = 'none'; let score = 0;
                 mockData.forEach(q => {
-                    const correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
-                    const user = userAnswers[q.id];
-                    const container = document.getElementById('quiz-block-' + q.id);
-                    const exp = document.getElementById('exp-' + q.id);
-                    const title = document.getElementById('res-' + q.id);
-                    
-                    container.querySelectorAll('.option-btn').forEach(btn => {
-                        btn.disabled = true; btn.classList.remove('selected');
-                        const bL = btn.getAttribute('data-letter');
-                        if (bL === correct) btn.classList.add('correct-show');
-                        else if (bL === user && user !== correct) btn.classList.add('incorrect-show');
-                    });
-                    
-                    exp.classList.remove('d-none');
-                    if(user === correct) { score++; exp.classList.add('alert-success', 'border-success'); title.innerText = "Correct!"; }
-                    else if(!user) { exp.classList.add('alert-warning', 'border-warning'); title.innerText = "Unanswered. Correct: " + correct; }
-                    else { exp.classList.add('alert-danger', 'border-danger'); title.innerText = "Incorrect. Correct: " + correct; }
+                    const correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase(); const user = userAnswers[q.id]; const container = document.getElementById('quiz-block-' + q.id); const exp = document.getElementById('exp-' + q.id); const title = document.getElementById('res-' + q.id);
+                    container.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = true; btn.classList.remove('selected'); const bL = btn.getAttribute('data-letter'); if (bL === correct) btn.classList.add('correct-show'); else if (bL === user && user !== correct) btn.classList.add('incorrect-show'); });
+                    exp.classList.remove('d-none'); if(user === correct) { score++; exp.classList.add('alert-success', 'border-success'); title.innerText = "Correct!"; } else if(!user) { exp.classList.add('alert-warning', 'border-warning'); title.innerText = "Unanswered. Correct: " + correct; } else { exp.classList.add('alert-danger', 'border-danger'); title.innerText = "Incorrect. Correct: " + correct; }
                 });
-
-                document.getElementById('score-board').classList.remove('d-none');
-                document.getElementById('final-score').innerText = score + " / 10";
-                window.scrollTo(0,0);
+                document.getElementById('score-board').classList.remove('d-none'); document.getElementById('final-score').innerText = score + " / 10"; window.scrollTo(0,0);
             }
         </script>
     `);
@@ -1043,7 +671,7 @@ function getStaticPageTemplate(title, contentHtml) {
     `);
 }
 
-function getAdminTemplate() {
+function getAdminTemplate(pluginAdminHTML = "") {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1088,22 +716,15 @@ function getAdminTemplate() {
                     <div class="col-md-3"><div class="card p-4 bg-success text-white text-center"><h1 id="stat-blog">...</h1><p class="mb-0 fw-medium">Published Blogs</p></div></div>
                     <div class="col-md-3"><div class="card p-4 bg-warning text-dark text-center"><h1 id="stat-user">...</h1><p class="mb-0 fw-medium">Registered Users</p></div></div>
                 </div>
-                <div class="alert alert-success border-0 shadow-sm"><i class="bi bi-rocket-takeoff-fill me-2"></i>Dynamic Client-Side Rendering is Active. Changes here appear on the website instantly. No GitHub rebuilds required.</div>
             </div>
             
             <div id="tab-questions" class="admin-tab d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold mb-0">Manage Questions</h2>
-                    <button class="btn btn-primary fw-bold" onclick="openMcqModal()"><i class="bi bi-plus-lg me-2"></i>Add Question</button>
-                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="fw-bold mb-0">Manage Questions</h2><button class="btn btn-primary fw-bold" onclick="openMcqModal()"><i class="bi bi-plus-lg me-2"></i>Add Question</button></div>
                 <div class="card p-0 overflow-hidden"><table class="table table-hover mb-0 align-middle"><thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Actions</th></tr></thead><tbody id="mcq-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody></table></div>
             </div>
 
             <div id="tab-blogs" class="admin-tab d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold mb-0">Manage Editorial Blogs</h2>
-                    <button class="btn btn-primary fw-bold" onclick="openBlogModal()"><i class="bi bi-pen-fill me-2"></i>Write New Blog</button>
-                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="fw-bold mb-0">Manage Editorial Blogs</h2><button class="btn btn-primary fw-bold" onclick="openBlogModal()"><i class="bi bi-pen-fill me-2"></i>Write New Blog</button></div>
                 <div class="card p-0 overflow-hidden"><table class="table table-hover mb-0 align-middle"><thead class="table-light"><tr><th>Title</th><th>Category</th><th>Date</th><th>Actions</th></tr></thead><tbody id="blog-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody></table></div>
             </div>
 
@@ -1113,8 +734,9 @@ function getAdminTemplate() {
             </div>
 
             <div id="tab-settings" class="admin-tab d-none">
-                <h2 class="fw-bold mb-4">System Settings</h2>
-                <div class="card p-4"><h5 class="fw-bold mb-3 border-bottom pb-2">Module Access Control</h5><div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="toggle-mock-lock" onchange="toggleModuleLock(this.checked)" style="width:40px;height:20px;"><label class="form-check-label ms-2 fw-medium pt-1" for="toggle-mock-lock">Require Login for Mock Tests</label></div><p class="text-muted small">Locks tests for unregistered users.</p></div>
+                <h2 class="fw-bold mb-4">System Settings & Plugins</h2>
+                <div class="card p-4 mb-4"><h5 class="fw-bold mb-3 border-bottom pb-2">Module Access Control</h5><div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="toggle-mock-lock" onchange="toggleModuleLock(this.checked)" style="width:40px;height:20px;"><label class="form-check-label ms-2 fw-medium pt-1" for="toggle-mock-lock">Require Login for Mock Tests</label></div></div>
+                ${pluginAdminHTML}
             </div>
         </div>
     </div>
@@ -1185,18 +807,65 @@ function getAdminTemplate() {
 }
 
 // ==========================================
-// STATIC BUILD PROCESS
+// BUILD SCRIPT WITH PLUGIN SCANNER
 // ==========================================
 async function buildCSRSite() {
     try {
         const rootDir = __dirname;
         
-        console.log("Generating Full Client-Side Application Templates in ROOT...");
+        console.log("1. Scanning for Dynamic Plugins (Modules)...");
+        let loadedPluginsTools = "";
+        let loadedPluginsAdmin = "";
+        const modulesDir = path.join(rootDir, 'modules');
+        
+        if (fs.existsSync(modulesDir)) {
+            const folders = fs.readdirSync(modulesDir, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
+            for (const folder of folders) {
+                const configPath = path.join(modulesDir, folder, 'config.json');
+                const uiPath = path.join(modulesDir, folder, 'ui.html');
+                const adminPath = path.join(modulesDir, folder, 'admin.html');
+                
+                if (fs.existsSync(configPath)) {
+                    try {
+                        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                        
+                        // Inject into Tools Page
+                        if (fs.existsSync(uiPath) && config.category === 'tools') {
+                            const uiCode = fs.readFileSync(uiPath, 'utf8');
+                            loadedPluginsTools += `
+                            <div class="col-md-6" id="plugin-${config.id}">
+                                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
+                                    <h4 class="fw-bold text-dark mb-3"><i class="bi ${config.icon || 'bi-plug'} text-primary me-2"></i>${config.name}</h4>
+                                    <p class="text-muted small mb-3">${config.desc}</p>
+                                    ${uiCode}
+                                </div>
+                            </div>`;
+                            console.log(`   -> Plugin Tool Loaded: ${config.name}`);
+                        }
+                        
+                        // Inject into Admin Settings Page
+                        if (fs.existsSync(adminPath)) {
+                            const adminCode = fs.readFileSync(adminPath, 'utf8');
+                            loadedPluginsAdmin += `
+                            <div class="card p-4 mb-4 border-0 shadow-sm" id="admin-plugin-${config.id}">
+                                <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi ${config.icon || 'bi-gear'} me-2"></i>${config.name} (Plugin Settings)</h5>
+                                ${adminCode}
+                            </div>`;
+                            console.log(`   -> Plugin Admin Hook Loaded: ${config.name}`);
+                        }
+                    } catch(e) {
+                        console.error(`   -> Error loading plugin ${folder}:`, e.message);
+                    }
+                }
+            }
+        }
 
-        // Write files directly to the root directory
+        console.log("2. Generating Full Client-Side Application Templates in ROOT...");
+
+        // Generate core files directly in the root directory
         await fsAsync.writeFile(path.join(rootDir, 'index.html'), getIndexTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'categories.html'), getCategoriesTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(loadedPluginsTools), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'blogs.html'), getBlogsTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'custom-exam.html'), getCustomExamTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), getMcqTemplate(), 'utf8');
@@ -1214,15 +883,15 @@ async function buildCSRSite() {
         const termsContent = `<p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website.</p>`;
         await fsAsync.writeFile(path.join(rootDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent), 'utf8');
 
-        // Admin Portal
+        // Admin Portal (Now receives injected admin plugins)
         const adminDir = path.join(rootDir, 'admin');
         if (!fs.existsSync(adminDir)) fs.mkdirSync(adminDir, { recursive: true });
-        await fsAsync.writeFile(path.join(adminDir, 'index.html'), getAdminTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(adminDir, 'index.html'), getAdminTemplate(loadedPluginsAdmin), 'utf8');
 
         // 404 Fallback
         await fsAsync.writeFile(path.join(rootDir, '404.html'), getStaticPageTemplate('404 - Page Not Found', '<p class="lead">Oops! The page you are looking for does not exist.</p><a href="/index.html" class="btn btn-primary fw-bold mt-3 px-4 py-2 rounded-pill">Go back to homepage</a>'), 'utf8');
 
-        console.log("Generating SEO Sitemap...");
+        console.log("3. Generating SEO Sitemap...");
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         xml += `<url><loc>${SITE_BASE_URL}/</loc><priority>1.0</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/categories.html</loc><priority>0.9</priority></url>\n`;
@@ -1234,7 +903,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Root Deployment Strategy Applied)");
+        console.log("✅ BUILD COMPLETE (Plugin Engine Active)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

@@ -5,8 +5,8 @@ const path = require('path');
 // ==========================================
 // CONFIGURATION & SUPABASE ENV VARS
 // ==========================================
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
+const SUPABASE_URL = "https://cncahdezxttujjzihozt.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0";
 const SITE_BASE_URL = "https://www.wedugo.com"; 
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const CACHE_BUSTER = Date.now(); 

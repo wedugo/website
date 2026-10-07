@@ -765,25 +765,22 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function checkAdminSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if(session?.user) {
-        // Direct email ya metadata se bhi check kar sakte hain, par profiles table se safety ke liye:
-        const { data, error } = await supabaseClient.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
-        
-        console.log("User Role Data:", data, error); // F12 console mein check karne ke liye
+        // Direct email se check kar lein ki ye aapka admin email hai ya nahi
+        // Yahan apna admin email daal dein:
+        const adminEmail = "wedugo.com@gmail.com"; // (Aapka wahi email jo screenshot me hai)
 
-        if(data && (data.role === 'admin' || data.role === 'Admin')) {
+        if(session.user.email === adminEmail) {
             document.getElementById('auth-screen').classList.add('d-none'); 
             document.getElementById('dashboard-screen').classList.remove('d-none');
             loadDashboardStats(); 
             loadModuleConfig();
         } else {
-            // Agar data nahi mila ya role admin nahi hai
-            console.warn("Access denied for role:", data?.role);
-            alert("Access Denied. Admin role required. Current role: " + (data?.role || 'None')); 
+            // Agar koi aur user login karega toh block ho jayega
+            alert("Access Denied. Admin privileges required."); 
             await supabaseClient.auth.signOut();
             window.location.reload();
         }
     } else {
-        // Not logged in, stay on auth screen
         document.getElementById('auth-screen').classList.remove('d-none');
     }
 }

@@ -765,9 +765,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function checkAdminSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if(session?.user) {
-        // Direct email se check kar lein ki ye aapka admin email hai ya nahi
-        // Yahan apna admin email daal dein:
-        const adminEmail = "wedugo.com@gmail.com"; // (Aapka wahi email jo screenshot me hai)
+        // Yahan apna exact login email daal dein:
+        const adminEmail = "wedugo.com@gmail.com"; 
 
         if(session.user.email === adminEmail) {
             document.getElementById('auth-screen').classList.add('d-none'); 
@@ -775,7 +774,6 @@ function getAdminTemplate(pluginAdminHTML = "") {
             loadDashboardStats(); 
             loadModuleConfig();
         } else {
-            // Agar koi aur user login karega toh block ho jayega
             alert("Access Denied. Admin privileges required."); 
             await supabaseClient.auth.signOut();
             window.location.reload();

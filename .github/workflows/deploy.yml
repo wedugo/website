@@ -31,9 +31,6 @@ jobs:
           node-version: '20'
 
       - name: Run Build Script
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: node build.js
 
       - name: Setup Pages
@@ -42,8 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Yahan sabse zaroori setting hai: public folder ko upload karna
-          path: './public'
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -3,7 +3,7 @@ const fsAsync = require('fs').promises;
 const path = require('path');
 
 // ==========================================
-// CONFIGURATION & SUPABASE ENV VARS
+// CONFIGURATION & HARDCODED SUPABASE KEYS
 // ==========================================
 const SUPABASE_URL = "https://cncahdezxttujjzihozt.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0";
@@ -209,17 +209,13 @@ function getHtmlShell(title, content, seoDescription = "") {
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // HARDCODED KEYS IN FRONTEND FOR GUARANTEED CONNECTION
         const _SU_URL = "${SUPABASE_URL}";
         const _SU_KEY = "${SUPABASE_KEY}";
-        let supabaseClient = null;
+        let supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
         let currentUser = null;
 
-        if(_SU_URL && _SU_KEY) {
-            supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
-        }
-
         async function initAuth() {
-            if(!supabaseClient) return;
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateNavUI(session?.user);
             checkModuleLock();
@@ -282,7 +278,6 @@ function getHtmlShell(title, content, seoDescription = "") {
         }
 
         async function checkModuleLock() {
-            if(!supabaseClient) return;
             const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html');
             if(!isProtected) return;
 
@@ -355,7 +350,6 @@ function getIndexTemplate() {
         </div>
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
-                if(!supabaseClient) return;
                 const { data: blogs } = await supabaseClient.from('blog_posts').select('slug, title, category, created_at').order('created_at', { ascending: false }).limit(6);
                 if(blogs) {
                     let blogHtml = '';
@@ -729,7 +723,6 @@ function getBlogsTemplate() {
         <div class="row g-4 mb-5" id="blogs-container"></div>
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
-                if(!supabaseClient) return;
                 const { data } = await supabaseClient.from('blog_posts').select('*').order('created_at', { ascending: false }).limit(50);
                 if(data) {
                     let html = '';
@@ -777,7 +770,6 @@ function getSingleBlogTemplate() {
         </div>
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
-                if(!supabaseClient) return;
                 const slug = new URLSearchParams(window.location.search).get('slug');
                 if(!slug) return document.getElementById('blog-content').innerHTML = "Invalid URL";
                 const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', slug).single();
@@ -834,7 +826,6 @@ function getMcqTemplate() {
             let hasAnswered = false;
 
             document.addEventListener('DOMContentLoaded', async () => {
-                if(!supabaseClient) return;
                 const urlParams = new URLSearchParams(window.location.search);
                 const id = urlParams.get('id');
                 if(!id) return document.getElementById('mcq-content').innerHTML = "Invalid ID";
@@ -857,14 +848,7 @@ function getMcqTemplate() {
                     document.getElementById('btn-prev').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)-1);
                     document.getElementById('btn-next').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)+1);
 
-                    // Setup Disqus
-                    document.getElementById('disqus-container').innerHTML = \`
-                        <div id="disqus_thread"></div>
-                        <script>
-                            var disqus_config = function () { this.page.url = window.location.href; this.page.identifier = 'mcq_\${data.id}'; };
-                            (function() { var d = document, s = d.createElement('script'); s.src = 'https://wedugo.disqus.com/embed.js'; s.setAttribute('data-timestamp', +new Date()); (d.head || d.body).appendChild(s); })();
-                        <\/script>
-                    \`;
+                    document.getElementById('disqus-container').innerHTML = \`<div id="disqus_thread"></div><script>var disqus_config = function () { this.page.url = window.location.href; this.page.identifier = 'mcq_\${data.id}'; }; (function() { var d = document, s = d.createElement('script'); s.src = 'https://wedugo.disqus.com/embed.js'; s.setAttribute('data-timestamp', +new Date()); (d.head || d.body).appendChild(s); })();<\\/script>\`;
 
                     document.getElementById('mcq-loader').classList.add('d-none');
                     document.getElementById('mcq-content').classList.remove('d-none');
@@ -919,7 +903,7 @@ function getCategoryTemplate() {
             const catName = urlParams.get('name');
 
             document.addEventListener('DOMContentLoaded', async () => {
-                if(!supabaseClient || !catName) return;
+                if(!catName) return;
                 document.getElementById('cat-title').innerText = catName + " - Study Hub";
                 document.title = catName + " MCQs & Mock Tests | Wedugo";
                 document.getElementById('btn-start-mock').href = "/mock.html?cat=" + encodeURIComponent(catName);
@@ -943,6 +927,107 @@ function getCategoryTemplate() {
                 } else {
                     document.getElementById('btn-load-more').style.display = 'none';
                 }
+            }
+        </script>
+    `);
+}
+
+function getMockTemplate() {
+    return getHtmlShell("Live Mock Test", `
+        <div id="mock-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+        <div id="mock-content" class="row d-none">
+            <div class="col-lg-8">
+                ${getAdBannerHtml("Sponsored")}
+                <div class="timer-header p-4 shadow-sm d-flex flex-wrap gap-3 justify-content-between align-items-center mb-5 rounded-4 border">
+                    <div><h1 class="h4 fw-bold text-dark mb-1" id="mock-title">Mock Test</h1><p class="text-muted small mb-0">10 Questions</p></div>
+                    <div class="text-center ms-auto bg-light px-4 py-2 rounded-3 border"><div class="fs-4 fw-bold font-monospace text-danger" id="timer-display">10:00</div></div>
+                </div>
+                
+                <div id="score-board" class="card shadow-lg border-success d-none mb-5 text-center p-5 rounded-4 bg-success bg-opacity-10">
+                    <h2 class="text-success fw-bold display-6 mb-3">Test Completed!</h2>
+                    <div class="display-2 fw-bold text-success mb-4" id="final-score">0 / 10</div>
+                    <a id="btn-back-cat" href="#" class="btn btn-success rounded-pill px-5 fw-bold">Back to Hub</a>
+                </div>
+
+                <div id="q-container"></div>
+                
+                <div class="text-center mt-5 mb-5" id="submit-container">
+                    <button class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow rounded-pill w-100" onclick="submitTest()">Submit Test & View Results</button>
+                </div>
+            </div>
+            ${getAdSidebar()}
+        </div>
+
+        <script>
+            let mockData = []; let userAnswers = {}; let timeLeft = 600, timerInterval, testSubmitted = false;
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                const catName = new URLSearchParams(window.location.search).get('cat');
+                if(!catName) return;
+
+                document.getElementById('mock-title').innerText = catName + " Mock Test";
+                document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
+                
+                const { data } = await supabaseClient.from('questions').select('*').eq('qcategory', catName).limit(50);
+                if(data) {
+                    mockData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
+                    renderQuestions();
+                    document.getElementById('mock-loader').classList.add('d-none');
+                    document.getElementById('mock-content').classList.remove('d-none');
+                    
+                    timerInterval = setInterval(() => {
+                        if(testSubmitted) return;
+                        timeLeft--;
+                        let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+                        document.getElementById('timer-display').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
+                        if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); }
+                    }, 1000);
+                }
+            });
+
+            function renderQuestions() {
+                let html = '';
+                mockData.forEach((q, i) => {
+                    html += \`<article class="card p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-\${q.id}"><div class="mb-4 pb-3 border-bottom"><span class="badge bg-dark rounded-pill px-3 py-2 fs-6">Question \${i+1}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${q.question}</h3><div class="d-grid gap-3 mb-4"><button class="btn option-btn" data-letter="A" onclick="selOpt('\${q.id}', 'A', this)">A) \${q.answer1}</button><button class="btn option-btn" data-letter="B" onclick="selOpt('\${q.id}', 'B', this)">B) \${q.answer2}</button><button class="btn option-btn" data-letter="C" onclick="selOpt('\${q.id}', 'C', this)">C) \${q.answer3}</button><button class="btn option-btn" data-letter="D" onclick="selOpt('\${q.id}', 'D', this)">D) \${q.answer4}</button></div><div id="exp-\${q.id}" class="alert mt-4 d-none p-4 border bg-light rounded-4"><h5 class="alert-heading fw-bold fs-5 mb-3" id="res-\${q.id}"></h5><hr class="opacity-25 mb-3"><p class="mb-0 text-dark">\${q.answerdetail || ''}</p></div></article>\`;
+                });
+                document.getElementById('q-container').innerHTML = html;
+            }
+
+            function selOpt(qId, letter, btn) {
+                if(testSubmitted) return;
+                document.getElementById('quiz-block-' + qId).querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected'); userAnswers[qId] = letter;
+            }
+
+            function submitTest() {
+                if(testSubmitted) return;
+                testSubmitted = true; clearInterval(timerInterval);
+                document.getElementById('submit-container').style.display = 'none';
+                let score = 0;
+                
+                mockData.forEach(q => {
+                    const correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
+                    const user = userAnswers[q.id];
+                    const container = document.getElementById('quiz-block-' + q.id);
+                    const exp = document.getElementById('exp-' + q.id);
+                    const title = document.getElementById('res-' + q.id);
+                    
+                    container.querySelectorAll('.option-btn').forEach(btn => {
+                        btn.disabled = true; btn.classList.remove('selected');
+                        const bL = btn.getAttribute('data-letter');
+                        if (bL === correct) btn.classList.add('correct-show');
+                        else if (bL === user && user !== correct) btn.classList.add('incorrect-show');
+                    });
+                    
+                    exp.classList.remove('d-none');
+                    if(user === correct) { score++; exp.classList.add('alert-success', 'border-success'); title.innerText = "Correct!"; }
+                    else if(!user) { exp.classList.add('alert-warning', 'border-warning'); title.innerText = "Unanswered. Correct: " + correct; }
+                    else { exp.classList.add('alert-danger', 'border-danger'); title.innerText = "Incorrect. Correct: " + correct; }
+                });
+
+                document.getElementById('score-board').classList.remove('d-none');
+                document.getElementById('final-score').innerText = score + " / 10";
+                window.scrollTo(0,0);
             }
         </script>
     `);
@@ -1042,17 +1127,13 @@ function getAdminTemplate() {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const _SU_URL = ""; 
-        const _SU_KEY = "";
-        
-        // Fetch securely from frontend since script runs in browser.
-        fetch('/env.json').then(r=>r.json()).then(env => {
-            window.supabaseClient = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+        const _SU_URL = "${SUPABASE_URL}"; const _SU_KEY = "${SUPABASE_KEY}";
+        const supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
+        let quill;
+        document.addEventListener("DOMContentLoaded", () => {
             quill = new Quill('#quill-editor', { theme: 'snow' }); checkAdminSession();
             supabaseClient.auth.onAuthStateChange((event) => { if(event === 'SIGNED_OUT') window.location.reload(); });
         });
-
-        let quill;
         async function checkAdminSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if(session?.user) {
@@ -1104,59 +1185,42 @@ function getAdminTemplate() {
 }
 
 // ==========================================
-// STATIC BUILD PROCESS (Generates All Required Pages)
+// STATIC BUILD PROCESS
 // ==========================================
 async function buildCSRSite() {
     try {
-        const distDir = path.join(__dirname, 'public');
-        if (fs.existsSync(distDir)) fs.rmSync(distDir, { recursive: true, force: true });
-        fs.mkdirSync(distDir, { recursive: true });
+        const rootDir = __dirname;
         
-        console.log("Generating Full Client-Side Application Templates...");
-        
-        // Create an env.json file in public directory to expose Supabase keys to the frontend securely
-        const frontendEnv = {
-            SUPABASE_URL: SUPABASE_URL,
-            SUPABASE_KEY: SUPABASE_KEY
-        };
-        await fsAsync.writeFile(path.join(distDir, 'env.json'), JSON.stringify(frontendEnv), 'utf8');
+        console.log("Generating Full Client-Side Application Templates in ROOT...");
 
-        // 1. Output Index (Fetches dynamically on load)
-        await fsAsync.writeFile(path.join(distDir, 'index.html'), getIndexTemplate(), 'utf8');
-        
-        // 2. Hubs and Core Pages
-        await fsAsync.writeFile(path.join(distDir, 'categories.html'), getCategoriesTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'tools.html'), getToolsTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'blogs.html'), getBlogsTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'custom-exam.html'), getCustomExamTemplate(), 'utf8');
-        
-        // 3. Dynamic Viewers
-        await fsAsync.writeFile(path.join(distDir, 'mcq.html'), getMcqTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'category.html'), getCategoryTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'mock.html'), getMockTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
+        // Write files directly to the root directory
+        await fsAsync.writeFile(path.join(rootDir, 'index.html'), getIndexTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'categories.html'), getCategoriesTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'blogs.html'), getBlogsTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'custom-exam.html'), getCustomExamTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), getMcqTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'category.html'), getCategoryTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
 
-        // 4. Legal & Static Pages
+        // Legal & Static Pages
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
-        await fsAsync.writeFile(path.join(distDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent), 'utf8');
         
         const privacyContent = `<p class="text-secondary lh-lg">At Wedugo Education, accessible from wedugo.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wedugo Education and how we use it.</p>`;
-        await fsAsync.writeFile(path.join(distDir, 'privacy.html'), getStaticPageTemplate('Privacy Policy', privacyContent), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'privacy.html'), getStaticPageTemplate('Privacy Policy', privacyContent), 'utf8');
         
         const termsContent = `<p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website.</p>`;
-        await fsAsync.writeFile(path.join(distDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent), 'utf8');
 
-        // 5. Admin Portal
-        const adminDir = path.join(distDir, 'admin');
-        fs.mkdirSync(adminDir, { recursive: true });
+        // Admin Portal
+        const adminDir = path.join(rootDir, 'admin');
+        if (!fs.existsSync(adminDir)) fs.mkdirSync(adminDir, { recursive: true });
         await fsAsync.writeFile(path.join(adminDir, 'index.html'), getAdminTemplate(), 'utf8');
 
-        // 6. 404 Fallback
-        await fsAsync.writeFile(path.join(distDir, '404.html'), getStaticPageTemplate('404 - Page Not Found', '<p class="lead">Oops! The page you are looking for does not exist.</p><a href="/index.html" class="btn btn-primary fw-bold mt-3 px-4 py-2 rounded-pill">Go back to homepage</a>'), 'utf8');
-
-        // 7. Copy Assets
-        ['main_images'].forEach(dir => { const s = path.join(__dirname, dir); if (fs.existsSync(s)) fs.cpSync(s, path.join(distDir, dir), { recursive: true }); });
-        ['Ads.txt', 'CNAME'].forEach(f => { const s = path.join(__dirname, f); if (fs.existsSync(s)) fs.copyFileSync(s, path.join(distDir, f === 'Ads.txt' ? 'ads.txt' : f)); });
+        // 404 Fallback
+        await fsAsync.writeFile(path.join(rootDir, '404.html'), getStaticPageTemplate('404 - Page Not Found', '<p class="lead">Oops! The page you are looking for does not exist.</p><a href="/index.html" class="btn btn-primary fw-bold mt-3 px-4 py-2 rounded-pill">Go back to homepage</a>'), 'utf8');
 
         console.log("Generating SEO Sitemap...");
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -1167,10 +1231,10 @@ async function buildCSRSite() {
         xml += `<url><loc>${SITE_BASE_URL}/custom-exam.html</loc><priority>0.9</priority></url>\n`;
         xml += `</urlset>`;
         
-        await fsAsync.writeFile(path.join(distDir, 'sitemap.xml'), xml, 'utf8');
-        await fsAsync.writeFile(path.join(distDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (404 Error Fixed & Core Pages Restored)");
+        console.log("✅ BUILD COMPLETE (Root Deployment Strategy Applied)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

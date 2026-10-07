@@ -1,17 +1,27 @@
 name: Deploy Static Site to GitHub Pages
 
+# Yeh action tab chalega jab aap 'main' branch par code push karenge
 on:
   push:
-    branches: ["main"] # Agar branch ka naam 'master' hai, toh ise 'master' kar dein
-  workflow_dispatch:
+    branches: ["main"] # Agar aapki branch ka naam 'master' hai, toh ise 'master' kar dein
+  workflow_dispatch: # Yeh aapko manually action run karne ki permission deta hai
 
+# GitHub Pages par deploy karne ke liye zaroori permissions
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Ek time par ek hi deployment run ho, uske liye concurrency set ki gayi hai
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -20,15 +30,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Run Build Script
-        run: node build.js # Make sure aapki JS file ka yahi naam ho
+        run: node build.js
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.' # Deploys the root directory where the HTML files are generated
+          # Humara build.js root directory (.) mein hi files banata hai
+          path: '.' 
 
       - name: Deploy to GitHub Pages
         id: deployment

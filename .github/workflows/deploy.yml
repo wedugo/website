@@ -1,18 +1,19 @@
 name: Deploy Quiz Website
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -27,19 +28,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
-      - name: Generate Pages from Google Sheet
-        run: node build.js
+      - name: Run Build Script
         env:
-          QUIZURL: ${{ vars.QUIZURL }}
-          BLOGURL: ${{ vars.BLOGURL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: node build.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Yahan sabse zaroori setting hai: public folder ko upload karna
           path: './public'
 
       - name: Deploy to GitHub Pages

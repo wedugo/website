@@ -763,15 +763,30 @@ function getAdminTemplate(pluginAdminHTML = "") {
             supabaseClient.auth.onAuthStateChange((event) => { if(event === 'SIGNED_OUT') window.location.reload(); });
         });
         async function checkAdminSession() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if(session?.user) {
-                const { data } = await supabaseClient.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
-                if(data?.role === 'admin') {
-                    document.getElementById('auth-screen').classList.add('d-none'); document.getElementById('dashboard-screen').classList.remove('d-none');
-                    loadDashboardStats(); loadModuleConfig();
-                } else { alert("Access Denied. Admin role required."); await supabaseClient.auth.signOut(); }
-            }
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if(session?.user) {
+        // Direct email ya metadata se bhi check kar sakte hain, par profiles table se safety ke liye:
+        const { data, error } = await supabaseClient.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+        
+        console.log("User Role Data:", data, error); // F12 console mein check karne ke liye
+
+        if(data && (data.role === 'admin' || data.role === 'Admin')) {
+            document.getElementById('auth-screen').classList.add('d-none'); 
+            document.getElementById('dashboard-screen').classList.remove('d-none');
+            loadDashboardStats(); 
+            loadModuleConfig();
+        } else {
+            // Agar data nahi mila ya role admin nahi hai
+            console.warn("Access denied for role:", data?.role);
+            alert("Access Denied. Admin role required. Current role: " + (data?.role || 'None')); 
+            await supabaseClient.auth.signOut();
+            window.location.reload();
         }
+    } else {
+        // Not logged in, stay on auth screen
+        document.getElementById('auth-screen').classList.remove('d-none');
+    }
+}
         async function adminLogin() {
             const email = document.getElementById('admin-email').value, password = document.getElementById('admin-pass').value;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });

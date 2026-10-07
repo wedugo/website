@@ -34,6 +34,8 @@ jobs:
         env:
           QUIZURL: ${{ vars.QUIZURL }}
           BLOGURL: ${{ vars.BLOGURL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

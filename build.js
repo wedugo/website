@@ -1,6 +1,7 @@
 const fs = require('fs');
 const fsAsync = require('fs').promises;
 const path = require('path');
+const https = require('https');
 
 // ==========================================
 // CONFIGURATION & SUPABASE KEYS
@@ -11,7 +12,7 @@ const SITE_BASE_URL = "https://www.wedugo.com";
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const CACHE_BUSTER = Date.now(); 
 
-// Global Variables for Dynamic Code Snippets (Fetched dynamically during build)
+// Global Variables for Dynamic Code Snippets (Injected at build time for SEO/Speed)
 let AFFILIATE_SNIPPET_BANNER = "";
 let AFFILIATE_SNIPPET_SIDEBAR = "";
 let CUSTOM_HEAD_CODE = "";
@@ -30,11 +31,7 @@ function getAdBannerHtml(label) {
     return `
         <div class="ad-banner-wrapper my-4 text-center">
             <span class="text-muted d-block small mb-1" style="font-size: 0.70rem; letter-spacing: 0.5px; text-transform: uppercase;">${label}</span>
-            
-            <!-- Affiliate Snippet Slot -->
             ${AFFILIATE_SNIPPET_BANNER ? `<div class="affiliate-banner-container mb-3">${AFFILIATE_SNIPPET_BANNER}</div>` : ''}
-
-            <!-- AdSense Slot -->
             <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #fafafa; border-radius: 8px;">
                 <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins>
                 <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
@@ -49,11 +46,7 @@ function getAdSidebar() {
             <div class="sticky-desktop-sidebar" style="position: sticky; top: 90px;">
                 <div class="card shadow-sm border-0 rounded-4 bg-white p-3 mb-4 text-center">
                     <span class="text-muted small fw-bold text-uppercase mb-2 d-block" style="font-size: 0.75rem;">Sponsored</span>
-                    
-                    <!-- Affiliate Snippet Slot -->
                     ${AFFILIATE_SNIPPET_SIDEBAR ? `<div class="affiliate-sidebar-container mb-3">${AFFILIATE_SNIPPET_SIDEBAR}</div>` : ''}
-
-                    <!-- AdSense Slot -->
                     <div class="ad-container shadow-none border-0 mb-0" style="min-height: 280px; background: #f8fafc;">
                         <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="0987654321" data-ad-format="auto" data-full-width-responsive="true"></ins>
                         <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
@@ -70,6 +63,7 @@ function getAdSidebar() {
 }
 
 function getNavbar() {
+    // Nav items are hidden (d-none) by default. The live script will unhide them if they are ON.
     return `
     <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm py-3 border-bottom sticky-top">
         <div class="container">
@@ -84,7 +78,17 @@ function getNavbar() {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/index.html"><i class="bi bi-house-door me-1"></i>Home</a></li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/categories.html"><i class="bi bi-grid me-1"></i>Categories</a></li>
                     <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="/custom-exam.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/tools.html"><i class="bi bi-tools me-1"></i>Tools</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tools me-1"></i>Tools
+                        </a>
+                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">
+                            <li><a class="dropdown-item fw-medium py-2" href="/tools.html"><i class="bi bi-collection me-2 text-secondary"></i>All Tools Explorer</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li id="nav-tool-score" class="d-none"><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>
+                            <li id="nav-tool-pdf" class="d-none"><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/blogs.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
                     <li class="nav-item ms-lg-2" id="auth-nav-container">
                         <button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button>
@@ -114,7 +118,7 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH AUTH, HEAD INJECTION & BODY BOTTOM INJECTION
+// 🟢 MASTER HTML SHELL WITH LIVE SETTINGS FETCHING & INJECTIONS
 function getHtmlShell(title, content, seoDescription = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
@@ -230,6 +234,30 @@ function getHtmlShell(title, content, seoDescription = "") {
         let supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
         let currentUser = null;
 
+        // FETCH LIVE MODULE SETTINGS (No Build Required for ON/OFF)
+        async function fetchLiveModuleSettings() {
+            try {
+                const { data } = await supabaseClient.from('dynamic_components').select('*');
+                if(data) {
+                    const getVal = (name) => { const obj = data.find(s => s.component_name === name); return obj ? obj.is_active : true; };
+                    
+                    // Live UI Updates for Toggles
+                    if(getVal('TOOL_PDF_READER')) {
+                        if(document.getElementById('nav-tool-pdf')) document.getElementById('nav-tool-pdf').classList.remove('d-none');
+                        if(document.getElementById('tool-card-pdf')) document.getElementById('tool-card-pdf').classList.remove('d-none');
+                    } else {
+                        // Redirect away if someone manually accesses a disabled tool URL
+                        if(window.location.pathname.includes('pdf-reader')) window.location.href = '/tools.html';
+                    }
+
+                    if(getVal('TOOL_SCORE_ESTIMATOR')) {
+                        if(document.getElementById('nav-tool-score')) document.getElementById('nav-tool-score').classList.remove('d-none');
+                        if(document.getElementById('tool-card-score')) document.getElementById('tool-card-score').classList.remove('d-none');
+                    }
+                }
+            } catch(e) { console.error("Error fetching live settings."); }
+        }
+
         async function initAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateNavUI(session?.user);
@@ -322,7 +350,10 @@ function getHtmlShell(title, content, seoDescription = "") {
             }
         }
 
-        document.addEventListener("DOMContentLoaded", initAuth);
+        document.addEventListener("DOMContentLoaded", () => {
+            initAuth();
+            fetchLiveModuleSettings();
+        });
     </script>
     
     <!-- CUSTOM BODY BOTTOM INJECTION CODE -->
@@ -483,10 +514,12 @@ function getCustomExamTemplate() {
 }
 
 function getToolsTemplate(pluginHTML = "") {
+    // Tool cards are generated but hidden (d-none) by default to prevent UI flashing
+    // The live JS script will unhide them if they are enabled in DB
     const toolsHTML = `
         <div class="row g-4 mt-3 mb-5">
-            <div class="col-md-6">
-                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4">
+            <div class="col-md-6 d-none" id="tool-card-score">
+                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4" id="estimator">
                     <h4 class="fw-bold text-primary mb-3"><i class="bi bi-calculator me-2"></i>Exam Score Estimator</h4>
                     <p class="text-muted small mb-3">Calculate your expected score with negative marking.</p>
                     <div class="mb-2"><label class="form-label small fw-bold">Total Correct</label><input type="number" id="tool-c" class="form-control" value="0"></div>
@@ -497,6 +530,15 @@ function getToolsTemplate(pluginHTML = "") {
                     <script>function calcScore(){ document.getElementById('tool-score').innerText = ((parseFloat(document.getElementById('tool-c').value)||0) - ((parseFloat(document.getElementById('tool-w').value)||0) * (parseFloat(document.getElementById('tool-n').value)||0))).toFixed(2); document.getElementById('tool-res-box').classList.remove('d-none'); }</script>
                 </div>
             </div>
+
+            <div class="col-md-6 d-none" id="tool-card-pdf">
+                <div class="card bg-white shadow-sm border-0 h-100 p-4 rounded-4 text-center d-flex flex-column justify-content-center">
+                    <h4 class="fw-bold text-danger mb-3"><i class="bi bi-file-earmark-pdf-fill me-2"></i>PDF Reader</h4>
+                    <p class="text-muted small mb-4">Read your study PDFs instantly without uploading to any server. Fast and secure.</p>
+                    <a href="/pdf-reader.html" class="btn btn-outline-danger fw-bold rounded-pill w-100 mt-auto">Open PDF Reader</a>
+                </div>
+            </div>
+
             ${pluginHTML}
         </div>
     `;
@@ -508,6 +550,40 @@ function getToolsTemplate(pluginHTML = "") {
             <p class="lead text-secondary">Free interactive utilities to optimize your competitive exam preparation.</p>
         </div>
         ${toolsHTML}
+    `);
+}
+
+function getPdfReaderTemplate() {
+    return getHtmlShell("Free PDF Reader Tool", `
+        ${getBreadcrumbs([{name: 'Tools', url: '/tools.html'}, {name: 'PDF Reader', url: '/pdf-reader.html'}])}
+        <div class="card shadow-sm p-4 p-md-5 border-0 rounded-4 bg-white mt-4 text-center">
+            <h1 class="blog-title text-dark mb-3"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Online PDF Reader</h1>
+            <p class="text-secondary mb-4">Read your study materials, ebooks, and PDF notes directly in your browser. Files are processed locally on your device for 100% privacy.</p>
+            
+            <div class="mb-4 p-4 bg-light rounded-4 border border-light shadow-sm">
+                <label class="form-label fw-bold mb-3 d-block">Select a PDF File from your device:</label>
+                <input type="file" id="pdf-upload" class="form-control form-control-lg w-75 mx-auto" accept="application/pdf">
+            </div>
+            
+            <div id="pdf-viewer-container" class="d-none mt-4 shadow-sm" style="height: 85vh; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #f8fafc;">
+                <div class="p-2 bg-dark text-white text-end">
+                    <button class="btn btn-sm btn-outline-light" onclick="document.getElementById('pdf-upload').click()"><i class="bi bi-arrow-repeat me-1"></i>Change File</button>
+                </div>
+                <iframe id="pdf-iframe" style="width: 100%; height: calc(100% - 40px); border: none;"></iframe>
+            </div>
+        </div>
+        <script>
+            document.getElementById('pdf-upload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file && file.type === 'application/pdf') {
+                    const fileURL = URL.createObjectURL(file);
+                    document.getElementById('pdf-iframe').src = fileURL + '#toolbar=0';
+                    document.getElementById('pdf-viewer-container').classList.remove('d-none');
+                } else {
+                    alert('Please select a valid PDF file.');
+                }
+            });
+        </script>
     `);
 }
 
@@ -955,15 +1031,34 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
             <div id="tab-settings" class="admin-tab d-none">
                 <h2 class="fw-bold mb-4">System Settings & Plugins</h2>
-                <div class="card p-4 mb-4 shadow-sm border-0">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2">Module Access Control</h5>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" role="switch" id="toggle-mock-lock" onchange="toggleModuleLock(this.checked)" style="width:40px;height:20px;">
-                        <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-mock-lock">Require Login for Mock Tests</label>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card p-4 h-100 shadow-sm border-0">
+                            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-shield-lock me-2"></i>Module Access Control</h5>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggle-mock-lock" onchange="toggleModuleStatus('LOCK_MOCK_TESTS', this.checked)" style="width:40px;height:20px;">
+                                <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-mock-lock">Require Login for Mock Tests</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggle-pagination" onchange="toggleModuleStatus('USE_PAGINATION', this.checked)" style="width:40px;height:20px;">
+                                <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-pagination">Use Pagination style for Questions</label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-check form-switch mb-3 mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" id="toggle-pagination" onchange="togglePagination(this.checked)" style="width:40px;height:20px;">
-                        <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-pagination">Use Pagination style for Questions (Off = Load More button)</label>
+                    
+                    <div class="col-md-6">
+                        <div class="card p-4 h-100 shadow-sm border-0">
+                            <h5 class="fw-bold mb-3 border-bottom pb-2 text-success"><i class="bi bi-tools me-2"></i>Enable / Disable Study Tools</h5>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggle-pdf-reader" onchange="toggleModuleStatus('TOOL_PDF_READER', this.checked)" style="width:40px;height:20px;">
+                                <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-pdf-reader">Enable PDF Reader Tool</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggle-score-est" onchange="toggleModuleStatus('TOOL_SCORE_ESTIMATOR', this.checked)" style="width:40px;height:20px;">
+                                <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-score-est">Enable Score Estimator Tool</label>
+                            </div>
+                            <div class="alert alert-info small mt-3 mb-0"><i class="bi bi-info-circle-fill me-1"></i>Tools toggle in real-time on live site.</div>
+                        </div>
                     </div>
                 </div>
                 ${pluginAdminHTML}
@@ -1034,15 +1129,22 @@ function getAdminTemplate(pluginAdminHTML = "") {
         }
 
         async function loadModuleConfig() { 
-            const { data: d1 } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'LOCK_MOCK_TESTS').maybeSingle(); 
-            if(d1) document.getElementById('toggle-mock-lock').checked = d1.is_active; 
-
-            const { data: d2 } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'USE_PAGINATION').maybeSingle(); 
-            if(d2) document.getElementById('toggle-pagination').checked = d2.is_active; 
+            const { data } = await supabaseClient.from('dynamic_components').select('*'); 
+            if(data) {
+                const getVal = (key) => {
+                    const obj = data.find(s => s.component_name === key);
+                    return obj ? obj.is_active : false;
+                };
+                document.getElementById('toggle-mock-lock').checked = getVal('LOCK_MOCK_TESTS'); 
+                document.getElementById('toggle-pagination').checked = getVal('USE_PAGINATION'); 
+                document.getElementById('toggle-pdf-reader').checked = getVal('TOOL_PDF_READER'); 
+                document.getElementById('toggle-score-est').checked = getVal('TOOL_SCORE_ESTIMATOR'); 
+            }
         }
 
-        async function toggleModuleLock(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'LOCK_MOCK_TESTS', is_active: v }); }
-        async function togglePagination(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'USE_PAGINATION', is_active: v }); }
+        async function toggleModuleStatus(compName, isActive) { 
+            await supabaseClient.from('dynamic_components').upsert({ component_name: compName, is_active: isActive }); 
+        }
 
         // --- MANAGE SNIPPETS & ADS LOGIC ---
         async function loadAds() {
@@ -1133,23 +1235,15 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
         function decodeMojibake(str) {
             if (!str || typeof str !== 'string') return str;
-            try {
-                // Ye corrupt Latin-1 bytes ko automatically sahi UTF-8 (Hindi) me convert karega
-                return decodeURIComponent(escape(str));
-            } catch (e) {
-                // Agar text pehle se hi sahi Hindi me hai, toh escape usko %uXXXX bana dega
-                // jisse decodeURIComponent error dega. Us case me original sahi text return ho jayega.
-                return str; 
-            }
+            try { return decodeURIComponent(escape(str)); } 
+            catch (e) { return str; }
         }
 
         function fixCurrentModalEncoding() {
             const fields = ['q-text', 'q-optA', 'q-optB', 'q-optC', 'q-optD', 'q-cat', 'q-exp'];
             fields.forEach(id => {
                 const el = document.getElementById(id);
-                if (el && el.value) {
-                    el.value = decodeMojibake(el.value);
-                }
+                if (el && el.value) { el.value = decodeMojibake(el.value); }
             });
         }
 
@@ -1352,7 +1446,7 @@ async function buildCSRSite() {
     try {
         const rootDir = __dirname;
 
-        // Fetch settings from DB before building pages
+        // Fetch configs from DB before building pages
         await fetchSiteSettings();
 
         console.log("1. Scanning for Dynamic Plugins (Modules)...");
@@ -1412,6 +1506,9 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
         
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
+        
+        // We ALWAYS build the PDF reader file. Live JS determines if links to it are shown.
+        await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(), 'utf8');
 
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
         await fsAsync.writeFile(path.join(rootDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent), 'utf8');
@@ -1435,12 +1532,13 @@ async function buildCSRSite() {
         xml += `<url><loc>${SITE_BASE_URL}/tools.html</loc><priority>0.9</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/blogs.html</loc><priority>0.9</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/custom-exam.html</loc><priority>0.9</priority></url>\n`;
+        xml += `<url><loc>${SITE_BASE_URL}/pdf-reader.html</loc><priority>0.8</priority></url>\n`;
         xml += `</urlset>`;
 
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Global Head/Body Snippets, Component Injections Active)");
+        console.log("✅ BUILD COMPLETE (Live Server Toggles, Dynamic Nav, Real-Time Tools ON/OFF)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

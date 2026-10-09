@@ -12,13 +12,17 @@ const SITE_BASE_URL = "https://www.wedugo.com";
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const CACHE_BUSTER = Date.now(); 
 
-// Global Variables for Dynamic Code Snippets (Injected at build time for SEO/Speed)
+// Global Variables for Dynamic Code Snippets
 let AFFILIATE_SNIPPET_BANNER = "";
 let AFFILIATE_SNIPPET_SIDEBAR = "";
 let CUSTOM_HEAD_CODE = "";
 let CUSTOM_BODY_BOTTOM_CODE = "";
 let BLOG_BOTTOM_CODE = "";
 let MCQ_BOTTOM_CODE = "";
+
+// Global Variables for Dynamic Module Toggles
+let TOOL_PDF_READER = true;
+let TOOL_SCORE_ESTIMATOR = true;
 
 const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
@@ -63,7 +67,15 @@ function getAdSidebar() {
 }
 
 function getNavbar() {
-    // Nav items are hidden (d-none) by default. The live script will unhide them if they are ON.
+    let toolsDropdownList = `<li><a class="dropdown-item fw-medium py-2" href="/tools.html"><i class="bi bi-collection me-2 text-secondary"></i>All Tools Explorer</a></li><li><hr class="dropdown-divider"></li>`;
+    
+    if(TOOL_SCORE_ESTIMATOR) {
+        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
+    }
+    if(TOOL_PDF_READER) {
+        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
+    }
+
     return `
     <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm py-3 border-bottom sticky-top">
         <div class="container">
@@ -83,10 +95,7 @@ function getNavbar() {
                             <i class="bi bi-tools me-1"></i>Tools
                         </a>
                         <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">
-                            <li><a class="dropdown-item fw-medium py-2" href="/tools.html"><i class="bi bi-collection me-2 text-secondary"></i>All Tools Explorer</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li id="nav-tool-score" class="d-none"><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>
-                            <li id="nav-tool-pdf" class="d-none"><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>
+                            ${toolsDropdownList}
                         </ul>
                     </li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/blogs.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
@@ -118,7 +127,7 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH LIVE SETTINGS FETCHING & INJECTIONS
+// 🟢 MASTER HTML SHELL WITH INJECTIONS
 function getHtmlShell(title, content, seoDescription = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
@@ -246,7 +255,6 @@ function getHtmlShell(title, content, seoDescription = "") {
                         if(document.getElementById('nav-tool-pdf')) document.getElementById('nav-tool-pdf').classList.remove('d-none');
                         if(document.getElementById('tool-card-pdf')) document.getElementById('tool-card-pdf').classList.remove('d-none');
                     } else {
-                        // Redirect away if someone manually accesses a disabled tool URL
                         if(window.location.pathname.includes('pdf-reader')) window.location.href = '/tools.html';
                     }
 
@@ -514,8 +522,6 @@ function getCustomExamTemplate() {
 }
 
 function getToolsTemplate(pluginHTML = "") {
-    // Tool cards are generated but hidden (d-none) by default to prevent UI flashing
-    // The live JS script will unhide them if they are enabled in DB
     const toolsHTML = `
         <div class="row g-4 mt-3 mb-5">
             <div class="col-md-6 d-none" id="tool-card-score">
@@ -634,7 +640,13 @@ function getSingleBlogTemplate() {
                 const slug = new URLSearchParams(window.location.search).get('slug');
                 const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', slug).single();
                 if(data) {
+                    // --- DYNAMIC SEO UPDATES ---
                     document.title = data.title + " | Wedugo";
+                    let metaDesc = document.querySelector('meta[name="description"]');
+                    let plainText = data.content.replace(/<[^>]*>?/gm, '').replace(/\\s+/g, ' ').trim().substring(0, 150);
+                    if(metaDesc) metaDesc.setAttribute("content", plainText + "...");
+                    // ---------------------------
+
                     document.getElementById('blog-title').innerText = data.title;
                     document.getElementById('blog-cat').innerText = data.category;
                     document.getElementById('blog-date').innerText = new Date(data.created_at).toLocaleDateString();
@@ -674,7 +686,17 @@ function getMcqTemplate() {
                     document.getElementById('mcq-cat-link').innerText = data.qcategory;
                     document.getElementById('mcq-cat-link').href = "/category.html?name=" + encodeURIComponent(data.qcategory);
                     document.getElementById('mcq-qtext').innerText = data.question;
-                    document.title = "Q" + data.id + " | Wedugo";
+                    
+                    // --- DYNAMIC SEO & URL UPDATES ---
+                    const cleanQ = data.question.replace(/<[^>]*>?/gm, '').trim();
+                    document.title = cleanQ.substring(0, 60) + " | Wedugo";
+                    let metaDesc = document.querySelector('meta[name="description"]');
+                    if(metaDesc) metaDesc.setAttribute("content", cleanQ.substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.");
+                    
+                    const urlSlug = cleanQ.substring(0, 60).replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+                    window.history.replaceState(null, '', '/mcq.html?id=' + data.id + '&q=' + urlSlug);
+                    // ---------------------------------
+
                     const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
                     let optHtml = ''; for(let k in opts) { optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${opts[k]}</button>\`; }
                     document.getElementById('mcq-options').innerHTML = optHtml;
@@ -725,18 +747,26 @@ function getCategoryTemplate() {
             let currentOffset = 0; 
             const limit = 10; 
             const catName = new URLSearchParams(window.location.search).get('name');
-            let usePagination = false;
+            let usePagination = true; // DEFAULT ON
             let totalQuestions = 0;
 
             document.addEventListener('DOMContentLoaded', async () => {
                 if(!catName) return;
                 document.getElementById('cat-title').innerText = catName + " - Study Hub"; 
 
+                // --- DYNAMIC SEO & URL UPDATES ---
+                document.title = catName + " Important MCQs & Mock Tests | Wedugo";
+                let metaDesc = document.querySelector('meta[name="description"]');
+                if(metaDesc) metaDesc.setAttribute("content", "Practice top " + catName + " objective questions, mock tests, and previous year MCQs online for free.");
+                
+                const urlSlug = catName.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+                window.history.replaceState(null, '', '/category.html?name=' + encodeURIComponent(catName) + '&topic=' + urlSlug);
+                // ---------------------------------
+
                 // Fetch Pagination Settings
                 const { data: prefData } = await supabaseClient.from('dynamic_components').select('is_active').eq('component_name', 'USE_PAGINATION').maybeSingle();
-                if(prefData && prefData.is_active) usePagination = true;
+                if(prefData) usePagination = prefData.is_active;
 
-                // Toggle visibility robustly based on Admin setting
                 if (usePagination) {
                     document.getElementById('btn-load-more').classList.add('d-none');
                     document.getElementById('pagination-controls').classList.remove('d-none');
@@ -744,7 +774,6 @@ function getCategoryTemplate() {
                     document.getElementById('pagination-controls').classList.add('d-none');
                 }
 
-                // Fetch total count for 10-Question Sets
                 const { count } = await supabaseClient.from('questions').select('*', { count: 'exact', head: true }).eq('qcategory', catName);
                 totalQuestions = count || 0;
 
@@ -786,7 +815,6 @@ function getCategoryTemplate() {
                         const tempEl = document.getElementById('mcq-list').innerHTML;
                         document.getElementById('mcq-list').innerHTML = (tempEl.includes('spinner') ? '' : tempEl) + html;
                         currentOffset += limit;
-                        // Ensure "Load More" button is visible when using Load More style and data exists
                         document.getElementById('btn-load-more').classList.remove('d-none');
                     }
                 } else { 
@@ -831,6 +859,12 @@ function getMockTemplate() {
 
                 let pageTitle = catName + " Mock Test";
                 if(setNum) pageTitle += " (Set " + setNum + ")";
+
+                // --- DYNAMIC SEO UPDATES ---
+                document.title = pageTitle + " | Wedugo";
+                let metaDesc = document.querySelector('meta[name="description"]');
+                if(metaDesc) metaDesc.setAttribute("content", "Attempt live " + pageTitle + " with timer and negative marking to evaluate your preparation.");
+                // ---------------------------
 
                 document.getElementById('mock-title').innerText = pageTitle; 
                 document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
@@ -1041,7 +1075,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                             </div>
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" id="toggle-pagination" onchange="toggleModuleStatus('USE_PAGINATION', this.checked)" style="width:40px;height:20px;">
-                                <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-pagination">Use Pagination style for Questions</label>
+                                <label class="form-check-label ms-2 fw-medium pt-1" for="toggle-pagination">Use Pagination style for Questions (Default ON)</label>
                             </div>
                         </div>
                     </div>
@@ -1136,7 +1170,10 @@ function getAdminTemplate(pluginAdminHTML = "") {
                     return obj ? obj.is_active : false;
                 };
                 document.getElementById('toggle-mock-lock').checked = getVal('LOCK_MOCK_TESTS'); 
-                document.getElementById('toggle-pagination').checked = getVal('USE_PAGINATION'); 
+                
+                const pgObj = data.find(s => s.component_name === 'USE_PAGINATION');
+                document.getElementById('toggle-pagination').checked = pgObj ? pgObj.is_active : true; 
+                
                 document.getElementById('toggle-pdf-reader').checked = getVal('TOOL_PDF_READER'); 
                 document.getElementById('toggle-score-est').checked = getVal('TOOL_SCORE_ESTIMATOR'); 
             }
@@ -1439,6 +1476,35 @@ async function fetchSiteSettings() {
     }
 }
 
+async function fetchDynamicComponents() {
+    try {
+        console.log("-> Fetching ON/OFF Module States from Supabase...");
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_components?select=*`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        
+        if(res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                const getVal = (name) => {
+                    const obj = data.find(s => s.component_name === name);
+                    return obj ? obj.is_active : true;
+                };
+
+                TOOL_PDF_READER = getVal('TOOL_PDF_READER');
+                TOOL_SCORE_ESTIMATOR = getVal('TOOL_SCORE_ESTIMATOR');
+            }
+            console.log(`   -> Success: PDF Reader Tool is ${TOOL_PDF_READER ? 'ON' : 'OFF'}`);
+            console.log(`   -> Success: Score Estimator Tool is ${TOOL_SCORE_ESTIMATOR ? 'ON' : 'OFF'}`);
+        }
+    } catch(e) { 
+        console.log("   -> Warning: Could not fetch dynamic components", e.message); 
+    }
+}
+
 // ==========================================
 // BUILD SCRIPT WITH PLUGIN SCANNER
 // ==========================================
@@ -1448,6 +1514,7 @@ async function buildCSRSite() {
 
         // Fetch configs from DB before building pages
         await fetchSiteSettings();
+        await fetchDynamicComponents();
 
         console.log("1. Scanning for Dynamic Plugins (Modules)...");
         let loadedPluginsTools = "";
@@ -1504,10 +1571,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), getMcqTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'category.html'), getCategoryTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
-        
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
-        
-        // We ALWAYS build the PDF reader file. Live JS determines if links to it are shown.
         await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(), 'utf8');
 
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
@@ -1532,13 +1596,13 @@ async function buildCSRSite() {
         xml += `<url><loc>${SITE_BASE_URL}/tools.html</loc><priority>0.9</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/blogs.html</loc><priority>0.9</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/custom-exam.html</loc><priority>0.9</priority></url>\n`;
-        xml += `<url><loc>${SITE_BASE_URL}/pdf-reader.html</loc><priority>0.8</priority></url>\n`;
+        if(TOOL_PDF_READER) xml += `<url><loc>${SITE_BASE_URL}/pdf-reader.html</loc><priority>0.8</priority></url>\n`;
         xml += `</urlset>`;
 
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Live Server Toggles, Dynamic Nav, Real-Time Tools ON/OFF)");
+        console.log("✅ BUILD COMPLETE (Dynamic SEO Titles, Clean URLs, Default Pagination ON, 100% Functions Kept)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

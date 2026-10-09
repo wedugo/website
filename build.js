@@ -1133,11 +1133,12 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
         function decodeMojibake(str) {
             if (!str || typeof str !== 'string') return str;
-            if (!/[à-ÿÃ-Ý]/.test(str)) return str;
             try {
-                const bytes = new Uint8Array([...str].map(ch => ch.charCodeAt(0) & 0xff));
-                return new TextDecoder('utf-8').decode(bytes);
+                // Ye corrupt Latin-1 bytes ko automatically sahi UTF-8 (Hindi) me convert karega
+                return decodeURIComponent(escape(str));
             } catch (e) {
+                // Agar text pehle se hi sahi Hindi me hai, toh escape usko %uXXXX bana dega
+                // jisse decodeURIComponent error dega. Us case me original sahi text return ho jayega.
                 return str; 
             }
         }

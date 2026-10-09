@@ -11,17 +11,39 @@ const SITE_BASE_URL = "https://www.wedugo.com";
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const CACHE_BUSTER = Date.now(); 
 
+// ==========================================
+// AFFILIATE ADS CONFIGURATION
+// ==========================================
+// Yahan apna Flipkart/Amazon/Clickbank ka HTML Snippet/Iframe code paste karein. 
+// Ye automatically AdSense ads ke theek upar website me sabhi jagah dikhne lagega.
+const AFFILIATE_SNIPPET_BANNER = `
+    <!-- Apna Horizontal Affiliate Banner Code Yahan Dalein (e.g., 728x90) -->
+    <!-- <a href="YOUR_AFFILIATE_LINK" target="_blank"><img src="YOUR_BANNER_IMAGE_URL" style="max-width: 100%; border-radius: 8px;" alt="Offer"></a> -->
+`;
+
+const AFFILIATE_SNIPPET_SIDEBAR = `
+    <!-- Apna Square/Vertical Affiliate Widget Code Yahan Dalein (e.g., 300x250) -->
+    <!-- <a href="YOUR_AFFILIATE_LINK" target="_blank"><img src="YOUR_WIDGET_IMAGE_URL" style="max-width: 100%; border-radius: 8px;" alt="Offer"></a> -->
+`;
+
 const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
 // ==========================================
-// ADVERTISEMENT UI COMPONENTS
+// ADVERTISEMENT & AFFILIATE UI COMPONENTS
 // ==========================================
 function getAdBannerHtml(label) {
     return `
         <div class="ad-banner-wrapper my-4 text-center">
             <span class="text-muted d-block small mb-1" style="font-size: 0.70rem; letter-spacing: 0.5px; text-transform: uppercase;">${label}</span>
+            
+            <!-- Affiliate Snippet Slot -->
+            <div class="affiliate-banner-container mb-3">
+                ${AFFILIATE_SNIPPET_BANNER}
+            </div>
+
+            <!-- AdSense Slot -->
             <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #fafafa; border-radius: 8px;">
                 <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins>
                 <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
@@ -36,6 +58,13 @@ function getAdSidebar() {
             <div class="sticky-desktop-sidebar" style="position: sticky; top: 90px;">
                 <div class="card shadow-sm border-0 rounded-4 bg-white p-3 mb-4 text-center">
                     <span class="text-muted small fw-bold text-uppercase mb-2 d-block" style="font-size: 0.75rem;">Sponsored</span>
+                    
+                    <!-- Affiliate Snippet Slot -->
+                    <div class="affiliate-sidebar-container mb-3">
+                        ${AFFILIATE_SNIPPET_SIDEBAR}
+                    </div>
+
+                    <!-- AdSense Slot -->
                     <div class="ad-container shadow-none border-0 mb-0" style="min-height: 280px; background: #f8fafc;">
                         <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="0987654321" data-ad-format="auto" data-full-width-responsive="true"></ins>
                         <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
@@ -838,6 +867,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                     <h2 class="fw-bold mb-0">Manage Questions</h2>
                     <div>
                         <button class="btn btn-warning fw-bold shadow-sm me-2" onclick="loadGibberishMCQs()"><i class="bi bi-funnel-fill me-1"></i>Find Gibberish</button>
+                        <button class="btn btn-success fw-bold shadow-sm me-2" onclick="autoFixAllGibberish()"><i class="bi bi-wrench-adjustable-circle me-1"></i>Auto Fix All Gibberish</button>
                         <button class="btn btn-primary fw-bold shadow-sm" onclick="openMcqModal()"><i class="bi bi-plus-lg me-2"></i>Add Question</button>
                     </div>
                 </div>
@@ -879,7 +909,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
     <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write / Edit Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><input type="text" id="b-cat" class="form-control" placeholder="Category"></div></div><div id="quill-editor" style="height:300px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()">Save Article</button></div></div></div></div>
 
     <!-- Modal for MCQs -->
-    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><input type="text" id="q-cat" class="form-control" placeholder="Category"></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
+    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><input type="text" id="q-cat" class="form-control" placeholder="Category"></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0 justify-content-between"><button type="button" class="btn btn-warning fw-bold" onclick="fixCurrentModalEncoding()"><i class="bi bi-magic me-1"></i> Fix Text Encoding</button><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -944,13 +974,76 @@ function getAdminTemplate(pluginAdminHTML = "") {
             tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
         }
 
+        // =====================================
+        // MOJIBAKE ENCODING REPAIR SYSTEM
+        // =====================================
+        function decodeMojibake(str) {
+            if (!str || typeof str !== 'string') return str;
+            if (!/[à-ÿÃ-Ý]/.test(str)) return str;
+            try {
+                const bytes = new Uint8Array([...str].map(ch => ch.charCodeAt(0) & 0xff));
+                return new TextDecoder('utf-8').decode(bytes);
+            } catch (e) {
+                return str; 
+            }
+        }
+
+        function fixCurrentModalEncoding() {
+            const fields = ['q-text', 'q-optA', 'q-optB', 'q-optC', 'q-optD', 'q-cat', 'q-exp'];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value) {
+                    el.value = decodeMojibake(el.value);
+                }
+            });
+        }
+
+        async function autoFixAllGibberish() {
+            if (!confirm("Are you sure you want to scan and automatically fix all Gibberish/Corrupted questions in the database?")) return;
+            
+            const tb = document.getElementById('mcq-tbody');
+            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-primary fw-bold"><div class="spinner-border spinner-border-sm me-2"></div> Fixing records in Supabase... Please wait.</td></tr>';
+            
+            const { data, error } = await supabaseClient.from('questions').select('*').limit(3000);
+            if (error || !data) return alert("Error fetching questions: " + (error?.message || ''));
+
+            let fixedCount = 0;
+            const badRegex = /[à-ÿÃ-Ý]/;
+
+            for (const q of data) {
+                const needsFix = badRegex.test(q.question || '') || 
+                                 badRegex.test(q.answer1 || '') || 
+                                 badRegex.test(q.answer2 || '') || 
+                                 badRegex.test(q.answer3 || '') || 
+                                 badRegex.test(q.answer4 || '') || 
+                                 badRegex.test(q.answerdetail || '') ||
+                                 badRegex.test(q.qcategory || '');
+
+                if (needsFix) {
+                    const updatedObj = {
+                        question: decodeMojibake(q.question),
+                        answer1: decodeMojibake(q.answer1),
+                        answer2: decodeMojibake(q.answer2),
+                        answer3: decodeMojibake(q.answer3),
+                        answer4: decodeMojibake(q.answer4),
+                        answerdetail: decodeMojibake(q.answerdetail),
+                        qcategory: decodeMojibake(q.qcategory)
+                    };
+                    await supabaseClient.from('questions').update(updatedObj).eq('id', q.id);
+                    fixedCount++;
+                }
+            }
+
+            alert("Successfully fixed " + fixedCount + " corrupted questions!");
+            loadMcqs();
+        }
+
         async function loadGibberishMCQs() {
             const tb = document.getElementById('mcq-tbody');
             tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
-            // Scan latest 1000 items to locate Mojibake text 
             const { data } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
             if(!data) return;
-            const badChars = ['Ã', 'â', '€', '™', 'Â', '', 'œ', '”'];
+            const badChars = ['Ã', 'â', '€', '™', 'Â', 'œ', '”', 'à'];
             const gibberish = data.filter(q => badChars.some(char => q.question.includes(char)));
             
             if(gibberish.length === 0) {
@@ -961,7 +1054,6 @@ function getAdminTemplate(pluginAdminHTML = "") {
         }
 
         function openMcqModal() { 
-            // Clear inputs for NEW question
             document.getElementById('q-id').value = '';
             document.getElementById('q-text').value = '';
             document.getElementById('q-optA').value = '';
@@ -1009,7 +1101,6 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function loadBlogs() { const { data } = await supabaseClient.from('blog_posts').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('blog-tbody'); tb.innerHTML = data.map(b=>\`<tr><td>\${b.title}</td><td>\${b.category}</td><td>\${new Date(b.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editBlog('\${b.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteBlog('\${b.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); }
         
         function openBlogModal() { 
-            // Clear inputs for NEW blog
             document.getElementById('b-id').value = '';
             document.getElementById('b-title').value = '';
             document.getElementById('b-cat').value = '';
@@ -1143,7 +1234,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets, Gibberish Filter, Edit Buttons Active)");
+        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets, Gibberish Filter, Edit Buttons Active, Affiliate Integration)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

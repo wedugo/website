@@ -11,20 +11,9 @@ const SITE_BASE_URL = "https://www.wedugo.com";
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const CACHE_BUSTER = Date.now(); 
 
-// ==========================================
-// AFFILIATE ADS CONFIGURATION
-// ==========================================
-// Yahan apna Flipkart/Amazon/Clickbank ka HTML Snippet/Iframe code paste karein. 
-// Ye automatically AdSense ads ke theek upar website me sabhi jagah dikhne lagega.
-const AFFILIATE_SNIPPET_BANNER = `
-    <!-- Apna Horizontal Affiliate Banner Code Yahan Dalein (e.g., 728x90) -->
-    <!-- <a href="YOUR_AFFILIATE_LINK" target="_blank"><img src="YOUR_BANNER_IMAGE_URL" style="max-width: 100%; border-radius: 8px;" alt="Offer"></a> -->
-`;
-
-const AFFILIATE_SNIPPET_SIDEBAR = `
-    <!-- Apna Square/Vertical Affiliate Widget Code Yahan Dalein (e.g., 300x250) -->
-    <!-- <a href="YOUR_AFFILIATE_LINK" target="_blank"><img src="YOUR_WIDGET_IMAGE_URL" style="max-width: 100%; border-radius: 8px;" alt="Offer"></a> -->
-`;
+// Global Variables for Ads (Fetched dynamically during build)
+let AFFILIATE_SNIPPET_BANNER = "";
+let AFFILIATE_SNIPPET_SIDEBAR = "";
 
 const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
@@ -39,9 +28,7 @@ function getAdBannerHtml(label) {
             <span class="text-muted d-block small mb-1" style="font-size: 0.70rem; letter-spacing: 0.5px; text-transform: uppercase;">${label}</span>
             
             <!-- Affiliate Snippet Slot -->
-            <div class="affiliate-banner-container mb-3">
-                ${AFFILIATE_SNIPPET_BANNER}
-            </div>
+            ${AFFILIATE_SNIPPET_BANNER ? `<div class="affiliate-banner-container mb-3">${AFFILIATE_SNIPPET_BANNER}</div>` : ''}
 
             <!-- AdSense Slot -->
             <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #fafafa; border-radius: 8px;">
@@ -60,9 +47,7 @@ function getAdSidebar() {
                     <span class="text-muted small fw-bold text-uppercase mb-2 d-block" style="font-size: 0.75rem;">Sponsored</span>
                     
                     <!-- Affiliate Snippet Slot -->
-                    <div class="affiliate-sidebar-container mb-3">
-                        ${AFFILIATE_SNIPPET_SIDEBAR}
-                    </div>
+                    ${AFFILIATE_SNIPPET_SIDEBAR ? `<div class="affiliate-sidebar-container mb-3">${AFFILIATE_SNIPPET_SIDEBAR}</div>` : ''}
 
                     <!-- AdSense Slot -->
                     <div class="ad-container shadow-none border-0 mb-0" style="min-height: 280px; background: #f8fafc;">
@@ -848,6 +833,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('questions', this)"><i class="bi bi-list-check me-2"></i>Manage Questions</a></li>
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('blogs', this)"><i class="bi bi-journal-richtext me-2"></i>Manage Blogs</a></li>
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('users', this)"><i class="bi bi-people-fill me-2"></i>Manage Users</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('ads', this)"><i class="bi bi-currency-dollar me-2"></i>Ads & Affiliates</a></li>
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('settings', this)"><i class="bi bi-gear-fill me-2"></i>System Modules</a></li>
             </ul>
             <div class="mt-auto pt-5"><button class="btn btn-outline-danger w-100 fw-bold" onclick="supabaseClient.auth.signOut()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
@@ -887,9 +873,24 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <div class="card p-0 overflow-hidden"><table class="table table-hover mb-0 align-middle"><thead class="table-light"><tr><th>Email/ID</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="users-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody></table></div>
             </div>
 
+            <div id="tab-ads" class="admin-tab d-none">
+                <h2 class="fw-bold mb-4">Affiliate & Ad Snippets</h2>
+                <div class="alert alert-info small fw-medium">Paste your raw HTML/JS affiliate snippets here. <strong>Note:</strong> You must re-run the <code>build.js</code> script on your server after saving to apply these changes to the live website.</div>
+                
+                <div class="card shadow-sm border-0 bg-white p-4 mb-4">
+                    <h5 class="fw-bold mb-3">Horizontal Banner (Header & Content)</h5>
+                    <textarea id="ad-banner-input" class="form-control font-monospace mb-4 bg-light" rows="5" placeholder="<!-- 728x90 Banner HTML/Script Here -->"></textarea>
+                    
+                    <h5 class="fw-bold mb-3 border-top pt-4">Sidebar Widget (Square)</h5>
+                    <textarea id="ad-sidebar-input" class="form-control font-monospace mb-4 bg-light" rows="5" placeholder="<!-- 300x250 Sidebar HTML/Script Here -->"></textarea>
+                    
+                    <button class="btn btn-success fw-bold px-5 py-2 shadow-sm" onclick="saveAdSettings()"><i class="bi bi-save me-2"></i>Save Configurations</button>
+                </div>
+            </div>
+
             <div id="tab-settings" class="admin-tab d-none">
                 <h2 class="fw-bold mb-4">System Settings & Plugins</h2>
-                <div class="card p-4 mb-4">
+                <div class="card p-4 mb-4 shadow-sm border-0">
                     <h5 class="fw-bold mb-3 border-bottom pb-2">Module Access Control</h5>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch" id="toggle-mock-lock" onchange="toggleModuleLock(this.checked)" style="width:40px;height:20px;">
@@ -947,7 +948,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             if(error) { document.getElementById('admin-alert').className="alert alert-danger small fw-bold"; document.getElementById('admin-alert').innerText = error.message; document.getElementById('admin-alert').classList.remove('d-none'); }
             else checkAdminSession();
         }
-        function switchTab(id, el) { document.querySelectorAll('.admin-tab').forEach(t=>t.classList.add('d-none')); document.getElementById('tab-'+id).classList.remove('d-none'); document.querySelectorAll('.sidebar .nav-link').forEach(l=>l.classList.remove('active')); el.classList.add('active'); if(id==='questions') loadMcqs(); if(id==='blogs') loadBlogs(); if(id==='users') loadUsers(); }
+        function switchTab(id, el) { document.querySelectorAll('.admin-tab').forEach(t=>t.classList.add('d-none')); document.getElementById('tab-'+id).classList.remove('d-none'); document.querySelectorAll('.sidebar .nav-link').forEach(l=>l.classList.remove('active')); el.classList.add('active'); if(id==='questions') loadMcqs(); if(id==='blogs') loadBlogs(); if(id==='users') loadUsers(); if(id==='ads') loadAds(); }
 
         async function loadDashboardStats() {
             const { count: c1 } = await supabaseClient.from('questions').select('*', { count: 'exact', head: true });
@@ -966,6 +967,28 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
         async function toggleModuleLock(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'LOCK_MOCK_TESTS', is_active: v }); }
         async function togglePagination(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'USE_PAGINATION', is_active: v }); }
+
+        // --- MANAGE ADS LOGIC ---
+        async function loadAds() {
+            const { data } = await supabaseClient.from('site_settings').select('*');
+            if (data) {
+                const b = data.find(s => s.setting_key === 'affiliate_banner');
+                const s = data.find(s => s.setting_key === 'affiliate_sidebar');
+                if (b) document.getElementById('ad-banner-input').value = b.setting_value || '';
+                if (s) document.getElementById('ad-sidebar-input').value = s.setting_value || '';
+            }
+        }
+        
+        async function saveAdSettings() {
+            const banner = document.getElementById('ad-banner-input').value;
+            const sidebar = document.getElementById('ad-sidebar-input').value;
+            
+            await supabaseClient.from('site_settings').upsert([
+                { setting_key: 'affiliate_banner', setting_value: banner },
+                { setting_key: 'affiliate_sidebar', setting_value: sidebar }
+            ]);
+            alert("Affiliate Snippets saved successfully! Please re-run build.js to apply these changes to the static website.");
+        }
 
         // --- MANAGE QUESTIONS LOGIC ---
         async function loadMcqs() { 
@@ -1144,11 +1167,42 @@ function getAdminTemplate(pluginAdminHTML = "") {
 }
 
 // ==========================================
+// FETCH AFFILIATE SNIPPETS FROM DB AT BUILD TIME
+// ==========================================
+async function fetchAffiliateSettings() {
+    try {
+        console.log("-> Fetching Dynamic Ad/Affiliate Snippets from Supabase...");
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=*`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        
+        if(res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                const b = data.find(s => s.setting_key === 'affiliate_banner');
+                const s = data.find(s => s.setting_key === 'affiliate_sidebar');
+                if (b) AFFILIATE_SNIPPET_BANNER = b.setting_value || "";
+                if (s) AFFILIATE_SNIPPET_SIDEBAR = s.setting_value || "";
+            }
+            console.log("   -> Success: Affiliate snippets loaded.");
+        }
+    } catch(e) { 
+        console.log("   -> Warning: Could not fetch affiliate settings", e.message); 
+    }
+}
+
+// ==========================================
 // BUILD SCRIPT WITH PLUGIN SCANNER
 // ==========================================
 async function buildCSRSite() {
     try {
         const rootDir = __dirname;
+
+        // Fetch settings from DB before building pages
+        await fetchAffiliateSettings();
 
         console.log("1. Scanning for Dynamic Plugins (Modules)...");
         let loadedPluginsTools = "";
@@ -1205,6 +1259,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), getMcqTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'category.html'), getCategoryTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
+        await Supabase 
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
 
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
@@ -1234,7 +1289,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets, Gibberish Filter, Edit Buttons Active, Affiliate Integration)");
+        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets, Gibberish Filter, Affiliate Fetching, Edit Buttons Active)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

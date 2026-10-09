@@ -11,9 +11,13 @@ const SITE_BASE_URL = "https://www.wedugo.com";
 const ADSENSE_CLIENT_ID = "ca-pub-5947676189341600";
 const CACHE_BUSTER = Date.now(); 
 
-// Global Variables for Ads (Fetched dynamically during build)
+// Global Variables for Dynamic Code Snippets (Fetched dynamically during build)
 let AFFILIATE_SNIPPET_BANNER = "";
 let AFFILIATE_SNIPPET_SIDEBAR = "";
+let CUSTOM_HEAD_CODE = "";
+let CUSTOM_BODY_BOTTOM_CODE = "";
+let BLOG_BOTTOM_CODE = "";
+let MCQ_BOTTOM_CODE = "";
 
 const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
@@ -110,7 +114,7 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH AUTH & MODULE LOCK LOGIC
+// 🟢 MASTER HTML SHELL WITH AUTH, HEAD INJECTION & BODY BOTTOM INJECTION
 function getHtmlShell(title, content, seoDescription = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
@@ -136,6 +140,9 @@ function getHtmlShell(title, content, seoDescription = "") {
     <!-- External Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>
+
+    <!-- CUSTOM HEAD INJECTION CODE -->
+    ${CUSTOM_HEAD_CODE}
 
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; display: flex; flex-direction: column; min-height: 100vh; }
@@ -264,10 +271,8 @@ function getHtmlShell(title, content, seoDescription = "") {
             btn.disabled = true;
             alertBox.classList.add('d-none');
 
-            // Try to sign in first
             let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
 
-            // If user doesn't exist, try to sign up
             if(error && error.message.includes("Invalid login")) {
                 const reg = await supabaseClient.auth.signUp({ email, password: pass });
                 data = reg.data; 
@@ -319,6 +324,9 @@ function getHtmlShell(title, content, seoDescription = "") {
 
         document.addEventListener("DOMContentLoaded", initAuth);
     </script>
+    
+    <!-- CUSTOM BODY BOTTOM INJECTION CODE -->
+    ${CUSTOM_BODY_BOTTOM_CODE}
 </body>
 </html>`;
 }
@@ -538,6 +546,10 @@ function getSingleBlogTemplate() {
                 </div>
                 ${getAdBannerHtml("Sponsored")}
                 <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white"><article class="article-content" id="blog-body"></article></div>
+                
+                <!-- DYNAMIC BLOG POST BOTTOM INJECTION CODE -->
+                ${BLOG_BOTTOM_CODE ? `<div class="mt-4">${BLOG_BOTTOM_CODE}</div>` : ''}
+
             </div>
             ${getAdSidebar()}
         </div>
@@ -570,6 +582,9 @@ function getMcqTemplate() {
                     <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
                     <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top"><button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" id="btn-prev">Prev</button><button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" id="btn-next">Next</button></div>
                 </article>
+                
+                <!-- DYNAMIC MCQ BOTTOM INJECTION CODE -->
+                ${MCQ_BOTTOM_CODE ? `<div class="mt-4 mb-5">${MCQ_BOTTOM_CODE}</div>` : ''}
             </div>
             ${getAdSidebar()}
         </div>
@@ -833,7 +848,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('questions', this)"><i class="bi bi-list-check me-2"></i>Manage Questions</a></li>
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('blogs', this)"><i class="bi bi-journal-richtext me-2"></i>Manage Blogs</a></li>
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('users', this)"><i class="bi bi-people-fill me-2"></i>Manage Users</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('ads', this)"><i class="bi bi-currency-dollar me-2"></i>Ads & Affiliates</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('ads', this)"><i class="bi bi-code-square me-2"></i>Ads & Snippets</a></li>
                 <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('settings', this)"><i class="bi bi-gear-fill me-2"></i>System Modules</a></li>
             </ul>
             <div class="mt-auto pt-5"><button class="btn btn-outline-danger w-100 fw-bold" onclick="supabaseClient.auth.signOut()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
@@ -848,16 +863,31 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 </div>
             </div>
 
+            <!-- MANAGE QUESTIONS TAB -->
             <div id="tab-questions" class="admin-tab d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                     <h2 class="fw-bold mb-0">Manage Questions</h2>
-                    <div>
-                        <button class="btn btn-warning fw-bold shadow-sm me-2" onclick="loadGibberishMCQs()"><i class="bi bi-funnel-fill me-1"></i>Find Gibberish</button>
-                        <button class="btn btn-success fw-bold shadow-sm me-2" onclick="autoFixAllGibberish()"><i class="bi bi-wrench-adjustable-circle me-1"></i>Auto Fix All Gibberish</button>
-                        <button class="btn btn-primary fw-bold shadow-sm" onclick="openMcqModal()"><i class="bi bi-plus-lg me-2"></i>Add Question</button>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <div class="input-group input-group-sm" style="width: 200px;">
+                            <input type="number" id="search-q-id" class="form-control" placeholder="Search by ID...">
+                            <button class="btn btn-dark fw-bold" onclick="searchMcqById()"><i class="bi bi-search"></i></button>
+                        </div>
+                        <button class="btn btn-warning btn-sm fw-bold shadow-sm" onclick="loadGibberishMCQs()"><i class="bi bi-funnel-fill"></i></button>
+                        <button class="btn btn-success btn-sm fw-bold shadow-sm" onclick="autoFixAllGibberish()"><i class="bi bi-magic"></i> Auto Fix</button>
+                        <button class="btn btn-primary btn-sm fw-bold shadow-sm" onclick="openMcqModal()"><i class="bi bi-plus-lg"></i> Add</button>
                     </div>
                 </div>
-                <div class="card p-0 overflow-hidden"><table class="table table-hover mb-0 align-middle"><thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Actions</th></tr></thead><tbody id="mcq-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody></table></div>
+                <div class="card p-0 overflow-hidden">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Actions</th></tr></thead>
+                        <tbody id="mcq-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody>
+                    </table>
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                        <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="prevMcqPage()"><i class="bi bi-chevron-left me-1"></i>Previous</button>
+                        <span class="small fw-bold text-muted" id="mcq-page-indicator">Page 1</span>
+                        <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="nextMcqPage()">Next<i class="bi bi-chevron-right ms-1"></i></button>
+                    </div>
+                </div>
             </div>
 
             <div id="tab-blogs" class="admin-tab d-none">
@@ -874,17 +904,52 @@ function getAdminTemplate(pluginAdminHTML = "") {
             </div>
 
             <div id="tab-ads" class="admin-tab d-none">
-                <h2 class="fw-bold mb-4">Affiliate & Ad Snippets</h2>
-                <div class="alert alert-info small fw-medium">Paste your raw HTML/JS affiliate snippets here. <strong>Note:</strong> You must re-run the <code>build.js</code> script on your server after saving to apply these changes to the live website.</div>
+                <h2 class="fw-bold mb-4">Ads & Custom Snippets</h2>
+                <div class="alert alert-info small fw-medium">Paste your raw HTML/JS snippets here (e.g., Google Analytics, Disqus, Affiliates). <strong>Note:</strong> Re-run the <code>build.js</code> script on your server after saving to apply changes.</div>
                 
-                <div class="card shadow-sm border-0 bg-white p-4 mb-4">
-                    <h5 class="fw-bold mb-3">Horizontal Banner (Header & Content)</h5>
-                    <textarea id="ad-banner-input" class="form-control font-monospace mb-4 bg-light" rows="5" placeholder="<!-- 728x90 Banner HTML/Script Here -->"></textarea>
+                <div class="row g-4 mb-4">
+                    <!-- Standard Affiliates/Banners -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-image me-2 text-primary"></i>Standard Banner (Header/Content)</h5>
+                            <textarea id="ad-banner-input" class="form-control font-monospace mb-4 bg-light" rows="4" placeholder="<!-- e.g., 728x90 Banner -->"></textarea>
+                            
+                            <h5 class="fw-bold mb-3 border-top pt-3"><i class="bi bi-layout-sidebar me-2 text-primary"></i>Sidebar Widget (Square)</h5>
+                            <textarea id="ad-sidebar-input" class="form-control font-monospace bg-light" rows="4" placeholder="<!-- e.g., 300x250 Banner -->"></textarea>
+                        </div>
+                    </div>
                     
-                    <h5 class="fw-bold mb-3 border-top pt-4">Sidebar Widget (Square)</h5>
-                    <textarea id="ad-sidebar-input" class="form-control font-monospace mb-4 bg-light" rows="5" placeholder="<!-- 300x250 Sidebar HTML/Script Here -->"></textarea>
-                    
-                    <button class="btn btn-success fw-bold px-5 py-2 shadow-sm" onclick="saveAdSettings()"><i class="bi bi-save me-2"></i>Save Configurations</button>
+                    <!-- Advanced Injection Points -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-code-slash me-2 text-warning"></i>&lt;head&gt; Injection (Global)</h5>
+                            <textarea id="head-code-input" class="form-control font-monospace mb-4 bg-light" rows="3" placeholder="<!-- e.g., gtag, Meta Tags -->"></textarea>
+                            
+                            <h5 class="fw-bold mb-3 border-top pt-3"><i class="bi bi-body-text me-2 text-warning"></i>&lt;body&gt; Bottom (Global)</h5>
+                            <textarea id="body-code-input" class="form-control font-monospace bg-light" rows="3" placeholder="<!-- e.g., Chatbots, deferred scripts -->"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Component Injection Points -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-chat-text me-2 text-success"></i>Below Blog Posts</h5>
+                            <p class="small text-muted mb-2">Ideal for Comments (Disqus, FB) or Content Recs.</p>
+                            <textarea id="blog-code-input" class="form-control font-monospace bg-light" rows="4" placeholder="<!-- Blog Bottom HTML -->"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-ui-checks me-2 text-success"></i>Below MCQ Questions</h5>
+                            <p class="small text-muted mb-2">Ideal for Ads, Native Banners, or Discussion Plugins.</p>
+                            <textarea id="mcq-code-input" class="form-control font-monospace bg-light" rows="4" placeholder="<!-- MCQ Bottom HTML -->"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-success btn-lg fw-bold px-5 py-3 shadow" onclick="saveAdSettings()"><i class="bi bi-save me-2"></i>Save All Snippets</button>
                 </div>
             </div>
 
@@ -923,7 +988,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
         });
 
         async function checkAdminSession() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
             if(session?.user) {
                 const adminEmail = "wedugo.com@gmail.com"; 
 
@@ -948,7 +1013,18 @@ function getAdminTemplate(pluginAdminHTML = "") {
             if(error) { document.getElementById('admin-alert').className="alert alert-danger small fw-bold"; document.getElementById('admin-alert').innerText = error.message; document.getElementById('admin-alert').classList.remove('d-none'); }
             else checkAdminSession();
         }
-        function switchTab(id, el) { document.querySelectorAll('.admin-tab').forEach(t=>t.classList.add('d-none')); document.getElementById('tab-'+id).classList.remove('d-none'); document.querySelectorAll('.sidebar .nav-link').forEach(l=>l.classList.remove('active')); el.classList.add('active'); if(id==='questions') loadMcqs(); if(id==='blogs') loadBlogs(); if(id==='users') loadUsers(); if(id==='ads') loadAds(); }
+
+        function switchTab(id, el) { 
+            document.querySelectorAll('.admin-tab').forEach(t=>t.classList.add('d-none')); 
+            document.getElementById('tab-'+id).classList.remove('d-none'); 
+            document.querySelectorAll('.sidebar .nav-link').forEach(l=>l.classList.remove('active')); 
+            el.classList.add('active'); 
+            
+            if(id==='questions') { currentMcqOffset = 0; loadMcqs(); }
+            if(id==='blogs') loadBlogs(); 
+            if(id==='users') loadUsers(); 
+            if(id==='ads') loadAds(); 
+        }
 
         async function loadDashboardStats() {
             const { count: c1 } = await supabaseClient.from('questions').select('*', { count: 'exact', head: true });
@@ -968,38 +1044,93 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function toggleModuleLock(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'LOCK_MOCK_TESTS', is_active: v }); }
         async function togglePagination(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'USE_PAGINATION', is_active: v }); }
 
-        // --- MANAGE ADS LOGIC ---
+        // --- MANAGE SNIPPETS & ADS LOGIC ---
         async function loadAds() {
-            const { data } = await supabaseClient.from('site_settings').select('*');
-            if (data) {
-                const b = data.find(s => s.setting_key === 'affiliate_banner');
-                const s = data.find(s => s.setting_key === 'affiliate_sidebar');
-                if (b) document.getElementById('ad-banner-input').value = b.setting_value || '';
-                if (s) document.getElementById('ad-sidebar-input').value = s.setting_value || '';
+            const { data, error } = await supabaseClient.from('site_settings').select('*');
+            if (data && !error) {
+                const getVal = (key) => {
+                    const obj = data.find(s => s.setting_key === key);
+                    return obj ? obj.setting_value : '';
+                };
+                
+                document.getElementById('ad-banner-input').value = getVal('affiliate_banner');
+                document.getElementById('ad-sidebar-input').value = getVal('affiliate_sidebar');
+                document.getElementById('head-code-input').value = getVal('custom_head_code');
+                document.getElementById('body-code-input').value = getVal('custom_body_bottom_code');
+                document.getElementById('blog-code-input').value = getVal('blog_bottom_code');
+                document.getElementById('mcq-code-input').value = getVal('mcq_bottom_code');
             }
         }
         
         async function saveAdSettings() {
             const banner = document.getElementById('ad-banner-input').value;
             const sidebar = document.getElementById('ad-sidebar-input').value;
+            const headCode = document.getElementById('head-code-input').value;
+            const bodyCode = document.getElementById('body-code-input').value;
+            const blogCode = document.getElementById('blog-code-input').value;
+            const mcqCode = document.getElementById('mcq-code-input').value;
             
             await supabaseClient.from('site_settings').upsert([
                 { setting_key: 'affiliate_banner', setting_value: banner },
-                { setting_key: 'affiliate_sidebar', setting_value: sidebar }
+                { setting_key: 'affiliate_sidebar', setting_value: sidebar },
+                { setting_key: 'custom_head_code', setting_value: headCode },
+                { setting_key: 'custom_body_bottom_code', setting_value: bodyCode },
+                { setting_key: 'blog_bottom_code', setting_value: blogCode },
+                { setting_key: 'mcq_bottom_code', setting_value: mcqCode }
             ]);
-            alert("Affiliate Snippets saved successfully! Please re-run build.js to apply these changes to the static website.");
+            alert("Snippets saved successfully! Please re-run build.js to apply these changes to the static website.");
         }
 
         // --- MANAGE QUESTIONS LOGIC ---
+        let currentMcqOffset = 0;
+        const MCQ_LIMIT = 20;
+
         async function loadMcqs() { 
-            const { data } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(20); 
             const tb = document.getElementById('mcq-tbody'); 
+            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
+            
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question')
+                .order('id', {ascending: false})
+                .range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1); 
+            
+            if (error || !data) {
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`;
+                return;
+            }
+            if (data.length === 0) {
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-muted">No questions found.</td></tr>\`;
+                return;
+            }
+
             tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+            
+            document.getElementById('mcq-page-indicator').innerText = \`Page \${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}\`;
         }
 
-        // =====================================
-        // MOJIBAKE ENCODING REPAIR SYSTEM
-        // =====================================
+        function nextMcqPage() { currentMcqOffset += MCQ_LIMIT; loadMcqs(); }
+        function prevMcqPage() { if (currentMcqOffset >= MCQ_LIMIT) { currentMcqOffset -= MCQ_LIMIT; loadMcqs(); } }
+
+        async function searchMcqById() {
+            const id = document.getElementById('search-q-id').value;
+            if (!id) {
+                currentMcqOffset = 0;
+                return loadMcqs();
+            }
+            
+            const tb = document.getElementById('mcq-tbody'); 
+            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
+            
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question').eq('id', id);
+            
+            if (error || !data || data.length === 0) {
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">No question found with ID #\${id}</td></tr>\`;
+                return;
+            }
+            
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            document.getElementById('mcq-page-indicator').innerText = 'Search Result';
+        }
+
         function decodeMojibake(str) {
             if (!str || typeof str !== 'string') return str;
             if (!/[à-ÿÃ-Ý]/.test(str)) return str;
@@ -1064,8 +1195,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function loadGibberishMCQs() {
             const tb = document.getElementById('mcq-tbody');
             tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
-            const { data } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
-            if(!data) return;
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
+            if(error || !data) return;
             const badChars = ['Ã', 'â', '€', '™', 'Â', 'œ', '”', 'à'];
             const gibberish = data.filter(q => badChars.some(char => q.question.includes(char)));
             
@@ -1090,8 +1221,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
         }
 
         async function editMcq(id) {
-            const { data } = await supabaseClient.from('questions').select('*').eq('id', id).single();
-            if(data) {
+            const { data, error } = await supabaseClient.from('questions').select('*').eq('id', id).single();
+            if(data && !error) {
                 document.getElementById('q-id').value = data.id;
                 document.getElementById('q-text').value = data.question;
                 document.getElementById('q-optA').value = data.answer1;
@@ -1121,7 +1252,13 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function deleteMcq(id) { if(confirm("Delete this question?")) { await supabaseClient.from('questions').delete().eq('id', id); loadMcqs(); } }
 
         // --- MANAGE BLOG LOGIC ---
-        async function loadBlogs() { const { data } = await supabaseClient.from('blog_posts').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('blog-tbody'); tb.innerHTML = data.map(b=>\`<tr><td>\${b.title}</td><td>\${b.category}</td><td>\${new Date(b.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editBlog('\${b.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteBlog('\${b.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); }
+        async function loadBlogs() { 
+            const tb = document.getElementById('blog-tbody'); 
+            const { data, error } = await supabaseClient.from('blog_posts').select('*').order('created_at',{ascending:false}); 
+            if(error || !data) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-danger py-4 fw-bold">Error loading blogs.</td></tr>\`; return; }
+            if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-muted py-4">No blogs found.</td></tr>\`; return; }
+            tb.innerHTML = data.map(b=>\`<tr><td>\${b.title}</td><td>\${b.category}</td><td>\${new Date(b.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editBlog('\${b.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteBlog('\${b.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+        }
         
         function openBlogModal() { 
             document.getElementById('b-id').value = '';
@@ -1132,8 +1269,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
         }
 
         async function editBlog(id) {
-            const { data } = await supabaseClient.from('blog_posts').select('*').eq('id', id).single();
-            if(data) {
+            const { data, error } = await supabaseClient.from('blog_posts').select('*').eq('id', id).single();
+            if(data && !error) {
                 document.getElementById('b-id').value = data.id;
                 document.getElementById('b-title').value = data.title;
                 document.getElementById('b-cat').value = data.category;
@@ -1159,7 +1296,13 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function deleteBlog(id) { if(confirm("Delete this blog?")) { await supabaseClient.from('blog_posts').delete().eq('id', id); loadBlogs(); } }
 
         // --- USER MGMT LOGIC ---
-        async function loadUsers() { const { data } = await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('users-tbody'); tb.innerHTML = data.map(u=>\`<tr><td>\${u.id.substring(0,8)}</td><td>\${u.role}</td><td>Active</td><td><button class="btn btn-sm btn-outline-dark" onclick="toggleRole('\${u.id}','\${u.role}')">Toggle</button></td></tr>\`).join(''); }
+        async function loadUsers() { 
+            const tb = document.getElementById('users-tbody'); 
+            const { data, error } = await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}); 
+            if(error || !data) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-danger py-4 fw-bold">Error loading users. (Check RLS Policies)</td></tr>\`; return; }
+            if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-muted py-4">No users found.</td></tr>\`; return; }
+            tb.innerHTML = data.map(u=>\`<tr><td>\${u.id.substring(0,8)}</td><td>\${u.role}</td><td>Active</td><td><button class="btn btn-sm btn-outline-dark" onclick="toggleRole('\${u.id}','\${u.role}')">Toggle</button></td></tr>\`).join(''); 
+        }
         async function toggleRole(id, role) { const nr = role==='admin'?'student':'admin'; if(confirm("Change role to "+nr+"?")) { await supabaseClient.from('profiles').update({ role: nr }).eq('id', id); loadUsers(); } }
     </script>
 </body>
@@ -1167,11 +1310,11 @@ function getAdminTemplate(pluginAdminHTML = "") {
 }
 
 // ==========================================
-// FETCH AFFILIATE SNIPPETS FROM DB AT BUILD TIME
+// FETCH SETTINGS/SNIPPETS FROM DB AT BUILD TIME
 // ==========================================
-async function fetchAffiliateSettings() {
+async function fetchSiteSettings() {
     try {
-        console.log("-> Fetching Dynamic Ad/Affiliate Snippets from Supabase...");
+        console.log("-> Fetching Dynamic Settings & Snippets from Supabase...");
         const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=*`, {
             headers: {
                 'apikey': SUPABASE_KEY,
@@ -1182,15 +1325,22 @@ async function fetchAffiliateSettings() {
         if(res.ok) {
             const data = await res.json();
             if (Array.isArray(data)) {
-                const b = data.find(s => s.setting_key === 'affiliate_banner');
-                const s = data.find(s => s.setting_key === 'affiliate_sidebar');
-                if (b) AFFILIATE_SNIPPET_BANNER = b.setting_value || "";
-                if (s) AFFILIATE_SNIPPET_SIDEBAR = s.setting_value || "";
+                const getVal = (key) => {
+                    const obj = data.find(s => s.setting_key === key);
+                    return obj ? obj.setting_value : '';
+                };
+
+                AFFILIATE_SNIPPET_BANNER = getVal('affiliate_banner');
+                AFFILIATE_SNIPPET_SIDEBAR = getVal('affiliate_sidebar');
+                CUSTOM_HEAD_CODE = getVal('custom_head_code');
+                CUSTOM_BODY_BOTTOM_CODE = getVal('custom_body_bottom_code');
+                BLOG_BOTTOM_CODE = getVal('blog_bottom_code');
+                MCQ_BOTTOM_CODE = getVal('mcq_bottom_code');
             }
-            console.log("   -> Success: Affiliate snippets loaded.");
+            console.log("   -> Success: All Custom Snippets loaded.");
         }
     } catch(e) { 
-        console.log("   -> Warning: Could not fetch affiliate settings", e.message); 
+        console.log("   -> Warning: Could not fetch site settings", e.message); 
     }
 }
 
@@ -1202,7 +1352,7 @@ async function buildCSRSite() {
         const rootDir = __dirname;
 
         // Fetch settings from DB before building pages
-        await fetchAffiliateSettings();
+        await fetchSiteSettings();
 
         console.log("1. Scanning for Dynamic Plugins (Modules)...");
         let loadedPluginsTools = "";
@@ -1289,7 +1439,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets, Gibberish Filter, Affiliate Fetching, Edit Buttons Active)");
+        console.log("✅ BUILD COMPLETE (Global Head/Body Snippets, Component Injections Active)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

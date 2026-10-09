@@ -109,20 +109,20 @@ function getHtmlShell(title, content, seoDescription = "") {
     <title>${displayTitle}</title>
     <meta name="description" content="${cleanDesc}">
     <link rel="icon" href="/main_images/icon.png" type="image/png">
-    
+
     <!-- Google Tag -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G3TY8XCR55"></script>
     <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-G3TY8XCR55');</script>
-    
+
     <!-- CSS & Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- External Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>
-    
+
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; display: flex; flex-direction: column; min-height: 100vh; }
         .hover-bg-light:hover { background-color: #f1f5f9; color: #0d6efd !important; }
@@ -140,7 +140,7 @@ function getHtmlShell(title, content, seoDescription = "") {
         .option-btn.incorrect-show { background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .timer-header { position: sticky; top: 70px; z-index: 1020; border-bottom: 4px solid #3b82f6; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
         .module-locked-overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); backdrop-filter: blur(5px); z-index: 1000; display: flex; align-items: center; justify-content: center; border-radius: 16px; }
-        
+
         /* Custom Exam Portal CSS */
         .app-header { background-color: #1e293b; color: #fff; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; }
         .app-subheader { background-color: #f8fafc; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; color: #64748b; }
@@ -199,9 +199,9 @@ function getHtmlShell(title, content, seoDescription = "") {
     <div class="container flex-grow-1 pb-5 position-relative" id="main-content-area">
         ${content}
     </div>
-    
+
     ${getFooter()}
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const _SU_URL = "${SUPABASE_URL}";
@@ -245,20 +245,20 @@ function getHtmlShell(title, content, seoDescription = "") {
             const pass = document.getElementById('auth-password').value;
             const alertBox = document.getElementById('auth-alert');
             const btn = document.getElementById('auth-submit-btn');
-            
+
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
             btn.disabled = true;
             alertBox.classList.add('d-none');
 
             // Try to sign in first
             let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
-            
+
             // If user doesn't exist, try to sign up
             if(error && error.message.includes("Invalid login")) {
                 const reg = await supabaseClient.auth.signUp({ email, password: pass });
                 data = reg.data; 
                 error = reg.error;
-                
+
                 if(!error && data.user && data.user.identities && data.user.identities.length === 0) {
                     error = { message: "Account already exists but invalid credentials provided." };
                 } else if(!error) {
@@ -282,7 +282,7 @@ function getHtmlShell(title, content, seoDescription = "") {
             if(!isProtected) return;
 
             const { data } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'LOCK_MOCK_TESTS').maybeSingle();
-            
+
             if(data && data.is_active && !currentUser) {
                 const area = document.getElementById('main-content-area');
                 if(!document.getElementById('lock-overlay')) {
@@ -597,7 +597,7 @@ function getCategoryTemplate() {
         <div id="cat-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="cat-content" class="d-none">
             <h1 class="display-6 blog-title mb-4 text-dark mt-3" id="cat-title">Category Hub</h1>
-            
+
             <div class="card shadow-sm border-0 bg-white p-4 rounded-4 mb-5">
                 <h3 class="fw-bold mb-3"><i class="bi bi-stopwatch text-primary me-2"></i>Mock Test Sets</h3>
                 <p class="text-secondary small mb-3">10 Questions per set.</p>
@@ -609,10 +609,10 @@ function getCategoryTemplate() {
             ${getAdBannerHtml("Sponsored")}
             <h3 class="fw-bold mb-4 mt-5">Question Bank</h3>
             <div id="mcq-list" class="list-group shadow-sm border-0 rounded-4 mb-4"></div>
-            
+
             <!-- Load More / Pagination Wrapper -->
             <div class="text-center mb-5" id="pagination-wrapper">
-                <button class="btn btn-outline-dark fw-bold rounded-pill px-4" id="btn-load-more" onclick="loadMoreQuestions()">Load More</button>
+                <button class="btn btn-outline-dark fw-bold rounded-pill px-4 d-none" id="btn-load-more" onclick="loadMoreQuestions()">Load More</button>
                 <div id="pagination-controls" class="d-none mt-4"></div>
             </div>
         </div>
@@ -626,10 +626,18 @@ function getCategoryTemplate() {
             document.addEventListener('DOMContentLoaded', async () => {
                 if(!catName) return;
                 document.getElementById('cat-title').innerText = catName + " - Study Hub"; 
-                
+
                 // Fetch Pagination Settings
                 const { data: prefData } = await supabaseClient.from('dynamic_components').select('is_active').eq('component_name', 'USE_PAGINATION').maybeSingle();
                 if(prefData && prefData.is_active) usePagination = true;
+
+                // Toggle visibility robustly based on Admin setting
+                if (usePagination) {
+                    document.getElementById('btn-load-more').classList.add('d-none');
+                    document.getElementById('pagination-controls').classList.remove('d-none');
+                } else {
+                    document.getElementById('pagination-controls').classList.add('d-none');
+                }
 
                 // Fetch total count for 10-Question Sets
                 const { count } = await supabaseClient.from('questions').select('*', { count: 'exact', head: true }).eq('qcategory', catName);
@@ -641,11 +649,6 @@ function getCategoryTemplate() {
                     setsHtml += \`<a href="/mock.html?cat=\${encodeURIComponent(catName)}&set=\${i}" class="btn btn-outline-primary fw-bold px-4 rounded-pill m-1">Set \${i}</a>\`;
                 }
                 document.getElementById('mock-sets-container').innerHTML = setsHtml || '<p class="text-muted mb-0">Not enough questions.</p>';
-
-                if (usePagination) {
-                    document.getElementById('btn-load-more').style.display = 'none';
-                    document.getElementById('pagination-controls').classList.remove('d-none');
-                }
 
                 await loadQuestionsData();
                 document.getElementById('cat-loader').classList.add('d-none'); document.getElementById('cat-content').classList.remove('d-none');
@@ -664,13 +667,13 @@ function getCategoryTemplate() {
 
             async function loadQuestionsData() {
                 const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1).order('id', {ascending: true});
-                
+
                 if(data && data.length > 0) {
                     let html = ''; 
                     data.forEach((q, i) => { 
                         html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${q.question.substring(0, 100)}...</a>\`; 
                     });
-                    
+
                     if (usePagination) {
                         document.getElementById('mcq-list').innerHTML = html;
                         renderPaginationHTML();
@@ -678,9 +681,11 @@ function getCategoryTemplate() {
                         const tempEl = document.getElementById('mcq-list').innerHTML;
                         document.getElementById('mcq-list').innerHTML = (tempEl.includes('spinner') ? '' : tempEl) + html;
                         currentOffset += limit;
+                        // Ensure "Load More" button is visible when using Load More style and data exists
+                        document.getElementById('btn-load-more').classList.remove('d-none');
                     }
                 } else { 
-                    if(!usePagination) document.getElementById('btn-load-more').style.display = 'none'; 
+                    if(!usePagination) document.getElementById('btn-load-more').classList.add('d-none'); 
                 }
             }
 
@@ -716,17 +721,17 @@ function getMockTemplate() {
             document.addEventListener('DOMContentLoaded', async () => {
                 const catName = new URLSearchParams(window.location.search).get('cat');
                 const setNum = parseInt(new URLSearchParams(window.location.search).get('set'));
-                
+
                 if(!catName) return;
-                
+
                 let pageTitle = catName + " Mock Test";
                 if(setNum) pageTitle += " (Set " + setNum + ")";
-                
+
                 document.getElementById('mock-title').innerText = pageTitle; 
                 document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
-                
+
                 let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('id', {ascending: true});
-                
+
                 if (setNum) {
                     const offset = (setNum - 1) * 10;
                     query = query.range(offset, offset + 9);
@@ -735,17 +740,17 @@ function getMockTemplate() {
                 }
 
                 const { data } = await query;
-                
+
                 if(data && data.length > 0) {
                     if (setNum) {
                         mockData = data; 
                     } else {
                         mockData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
                     }
-                    
+
                     document.getElementById('mock-subtitle').innerText = mockData.length + " Questions";
                     renderQuestions();
-                    
+
                     document.getElementById('mock-loader').classList.add('d-none'); document.getElementById('mock-content').classList.remove('d-none');
                     timerInterval = setInterval(() => { if(testSubmitted) return; timeLeft--; let m = Math.floor(timeLeft / 60), s = timeLeft % 60; document.getElementById('timer-display').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s; if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); } }, 1000);
                 } else {
@@ -827,14 +832,23 @@ function getAdminTemplate(pluginAdminHTML = "") {
                     <div class="col-md-3"><div class="card p-4 bg-warning text-dark text-center"><h1 id="stat-user">...</h1><p class="mb-0 fw-medium">Registered Users</p></div></div>
                 </div>
             </div>
-            
+
             <div id="tab-questions" class="admin-tab d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="fw-bold mb-0">Manage Questions</h2><button class="btn btn-primary fw-bold" onclick="openMcqModal()"><i class="bi bi-plus-lg me-2"></i>Add Question</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">Manage Questions</h2>
+                    <div>
+                        <button class="btn btn-warning fw-bold shadow-sm me-2" onclick="loadGibberishMCQs()"><i class="bi bi-funnel-fill me-1"></i>Find Gibberish</button>
+                        <button class="btn btn-primary fw-bold shadow-sm" onclick="openMcqModal()"><i class="bi bi-plus-lg me-2"></i>Add Question</button>
+                    </div>
+                </div>
                 <div class="card p-0 overflow-hidden"><table class="table table-hover mb-0 align-middle"><thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Actions</th></tr></thead><tbody id="mcq-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody></table></div>
             </div>
 
             <div id="tab-blogs" class="admin-tab d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="fw-bold mb-0">Manage Editorial Blogs</h2><button class="btn btn-primary fw-bold" onclick="openBlogModal()"><i class="bi bi-pen-fill me-2"></i>Write New Blog</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">Manage Editorial Blogs</h2>
+                    <button class="btn btn-primary fw-bold shadow-sm" onclick="openBlogModal()"><i class="bi bi-pen-fill me-2"></i>Write New Blog</button>
+                </div>
                 <div class="card p-0 overflow-hidden"><table class="table table-hover mb-0 align-middle"><thead class="table-light"><tr><th>Title</th><th>Category</th><th>Date</th><th>Actions</th></tr></thead><tbody id="blog-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody></table></div>
             </div>
 
@@ -860,12 +874,12 @@ function getAdminTemplate(pluginAdminHTML = "") {
             </div>
         </div>
     </div>
-    
+
     <!-- Modal for Blogs -->
-    <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><input type="text" id="b-cat" class="form-control" placeholder="Category"></div></div><div id="quill-editor" style="height:300px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()">Save Article</button></div></div></div></div>
+    <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write / Edit Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><input type="text" id="b-cat" class="form-control" placeholder="Category"></div></div><div id="quill-editor" style="height:300px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()">Save Article</button></div></div></div></div>
 
     <!-- Modal for MCQs -->
-    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><input type="text" id="q-cat" class="form-control" placeholder="Category"></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
+    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><input type="text" id="q-cat" class="form-control" placeholder="Category"></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -876,11 +890,10 @@ function getAdminTemplate(pluginAdminHTML = "") {
             quill = new Quill('#quill-editor', { theme: 'snow' }); checkAdminSession();
             supabaseClient.auth.onAuthStateChange((event) => { if(event === 'SIGNED_OUT') window.location.reload(); });
         });
-        
+
         async function checkAdminSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if(session?.user) {
-                // Exact logic requested by user
                 const adminEmail = "wedugo.com@gmail.com"; 
 
                 if(session.user.email === adminEmail) {
@@ -897,7 +910,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 document.getElementById('auth-screen').classList.remove('d-none');
             }
         }
-        
+
         async function adminLogin() {
             const email = document.getElementById('admin-email').value, password = document.getElementById('admin-pass').value;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -905,41 +918,133 @@ function getAdminTemplate(pluginAdminHTML = "") {
             else checkAdminSession();
         }
         function switchTab(id, el) { document.querySelectorAll('.admin-tab').forEach(t=>t.classList.add('d-none')); document.getElementById('tab-'+id).classList.remove('d-none'); document.querySelectorAll('.sidebar .nav-link').forEach(l=>l.classList.remove('active')); el.classList.add('active'); if(id==='questions') loadMcqs(); if(id==='blogs') loadBlogs(); if(id==='users') loadUsers(); }
-        
+
         async function loadDashboardStats() {
             const { count: c1 } = await supabaseClient.from('questions').select('*', { count: 'exact', head: true });
             const { count: c2 } = await supabaseClient.from('blog_posts').select('*', { count: 'exact', head: true });
             const { count: c3 } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true });
             document.getElementById('stat-mcq').innerText = c1||0; document.getElementById('stat-blog').innerText = c2||0; document.getElementById('stat-user').innerText = c3||0;
         }
-        
+
         async function loadModuleConfig() { 
             const { data: d1 } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'LOCK_MOCK_TESTS').maybeSingle(); 
             if(d1) document.getElementById('toggle-mock-lock').checked = d1.is_active; 
-            
+
             const { data: d2 } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'USE_PAGINATION').maybeSingle(); 
             if(d2) document.getElementById('toggle-pagination').checked = d2.is_active; 
         }
-        
+
         async function toggleModuleLock(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'LOCK_MOCK_TESTS', is_active: v }); }
         async function togglePagination(v) { await supabaseClient.from('dynamic_components').upsert({ component_name: 'USE_PAGINATION', is_active: v }); }
-        
-        async function loadMcqs() { const { data } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(20); const tb = document.getElementById('mcq-tbody'); tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-danger" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); }
-        function openMcqModal() { new bootstrap.Modal(document.getElementById('mcqModal')).show(); }
+
+        // --- MANAGE QUESTIONS LOGIC ---
+        async function loadMcqs() { 
+            const { data } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(20); 
+            const tb = document.getElementById('mcq-tbody'); 
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+        }
+
+        async function loadGibberishMCQs() {
+            const tb = document.getElementById('mcq-tbody');
+            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
+            // Scan latest 1000 items to locate Mojibake text 
+            const { data } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
+            if(!data) return;
+            const badChars = ['Ã', 'â', '€', '™', 'Â', '', 'œ', '”'];
+            const gibberish = data.filter(q => badChars.some(char => q.question.includes(char)));
+            
+            if(gibberish.length === 0) {
+                tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-success fw-bold">No gibberish/corrupted questions found!</td></tr>';
+                return;
+            }
+            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td class="text-danger fw-medium">\${q.question.substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+        }
+
+        function openMcqModal() { 
+            // Clear inputs for NEW question
+            document.getElementById('q-id').value = '';
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-optA').value = '';
+            document.getElementById('q-optB').value = '';
+            document.getElementById('q-optC').value = '';
+            document.getElementById('q-optD').value = '';
+            document.getElementById('q-ans').value = '';
+            document.getElementById('q-cat').value = '';
+            document.getElementById('q-exp').value = '';
+            new bootstrap.Modal(document.getElementById('mcqModal')).show(); 
+        }
+
+        async function editMcq(id) {
+            const { data } = await supabaseClient.from('questions').select('*').eq('id', id).single();
+            if(data) {
+                document.getElementById('q-id').value = data.id;
+                document.getElementById('q-text').value = data.question;
+                document.getElementById('q-optA').value = data.answer1;
+                document.getElementById('q-optB').value = data.answer2;
+                document.getElementById('q-optC').value = data.answer3;
+                document.getElementById('q-optD').value = data.answer4;
+                document.getElementById('q-ans').value = data.mainanswer ? data.mainanswer.replace(/[^A-D]/gi, '').toUpperCase() : '';
+                document.getElementById('q-cat').value = data.qcategory;
+                document.getElementById('q-exp').value = data.answerdetail || '';
+                new bootstrap.Modal(document.getElementById('mcqModal')).show();
+            }
+        }
+
         async function saveMcq() {
+            const id = document.getElementById('q-id').value;
             const obj = { question: document.getElementById('q-text').value, answer1: document.getElementById('q-optA').value, answer2: document.getElementById('q-optB').value, answer3: document.getElementById('q-optC').value, answer4: document.getElementById('q-optD').value, mainanswer: document.getElementById('q-ans').value.toUpperCase(), qcategory: document.getElementById('q-cat').value, answerdetail: document.getElementById('q-exp').value };
-            await supabaseClient.from('questions').insert([obj]); bootstrap.Modal.getInstance(document.getElementById('mcqModal')).hide(); loadMcqs();
+            
+            if (id) {
+                await supabaseClient.from('questions').update(obj).eq('id', id);
+            } else {
+                await supabaseClient.from('questions').insert([obj]); 
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('mcqModal')).hide(); 
+            loadMcqs();
         }
         async function deleteMcq(id) { if(confirm("Delete this question?")) { await supabaseClient.from('questions').delete().eq('id', id); loadMcqs(); } }
+
+        // --- MANAGE BLOG LOGIC ---
+        async function loadBlogs() { const { data } = await supabaseClient.from('blog_posts').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('blog-tbody'); tb.innerHTML = data.map(b=>\`<tr><td>\${b.title}</td><td>\${b.category}</td><td>\${new Date(b.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editBlog('\${b.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteBlog('\${b.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); }
         
-        async function loadBlogs() { const { data } = await supabaseClient.from('blog_posts').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('blog-tbody'); tb.innerHTML = data.map(b=>\`<tr><td>\${b.title}</td><td>\${b.category}</td><td>\${new Date(b.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-danger" onclick="deleteBlog('\${b.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); }
-        function openBlogModal() { new bootstrap.Modal(document.getElementById('blogModal')).show(); }
+        function openBlogModal() { 
+            // Clear inputs for NEW blog
+            document.getElementById('b-id').value = '';
+            document.getElementById('b-title').value = '';
+            document.getElementById('b-cat').value = '';
+            quill.root.innerHTML = '';
+            new bootstrap.Modal(document.getElementById('blogModal')).show(); 
+        }
+
+        async function editBlog(id) {
+            const { data } = await supabaseClient.from('blog_posts').select('*').eq('id', id).single();
+            if(data) {
+                document.getElementById('b-id').value = data.id;
+                document.getElementById('b-title').value = data.title;
+                document.getElementById('b-cat').value = data.category;
+                quill.root.innerHTML = data.content;
+                new bootstrap.Modal(document.getElementById('blogModal')).show();
+            }
+        }
+
         async function saveBlog() {
+            const id = document.getElementById('b-id').value;
             const t = document.getElementById('b-title').value, c = document.getElementById('b-cat').value, body = quill.root.innerHTML;
-            await supabaseClient.from('blog_posts').insert([{ title: t, slug: t.toLowerCase().replace(/[^a-z0-9]+/g, '-'), category: c, content: body }]); bootstrap.Modal.getInstance(document.getElementById('blogModal')).hide(); loadBlogs();
+            const obj = { title: t, slug: t.toLowerCase().replace(/[^a-z0-9]+/g, '-'), category: c, content: body };
+            
+            if (id) {
+                await supabaseClient.from('blog_posts').update(obj).eq('id', id);
+            } else {
+                await supabaseClient.from('blog_posts').insert([obj]); 
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('blogModal')).hide(); 
+            loadBlogs();
         }
         async function deleteBlog(id) { if(confirm("Delete this blog?")) { await supabaseClient.from('blog_posts').delete().eq('id', id); loadBlogs(); } }
-        
+
+        // --- USER MGMT LOGIC ---
         async function loadUsers() { const { data } = await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('users-tbody'); tb.innerHTML = data.map(u=>\`<tr><td>\${u.id.substring(0,8)}</td><td>\${u.role}</td><td>Active</td><td><button class="btn btn-sm btn-outline-dark" onclick="toggleRole('\${u.id}','\${u.role}')">Toggle</button></td></tr>\`).join(''); }
         async function toggleRole(id, role) { const nr = role==='admin'?'student':'admin'; if(confirm("Change role to "+nr+"?")) { await supabaseClient.from('profiles').update({ role: nr }).eq('id', id); loadUsers(); } }
     </script>
@@ -953,23 +1058,23 @@ function getAdminTemplate(pluginAdminHTML = "") {
 async function buildCSRSite() {
     try {
         const rootDir = __dirname;
-        
+
         console.log("1. Scanning for Dynamic Plugins (Modules)...");
         let loadedPluginsTools = "";
         let loadedPluginsAdmin = "";
         const modulesDir = path.join(rootDir, 'modules');
-        
+
         if (fs.existsSync(modulesDir)) {
             const folders = fs.readdirSync(modulesDir, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
             for (const folder of folders) {
                 const configPath = path.join(modulesDir, folder, 'config.json');
                 const uiPath = path.join(modulesDir, folder, 'ui.html');
                 const adminPath = path.join(modulesDir, folder, 'admin.html');
-                
+
                 if (fs.existsSync(configPath)) {
                     try {
                         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                        
+
                         if (fs.existsSync(uiPath) && config.category === 'tools') {
                             const uiCode = fs.readFileSync(uiPath, 'utf8');
                             loadedPluginsTools += `
@@ -982,7 +1087,7 @@ async function buildCSRSite() {
                             </div>`;
                             console.log(`   -> Plugin Tool Loaded: ${config.name}`);
                         }
-                        
+
                         if (fs.existsSync(adminPath)) {
                             const adminCode = fs.readFileSync(adminPath, 'utf8');
                             loadedPluginsAdmin += `
@@ -1013,10 +1118,10 @@ async function buildCSRSite() {
 
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
         await fsAsync.writeFile(path.join(rootDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent), 'utf8');
-        
+
         const privacyContent = `<p class="text-secondary lh-lg">At Wedugo Education, accessible from wedugo.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wedugo Education and how we use it.</p>`;
         await fsAsync.writeFile(path.join(rootDir, 'privacy.html'), getStaticPageTemplate('Privacy Policy', privacyContent), 'utf8');
-        
+
         const termsContent = `<p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website.</p>`;
         await fsAsync.writeFile(path.join(rootDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent), 'utf8');
 
@@ -1034,11 +1139,11 @@ async function buildCSRSite() {
         xml += `<url><loc>${SITE_BASE_URL}/blogs.html</loc><priority>0.9</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/custom-exam.html</loc><priority>0.9</priority></url>\n`;
         xml += `</urlset>`;
-        
+
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets & Auth Active)");
+        console.log("✅ BUILD COMPLETE (Pagination, Auto-Sets, Gibberish Filter, Edit Buttons Active)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

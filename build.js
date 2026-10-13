@@ -28,6 +28,13 @@ const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
+// Utility: Generate Slugs for SEO Clean URLs
+const makeSlug = (str) => str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+
+const catMap = {};
+CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
+const catMapScript = `const catMap = ${JSON.stringify(catMap)};`;
+
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
 // ==========================================
@@ -333,7 +340,7 @@ function getHtmlShell(title, content, seoDescription = "") {
         }
 
         async function checkModuleLock() {
-            const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html');
+            const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html') || window.location.href.includes('/mock-tests/');
             if(!isProtected) return;
 
             const { data } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'LOCK_MOCK_TESTS').maybeSingle();
@@ -433,14 +440,17 @@ function getIndexTemplate() {
 }
 
 function getCategoriesTemplate() {
-    let catsHtml = CATEGORY_LIST.map(cat => `
+    let catsHtml = CATEGORY_LIST.map(cat => {
+        const slug = makeSlug(cat);
+        return `
         <div class="col-md-6 col-lg-4">
-            <a href="/category.html?name=${encodeURIComponent(cat)}" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
+            <a href="/categories/${slug}/index.html" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
                 <h3 class="h5 fw-bold mb-2 text-dark">${cat}</h3>
                 <p class="text-secondary small mb-0">Explore MCQs & Mocks</p>
             </a>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     return getHtmlShell("All MCQ Categories", `
         ${getBreadcrumbs([{name: 'Categories', url: '/categories.html'}])}
@@ -744,23 +754,47 @@ function getCategoryTemplate() {
             </div>
         </div>
         <script>
+            ${catMapScript}
+            
             let currentOffset = 0; 
             const limit = 10; 
-            const catName = new URLSearchParams(window.location.search).get('name');
+            let catName = "";
+            let currentSlug = "";
+            let currentPage = 1;
             let usePagination = true; // DEFAULT ON
             let totalQuestions = 0;
 
             document.addEventListener('DOMContentLoaded', async () => {
+                const path = window.location.pathname;
+                
+                // --- SMART ROUTER LOGIC ---
+                if (path.includes('/mcqs/')) {
+                    const parts = path.split('/');
+                    currentSlug = parts[parts.length - 2];
+                    const pageFile = parts[parts.length - 1]; // "page-14.html"
+                    catName = catMap[currentSlug];
+                    currentPage = parseInt(pageFile.replace('page-', '').replace('.html', '')) || 1;
+                } else if (path.includes('/categories/')) {
+                    const parts = path.split('/');
+                    currentSlug = parts[parts.length - 2] || parts[parts.length - 1];
+                    catName = catMap[currentSlug];
+                    currentPage = 1;
+                } else {
+                    catName = new URLSearchParams(window.location.search).get('name');
+                    currentSlug = Object.keys(catMap).find(k => catMap[k] === catName) || "";
+                }
+                
                 if(!catName) return;
+                currentOffset = (currentPage - 1) * limit;
+
                 document.getElementById('cat-title').innerText = catName + " - Study Hub"; 
 
                 // --- DYNAMIC SEO & URL UPDATES ---
                 document.title = catName + " Important MCQs & Mock Tests | Wedugo";
                 let metaDesc = document.querySelector('meta[name="description"]');
-                if(metaDesc) metaDesc.setAttribute("content", "Practice top " + catName + " objective questions, mock tests, and previous year MCQs online for free.");
+                if(metaDesc) metaDesc.setAttribute("content", "Practice top " + catName + " objective questions, mock tests, and previous year MCQs online for free. Page " + currentPage);
                 
-                const urlSlug = catName.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-                window.history.replaceState(null, '', '/category.html?name=' + encodeURIComponent(catName) + '&topic=' + urlSlug);
+                window.history.replaceState(null, '', '/mcqs/' + currentSlug + '/page-' + currentPage + '.html');
                 // ---------------------------------
 
                 // Fetch Pagination Settings
@@ -780,7 +814,7 @@ function getCategoryTemplate() {
                 const totalSets = Math.ceil(totalQuestions / 10);
                 let setsHtml = '';
                 for(let i=1; i<=totalSets; i++) {
-                    setsHtml += \`<a href="/mock.html?cat=\${encodeURIComponent(catName)}&set=\${i}" class="btn btn-outline-primary fw-bold px-4 rounded-pill m-1">Set \${i}</a>\`;
+                    setsHtml += \`<a href="/mock-tests/\${currentSlug}/set-\${i}.html" class="btn btn-outline-primary fw-bold px-4 rounded-pill m-1">Set \${i}</a>\`;
                 }
                 document.getElementById('mock-sets-container').innerHTML = setsHtml || '<p class="text-muted mb-0">Not enough questions.</p>';
 
@@ -789,10 +823,14 @@ function getCategoryTemplate() {
             });
 
             window.changePage = async function(newPage) {
-                currentOffset = (newPage - 1) * limit;
-                document.getElementById('mcq-list').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-                await loadQuestionsData();
-                window.scrollTo(0, document.getElementById('mcq-list').offsetTop - 100);
+                if(currentSlug) {
+                    window.location.href = \`/mcqs/\${currentSlug}/page-\${newPage}.html\`;
+                } else {
+                    currentOffset = (newPage - 1) * limit;
+                    document.getElementById('mcq-list').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+                    await loadQuestionsData();
+                    window.scrollTo(0, document.getElementById('mcq-list').offsetTop - 100);
+                }
             };
 
             window.loadMoreQuestions = async function() {
@@ -824,11 +862,11 @@ function getCategoryTemplate() {
 
             function renderPaginationHTML() {
                 const totalPages = Math.ceil(totalQuestions / limit);
-                const currentPage = Math.floor(currentOffset / limit) + 1;
+                const curPage = Math.floor(currentOffset / limit) + 1;
                 let pHTML = \`<nav><ul class="pagination justify-content-center border-0 shadow-sm rounded-pill overflow-hidden">\`;
-                pHTML += \`<li class="page-item \${currentPage === 1 ? 'disabled' : ''}"><a class="page-link px-4 py-2 fw-bold text-dark" href="#" onclick="changePage(\${currentPage - 1}); return false;">Previous</a></li>\`;
-                pHTML += \`<li class="page-item disabled"><span class="page-link px-4 py-2 text-muted fw-medium">Page \${currentPage} of \${totalPages}</span></li>\`;
-                pHTML += \`<li class="page-item \${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}"><a class="page-link px-4 py-2 fw-bold text-dark" href="#" onclick="changePage(\${currentPage + 1}); return false;">Next</a></li>\`;
+                pHTML += \`<li class="page-item \${curPage === 1 ? 'disabled' : ''}"><a class="page-link px-4 py-2 fw-bold text-dark" href="#" onclick="changePage(\${curPage - 1}); return false;">Previous</a></li>\`;
+                pHTML += \`<li class="page-item disabled"><span class="page-link px-4 py-2 text-muted fw-medium">Page \${curPage} of \${totalPages}</span></li>\`;
+                pHTML += \`<li class="page-item \${curPage === totalPages || totalPages === 0 ? 'disabled' : ''}"><a class="page-link px-4 py-2 fw-bold text-dark" href="#" onclick="changePage(\${curPage + 1}); return false;">Next</a></li>\`;
                 pHTML += \`</ul></nav>\`;
                 document.getElementById('pagination-controls').innerHTML = pHTML;
             }
@@ -850,10 +888,26 @@ function getMockTemplate() {
             ${getAdSidebar()}
         </div>
         <script>
+            ${catMapScript}
             let mockData = []; let userAnswers = {}; let timeLeft = 600, timerInterval, testSubmitted = false;
+            
             document.addEventListener('DOMContentLoaded', async () => {
-                const catName = new URLSearchParams(window.location.search).get('cat');
-                const setNum = parseInt(new URLSearchParams(window.location.search).get('set'));
+                const path = window.location.pathname;
+                let catName = "";
+                let setNum = 1;
+                let currentSlug = "";
+
+                if (path.includes('/mock-tests/')) {
+                    const parts = path.split('/');
+                    currentSlug = parts[parts.length - 2];
+                    const setFile = parts[parts.length - 1]; 
+                    catName = catMap[currentSlug];
+                    setNum = parseInt(setFile.replace('set-', '').replace('.html', '')) || 1;
+                } else {
+                    catName = new URLSearchParams(window.location.search).get('cat');
+                    setNum = parseInt(new URLSearchParams(window.location.search).get('set')) || 1;
+                    currentSlug = Object.keys(catMap).find(k => catMap[k] === catName) || "";
+                }
 
                 if(!catName) return;
 
@@ -867,7 +921,7 @@ function getMockTemplate() {
                 // ---------------------------
 
                 document.getElementById('mock-title').innerText = pageTitle; 
-                document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
+                document.getElementById('btn-back-cat').href = "/categories/" + currentSlug + "/index.html";
 
                 let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('id', {ascending: true});
 
@@ -894,7 +948,7 @@ function getMockTemplate() {
                     timerInterval = setInterval(() => { if(testSubmitted) return; timeLeft--; let m = Math.floor(timeLeft / 60), s = timeLeft % 60; document.getElementById('timer-display').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s; if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); } }, 1000);
                 } else {
                     alert("No questions found for this set.");
-                    window.location.href = "/category.html?name=" + encodeURIComponent(catName);
+                    window.location.href = "/categories/" + currentSlug + "/index.html";
                 }
             });
             function renderQuestions() {
@@ -1506,7 +1560,7 @@ async function fetchDynamicComponents() {
 }
 
 // ==========================================
-// BUILD SCRIPT WITH PLUGIN SCANNER
+// BUILD SCRIPT WITH PLUGIN SCANNER & PHYSICAL ROUTING
 // ==========================================
 async function buildCSRSite() {
     try {
@@ -1574,6 +1628,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(), 'utf8');
 
+        // Legal & Static Pages
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
         await fsAsync.writeFile(path.join(rootDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent), 'utf8');
 
@@ -1583,13 +1638,39 @@ async function buildCSRSite() {
         const termsContent = `<p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website.</p>`;
         await fsAsync.writeFile(path.join(rootDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent), 'utf8');
 
+        // Admin Portal
         const adminDir = path.join(rootDir, 'admin');
         if (!fs.existsSync(adminDir)) fs.mkdirSync(adminDir, { recursive: true });
         await fsAsync.writeFile(path.join(adminDir, 'index.html'), getAdminTemplate(loadedPluginsAdmin), 'utf8');
 
+        // 404 Fallback
         await fsAsync.writeFile(path.join(rootDir, '404.html'), getStaticPageTemplate('404 - Page Not Found', '<p class="lead">Oops! The page you are looking for does not exist.</p><a href="/index.html" class="btn btn-primary fw-bold mt-3 px-4 py-2 rounded-pill">Go back to homepage</a>'), 'utf8');
 
-        console.log("3. Generating SEO Sitemap...");
+        console.log("3. 🚀 GENERATING PHYSICAL SEO ROUTE FOLDERS TO PREVENT 404s...");
+        for (const cat of CATEGORY_LIST) {
+            const slug = makeSlug(cat);
+            
+            // Generate /categories/[slug]/index.html
+            const catDir = path.join(rootDir, 'categories', slug);
+            fs.mkdirSync(catDir, { recursive: true });
+            await fsAsync.writeFile(path.join(catDir, 'index.html'), getCategoryTemplate(), 'utf8');
+
+            // Generate /mcqs/[slug]/page-1.html TO page-60.html (Covers 600 questions per category safely)
+            const mcqDir = path.join(rootDir, 'mcqs', slug);
+            fs.mkdirSync(mcqDir, { recursive: true });
+            for (let p = 1; p <= 60; p++) {
+                await fsAsync.writeFile(path.join(mcqDir, `page-${p}.html`), getCategoryTemplate(), 'utf8');
+            }
+
+            // Generate /mock-tests/[slug]/set-1.html TO set-30.html
+            const mockDir = path.join(rootDir, 'mock-tests', slug);
+            fs.mkdirSync(mockDir, { recursive: true });
+            for (let s = 1; s <= 30; s++) {
+                await fsAsync.writeFile(path.join(mockDir, `set-${s}.html`), getMockTemplate(), 'utf8');
+            }
+        }
+
+        console.log("4. Generating SEO Sitemap...");
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         xml += `<url><loc>${SITE_BASE_URL}/</loc><priority>1.0</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/categories.html</loc><priority>0.9</priority></url>\n`;
@@ -1597,12 +1678,18 @@ async function buildCSRSite() {
         xml += `<url><loc>${SITE_BASE_URL}/blogs.html</loc><priority>0.9</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/custom-exam.html</loc><priority>0.9</priority></url>\n`;
         if(TOOL_PDF_READER) xml += `<url><loc>${SITE_BASE_URL}/pdf-reader.html</loc><priority>0.8</priority></url>\n`;
+        
+        CATEGORY_LIST.forEach(cat => {
+            const slug = makeSlug(cat);
+            xml += `<url><loc>${SITE_BASE_URL}/categories/${slug}/index.html</loc><priority>0.8</priority></url>\n`;
+        });
+
         xml += `</urlset>`;
 
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Dynamic SEO Titles, Clean URLs, Default Pagination ON, 100% Functions Kept)");
+        console.log("✅ BUILD COMPLETE (Dynamic SEO Titles, Clean URLs, Default Pagination ON, Physical Routes Generated, 100% Functions Kept)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

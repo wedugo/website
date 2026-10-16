@@ -139,6 +139,7 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
     
+    // Canonical tag static string (dynamically inserted below if present)
     const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
@@ -391,7 +392,7 @@ function getBreadcrumbs(pathArray) {
     return `<nav aria-label="breadcrumb" class="mb-4 mt-2"><ol class="breadcrumb bg-transparent p-0 mb-0">${list}</ol></nav>`;
 }
 
-function getIndexTemplate() {
+function getIndexTemplate(canonicalUrl = "") {
     return getHtmlShell("Wedugo Education: Master Your Exams", `
         <div class="mt-4 mb-5 text-center">
             <h1 class="display-3 blog-title text-dark mb-3">Learn & Master Your Exams</h1>
@@ -438,10 +439,10 @@ function getIndexTemplate() {
                 document.getElementById('home-loader').classList.add('d-none'); document.getElementById('home-content').classList.remove('d-none');
             });
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
-function getCategoriesTemplate() {
+function getCategoriesTemplate(canonicalUrl = "") {
     let catsHtml = CATEGORY_LIST.map(cat => {
         const slug = makeSlug(cat);
         return `
@@ -460,10 +461,10 @@ function getCategoriesTemplate() {
         <p class="text-secondary mb-5">Select a subject to access mock tests and individual questions.</p>
         ${getAdBannerHtml("Sponsored")}
         <div class="row g-4">${catsHtml}</div>
-    `);
+    `, "", canonicalUrl);
 }
 
-function getCustomExamTemplate() {
+function getCustomExamTemplate(canonicalUrl = "") {
     const catsOptions = CATEGORY_LIST.map((cat, i) => `
         <div class="form-check"><input class="form-check-input cat-checkbox" type="checkbox" value="${cat}" id="cat${i}" checked><label class="form-check-label" for="cat${i}">${cat}</label></div>
     `).join('');
@@ -530,10 +531,10 @@ function getCustomExamTemplate() {
             document.getElementById('btn-submit-exam').addEventListener('click', () => { if(confirm("Submit the exam?")) submitExam(); });
             function submitExam() { clearInterval(timerInterval); document.querySelector('nav.navbar').style.display = 'block'; document.querySelector('footer').style.display = 'block'; document.getElementById('exam-panel').classList.add('d-none'); document.getElementById('exam-panel').classList.remove('position-absolute'); document.getElementById('result-panel').classList.remove('d-none'); let c=0, ic=0, ua=0, solHtml = ''; examData.forEach((q, i) => { const uAns = userState[i].selected, correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase(), isCorrect = uAns === correct; if(!uAns) ua++; else if(isCorrect) c++; else ic++; let bgClass = !uAns ? 'bg-warning bg-opacity-10 border-warning' : (isCorrect ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger'); let statusIco = !uAns ? '⚠️ Unattempted' : (isCorrect ? '✅ Correct' : '❌ Incorrect'); solHtml += \`<div class="card mb-4 p-4 \${bgClass}"><h5 class="fw-bold mb-3">Q\${i+1}. \${q.question}</h5><p class="mb-2 fw-bold \${!uAns ? 'text-warning' : (isCorrect ? 'text-success' : 'text-danger')}">\${statusIco} (Your Answer: \${uAns || 'None'})</p><p class="mb-3 text-dark fw-bold">Right Answer: \${correct}</p><div class="p-3 bg-white border rounded shadow-sm small text-secondary"><strong>Explanation:</strong> \${q.answerdetail || ''}</div></div>\`; }); document.getElementById('res-total').innerText = examData.length; document.getElementById('res-correct').innerText = c; document.getElementById('res-incorrect').innerText = ic; document.getElementById('res-marks').innerText = ((c * pMarks) - (ic * nMarks)).toFixed(2); document.getElementById('solution-list').innerHTML = solHtml; window.scrollTo(0,0); }
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
-function getToolsTemplate(pluginHTML = "") {
+function getToolsTemplate(pluginHTML = "", canonicalUrl = "") {
     const toolsHTML = `
         <div class="row g-4 mt-3 mb-5">
             <div class="col-md-6 d-none" id="tool-card-score">
@@ -568,10 +569,10 @@ function getToolsTemplate(pluginHTML = "") {
             <p class="lead text-secondary">Free interactive utilities to optimize your competitive exam preparation.</p>
         </div>
         ${toolsHTML}
-    `);
+    `, "", canonicalUrl);
 }
 
-function getPdfReaderTemplate() {
+function getPdfReaderTemplate(canonicalUrl = "") {
     return getHtmlShell("Free PDF Reader Tool", `
         ${getBreadcrumbs([{name: 'Tools', url: '/tools.html'}, {name: 'PDF Reader', url: '/pdf-reader.html'}])}
         <div class="card shadow-sm p-4 p-md-5 border-0 rounded-4 bg-white mt-4 text-center">
@@ -602,10 +603,10 @@ function getPdfReaderTemplate() {
                 }
             });
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
-function getBlogsTemplate() {
+function getBlogsTemplate(canonicalUrl = "") {
     return getHtmlShell("Educational Blogs & Guides", `
         ${getBreadcrumbs([{name: 'Blogs', url: '/blogs.html'}])}
         <h2 class="display-6 blog-title mb-4 text-dark mt-3">Latest Educational Guides</h2>
@@ -625,10 +626,10 @@ function getBlogsTemplate() {
                 }
             });
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
-function getSingleBlogTemplate() {
+function getSingleBlogTemplate(canonicalUrl = "") {
     return getHtmlShell("Read Article", `
         <div id="blog-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="blog-content" class="row justify-content-center mt-3 d-none">
@@ -657,6 +658,15 @@ function getSingleBlogTemplate() {
                     let metaDesc = document.querySelector('meta[name="description"]');
                     let plainText = data.content.replace(/<[^>]*>?/gm, '').replace(/\\s+/g, ' ').trim().substring(0, 150);
                     if(metaDesc) metaDesc.setAttribute("content", plainText + "...");
+
+                    // Inject Canonical Tag Dynamically
+                    let canonicalLink = document.querySelector("link[rel='canonical']");
+                    if (!canonicalLink) {
+                        canonicalLink = document.createElement('link');
+                        canonicalLink.rel = 'canonical';
+                        document.head.appendChild(canonicalLink);
+                    }
+                    canonicalLink.href = "https://www.wedugo.com/blog.html?slug=" + data.slug;
                     // ---------------------------
 
                     document.getElementById('blog-title').innerText = data.title;
@@ -667,7 +677,7 @@ function getSingleBlogTemplate() {
                 }
             });
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
 function getMcqTemplate() {
@@ -706,7 +716,17 @@ function getMcqTemplate() {
                     if(metaDesc) metaDesc.setAttribute("content", cleanQ.substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.");
                     
                     const urlSlug = cleanQ.substring(0, 60).replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-                    window.history.replaceState(null, '', '/mcq.html?id=' + data.id + '&q=' + urlSlug);
+                    const newRelativeUrl = '/mcq.html?id=' + data.id + '&q=' + urlSlug;
+                    window.history.replaceState(null, '', newRelativeUrl);
+
+                    // Inject Canonical Tag Dynamically
+                    let canonicalLink = document.querySelector("link[rel='canonical']");
+                    if (!canonicalLink) {
+                        canonicalLink = document.createElement('link');
+                        canonicalLink.rel = 'canonical';
+                        document.head.appendChild(canonicalLink);
+                    }
+                    canonicalLink.href = "https://www.wedugo.com" + newRelativeUrl;
                     // ---------------------------------
 
                     const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
@@ -971,14 +991,14 @@ function getMockTemplate(canonicalUrl = "") {
     `, "", canonicalUrl);
 }
 
-function getStaticPageTemplate(title, contentHtml) {
+function getStaticPageTemplate(title, contentHtml, canonicalUrl = "") {
     return getHtmlShell(title, `
         ${getBreadcrumbs([{name: title, url: '#'}])}
         <div class="card shadow-sm p-4 p-md-5 border-0 rounded-4 bg-white mt-4">
             <h1 class="blog-title text-dark mb-4 display-5">${title}</h1>
             ${contentHtml}
         </div>
-    `);
+    `, "", canonicalUrl);
 }
 
 function getAdminTemplate(pluginAdminHTML = "") {
@@ -1629,26 +1649,26 @@ async function buildCSRSite() {
 
         console.log("2. Generating Full Client-Side Application Templates in ROOT...");
 
-        await fsAsync.writeFile(path.join(rootDir, 'index.html'), getIndexTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'categories.html'), getCategoriesTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(loadedPluginsTools), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'blogs.html'), getBlogsTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'custom-exam.html'), getCustomExamTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'index.html'), getIndexTemplate(`${SITE_BASE_URL}/`), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'categories.html'), getCategoriesTemplate(`${SITE_BASE_URL}/categories.html`), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(loadedPluginsTools, `${SITE_BASE_URL}/tools.html`), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'blogs.html'), getBlogsTemplate(`${SITE_BASE_URL}/blogs.html`), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'custom-exam.html'), getCustomExamTemplate(`${SITE_BASE_URL}/custom-exam.html`), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), getMcqTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'category.html'), getCategoryTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(`${SITE_BASE_URL}/pdf-reader.html`), 'utf8');
 
         // Legal & Static Pages
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
-        await fsAsync.writeFile(path.join(rootDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'about.html'), getStaticPageTemplate('About Us', aboutContent, `${SITE_BASE_URL}/about.html`), 'utf8');
 
         const privacyContent = `<p class="text-secondary lh-lg">At Wedugo Education, accessible from wedugo.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wedugo Education and how we use it.</p>`;
-        await fsAsync.writeFile(path.join(rootDir, 'privacy.html'), getStaticPageTemplate('Privacy Policy', privacyContent), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'privacy.html'), getStaticPageTemplate('Privacy Policy', privacyContent, `${SITE_BASE_URL}/privacy.html`), 'utf8');
 
         const termsContent = `<p class="text-secondary lh-lg">These terms and conditions outline the rules and regulations for the use of Wedugo Education's Website.</p>`;
-        await fsAsync.writeFile(path.join(rootDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent), 'utf8');
+        await fsAsync.writeFile(path.join(rootDir, 'terms.html'), getStaticPageTemplate('Terms & Conditions', termsContent, `${SITE_BASE_URL}/terms.html`), 'utf8');
 
         // Admin Portal
         const adminDir = path.join(rootDir, 'admin');

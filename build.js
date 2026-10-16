@@ -425,7 +425,7 @@ function getIndexTemplate() {
                     });
                     document.getElementById('home-blogs').innerHTML = blogHtml;
                 }
-                const { data: qData } = await supabaseClient.from('questions').select('id, qcategory, question').limit(5);
+                const { data: qData } = await supabaseClient.from('questions').select('id, qcategory, question').order('id', { ascending: false }).limit(5);
                 if(qData) {
                     let qHtml = '';
                     qData.forEach(q => {
@@ -710,8 +710,8 @@ function getMcqTemplate() {
                     const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
                     let optHtml = ''; for(let k in opts) { optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${opts[k]}</button>\`; }
                     document.getElementById('mcq-options').innerHTML = optHtml;
-                    document.getElementById('btn-prev').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)-1);
-                    document.getElementById('btn-next').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)+1);
+                    document.getElementById('btn-prev').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)+1);
+                    document.getElementById('btn-next').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)-1);
                     document.getElementById('mcq-loader').classList.add('d-none'); document.getElementById('mcq-content').classList.remove('d-none');
                 }
             });
@@ -838,7 +838,7 @@ function getCategoryTemplate() {
             };
 
             async function loadQuestionsData() {
-                const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1).order('id', {ascending: true});
+                const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1).order('id', {ascending: false});
 
                 if(data && data.length > 0) {
                     let html = ''; 

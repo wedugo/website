@@ -135,9 +135,12 @@ function getFooter() {
 }
 
 // 🟢 MASTER HTML SHELL WITH INJECTIONS
-function getHtmlShell(title, content, seoDescription = "") {
+function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
+    
+    // Naya Canonical Tag
+    const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -146,6 +149,7 @@ function getHtmlShell(title, content, seoDescription = "") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${displayTitle}</title>
     <meta name="description" content="${cleanDesc}">
+    ${canonicalTag}
     <link rel="icon" href="/main_images/icon.png" type="image/png">
 
     <!-- Google Tag -->
@@ -729,7 +733,7 @@ function getMcqTemplate() {
     `);
 }
 
-function getCategoryTemplate() {
+ffunction getCategoryTemplate(canonicalUrl = "") {
     return getHtmlShell("Category Viewer", `
         <div id="cat-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="cat-content" class="d-none">
@@ -871,10 +875,10 @@ function getCategoryTemplate() {
                 document.getElementById('pagination-controls').innerHTML = pHTML;
             }
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
-function getMockTemplate() {
+function getMockTemplate(canonicalUrl = "") {
     return getHtmlShell("Live Mock Test", `
         <div id="mock-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="mock-content" class="row d-none">
@@ -966,7 +970,7 @@ function getMockTemplate() {
                 document.getElementById('score-board').classList.remove('d-none'); document.getElementById('final-score').innerText = score + " / " + mockData.length; window.scrollTo(0,0);
             }
         </script>
-    `);
+    `, "", canonicalUrl);
 }
 
 function getStaticPageTemplate(title, contentHtml) {
@@ -1653,20 +1657,20 @@ async function buildCSRSite() {
             // Generate /categories/[slug]/index.html
             const catDir = path.join(rootDir, 'categories', slug);
             fs.mkdirSync(catDir, { recursive: true });
-            await fsAsync.writeFile(path.join(catDir, 'index.html'), getCategoryTemplate(), 'utf8');
+            await fsAsync.writeFile(path.join(catDir, 'index.html'), getCategoryTemplate(`${SITE_BASE_URL}/categories/${slug}/index.html`), 'utf8');
 
-            // Generate /mcqs/[slug]/page-1.html TO page-60.html (Covers 600 questions per category safely)
+            // Generate /mcqs/[slug]/page-1.html TO page-60.html 
             const mcqDir = path.join(rootDir, 'mcqs', slug);
             fs.mkdirSync(mcqDir, { recursive: true });
             for (let p = 1; p <= 60; p++) {
-                await fsAsync.writeFile(path.join(mcqDir, `page-${p}.html`), getCategoryTemplate(), 'utf8');
+                await fsAsync.writeFile(path.join(mcqDir, `page-${p}.html`), getCategoryTemplate(`${SITE_BASE_URL}/mcqs/${slug}/page-${p}.html`), 'utf8');
             }
 
             // Generate /mock-tests/[slug]/set-1.html TO set-30.html
             const mockDir = path.join(rootDir, 'mock-tests', slug);
             fs.mkdirSync(mockDir, { recursive: true });
             for (let s = 1; s <= 30; s++) {
-                await fsAsync.writeFile(path.join(mockDir, `set-${s}.html`), getMockTemplate(), 'utf8');
+                await fsAsync.writeFile(path.join(mockDir, `set-${s}.html`), getMockTemplate(`${SITE_BASE_URL}/mock-tests/${slug}/set-${s}.html`), 'utf8');
             }
         }
 

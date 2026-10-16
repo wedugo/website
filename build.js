@@ -134,12 +134,11 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH INJECTIONS
+// 🟢 MASTER HTML SHELL WITH INJECTIONS (Canonical Included)
 function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
     
-    // Naya Canonical Tag
     const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
@@ -254,14 +253,13 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
         let supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
         let currentUser = null;
 
-        // FETCH LIVE MODULE SETTINGS (No Build Required for ON/OFF)
+        // FETCH LIVE MODULE SETTINGS
         async function fetchLiveModuleSettings() {
             try {
                 const { data } = await supabaseClient.from('dynamic_components').select('*');
                 if(data) {
                     const getVal = (name) => { const obj = data.find(s => s.component_name === name); return obj ? obj.is_active : true; };
                     
-                    // Live UI Updates for Toggles
                     if(getVal('TOOL_PDF_READER')) {
                         if(document.getElementById('nav-tool-pdf')) document.getElementById('nav-tool-pdf').classList.remove('d-none');
                         if(document.getElementById('tool-card-pdf')) document.getElementById('tool-card-pdf').classList.remove('d-none');
@@ -733,7 +731,7 @@ function getMcqTemplate() {
     `);
 }
 
-ffunction getCategoryTemplate(canonicalUrl = "") {
+function getCategoryTemplate(canonicalUrl = "") {
     return getHtmlShell("Category Viewer", `
         <div id="cat-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="cat-content" class="d-none">
@@ -927,7 +925,7 @@ function getMockTemplate(canonicalUrl = "") {
                 document.getElementById('mock-title').innerText = pageTitle; 
                 document.getElementById('btn-back-cat').href = "/categories/" + currentSlug + "/index.html";
 
-                let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('id', {ascending: true});
+                let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('id', {ascending: false});
 
                 if (setNum) {
                     const offset = (setNum - 1) * 10;
@@ -1430,15 +1428,25 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const id = document.getElementById('q-id').value;
             const obj = { question: document.getElementById('q-text').value, answer1: document.getElementById('q-optA').value, answer2: document.getElementById('q-optB').value, answer3: document.getElementById('q-optC').value, answer4: document.getElementById('q-optD').value, mainanswer: document.getElementById('q-ans').value.toUpperCase(), qcategory: document.getElementById('q-cat').value, answerdetail: document.getElementById('q-exp').value };
             
+            let dbError;
             if (id) {
-                await supabaseClient.from('questions').update(obj).eq('id', id);
+                const { error } = await supabaseClient.from('questions').update(obj).eq('id', id);
+                dbError = error;
             } else {
-                await supabaseClient.from('questions').insert([obj]); 
+                const { error } = await supabaseClient.from('questions').insert([obj]); 
+                dbError = error;
+            }
+            
+            if (dbError) {
+                alert("Database Error: " + dbError.message);
+                console.error("Supabase Error:", dbError);
+                return;
             }
             
             bootstrap.Modal.getInstance(document.getElementById('mcqModal')).hide(); 
             loadMcqs();
         }
+        
         async function deleteMcq(id) { if(confirm("Delete this question?")) { await supabaseClient.from('questions').delete().eq('id', id); loadMcqs(); } }
 
         // --- MANAGE BLOG LOGIC ---

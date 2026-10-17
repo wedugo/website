@@ -1002,6 +1002,8 @@ function getStaticPageTemplate(title, contentHtml, canonicalUrl = "") {
 }
 
 function getAdminTemplate(pluginAdminHTML = "") {
+    const catOptionsHtml = CATEGORY_LIST.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1013,7 +1015,16 @@ function getAdminTemplate(pluginAdminHTML = "") {
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    <style>body { font-family: 'Inter', sans-serif; background: #f1f5f9; } .sidebar { min-height: 100vh; background: #1e293b; color: white; } .sidebar .nav-link { color: #cbd5e1; border-radius: 8px; margin-bottom: 5px; font-weight: 500; } .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #334155; color: white; } .card { border-radius: 12px; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); } #auth-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; position: fixed; top:0; left:0; right:0; z-index: 9999; }</style>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; } 
+        .sidebar { min-height: 100vh; background: #1e293b; color: white; } 
+        .sidebar .nav-link { color: #cbd5e1; border-radius: 8px; margin-bottom: 5px; font-weight: 500; } 
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #334155; color: white; } 
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); } 
+        #auth-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; position: fixed; top:0; left:0; right:0; z-index: 9999; }
+        .ql-toolbar { background: #f8fafc; border-radius: 8px 8px 0 0; }
+        .ql-container { border-radius: 0 0 8px 8px; font-size: 16px; }
+    </style>
 </head>
 <body>
     <div id="auth-screen">
@@ -1054,9 +1065,9 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                     <h2 class="fw-bold mb-0">Manage Questions</h2>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <div class="input-group input-group-sm" style="width: 200px;">
-                            <input type="number" id="search-q-id" class="form-control" placeholder="Search by ID...">
-                            <button class="btn btn-dark fw-bold" onclick="searchMcqById()"><i class="bi bi-search"></i></button>
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <input type="text" id="search-q-val" class="form-control" placeholder="Search ID or Keyword...">
+                            <button class="btn btn-dark fw-bold" onclick="searchMcq()"><i class="bi bi-search"></i></button>
                         </div>
                         <button class="btn btn-warning btn-sm fw-bold shadow-sm" onclick="loadGibberishMCQs()"><i class="bi bi-funnel-fill"></i></button>
                         <button class="btn btn-success btn-sm fw-bold shadow-sm" onclick="autoFixAllGibberish()"><i class="bi bi-magic"></i> Auto Fix</button>
@@ -1177,10 +1188,10 @@ function getAdminTemplate(pluginAdminHTML = "") {
     </div>
 
     <!-- Modal for Blogs -->
-    <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write / Edit Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><input type="text" id="b-cat" class="form-control" placeholder="Category"></div></div><div id="quill-editor" style="height:300px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()">Save Article</button></div></div></div></div>
+    <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write / Edit Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><select id="b-cat" class="form-select"><option value="" disabled selected>Select Category...</option>${catOptionsHtml}</select></div></div><div id="quill-editor" style="height:400px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()">Save Article</button></div></div></div></div>
 
     <!-- Modal for MCQs -->
-    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><input type="text" id="q-cat" class="form-control" placeholder="Category"></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0 justify-content-between"><button type="button" class="btn btn-warning fw-bold" onclick="fixCurrentModalEncoding()"><i class="bi bi-magic me-1"></i> Fix Text Encoding</button><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
+    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><select id="q-cat" class="form-select"><option value="" disabled selected>Select Category...</option>${catOptionsHtml}</select></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0 justify-content-between"><button type="button" class="btn btn-warning fw-bold" onclick="fixCurrentModalEncoding()"><i class="bi bi-magic me-1"></i> Fix Text Encoding</button><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1188,7 +1199,27 @@ function getAdminTemplate(pluginAdminHTML = "") {
         const supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
         let quill;
         document.addEventListener("DOMContentLoaded", () => {
-            quill = new Quill('#quill-editor', { theme: 'snow' }); checkAdminSession();
+            const toolbarOptions = [
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'header': 1 }, { 'header': 2 }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'size': ['small', false, 'large', 'huge'] }],
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'font': [] }],
+                [{ 'align': [] }],
+                ['clean'],
+                ['link', 'image', 'video']
+            ];
+            quill = new Quill('#quill-editor', { 
+                theme: 'snow',
+                modules: { toolbar: toolbarOptions }
+            }); 
+            checkAdminSession();
             supabaseClient.auth.onAuthStateChange((event) => { if(event === 'SIGNED_OUT') window.location.reload(); });
         });
 
@@ -1317,7 +1348,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 return;
             }
 
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
             
             document.getElementById('mcq-page-indicator').innerText = \`Page \${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}\`;
         }
@@ -1325,9 +1356,9 @@ function getAdminTemplate(pluginAdminHTML = "") {
         function nextMcqPage() { currentMcqOffset += MCQ_LIMIT; loadMcqs(); }
         function prevMcqPage() { if (currentMcqOffset >= MCQ_LIMIT) { currentMcqOffset -= MCQ_LIMIT; loadMcqs(); } }
 
-        async function searchMcqById() {
-            const id = document.getElementById('search-q-id').value;
-            if (!id) {
+        async function searchMcq() {
+            const val = document.getElementById('search-q-val').value.trim();
+            if (!val) {
                 currentMcqOffset = 0;
                 return loadMcqs();
             }
@@ -1335,15 +1366,23 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const tb = document.getElementById('mcq-tbody'); 
             tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
             
-            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question').eq('id', id);
+            let query = supabaseClient.from('questions').select('id, qcategory, question').limit(50);
+            
+            if (/^\\d+$/.test(val)) {
+                query = query.eq('id', val);
+            } else {
+                query = query.ilike('question', \`%\${val}%\`); 
+            }
+            
+            const { data, error } = await query;
             
             if (error || !data || data.length === 0) {
-                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">No question found with ID #\${id}</td></tr>\`;
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">No results found for "\${val}"</td></tr>\`;
                 return;
             }
             
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
-            document.getElementById('mcq-page-indicator').innerText = 'Search Result';
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            document.getElementById('mcq-page-indicator').innerText = 'Search Results';
         }
 
         function decodeMojibake(str) {
@@ -1412,7 +1451,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-success fw-bold">No gibberish/corrupted questions found!</td></tr>';
                 return;
             }
-            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td class="text-danger fw-medium">\${q.question.substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\${q.id})"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td class="text-danger fw-medium">\${q.question.substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
         }
 
         function openMcqModal() { 
@@ -1445,14 +1484,34 @@ function getAdminTemplate(pluginAdminHTML = "") {
         }
 
         async function saveMcq() {
-            const id = document.getElementById('q-id').value;
-            const obj = { question: document.getElementById('q-text').value, answer1: document.getElementById('q-optA').value, answer2: document.getElementById('q-optB').value, answer3: document.getElementById('q-optC').value, answer4: document.getElementById('q-optD').value, mainanswer: document.getElementById('q-ans').value.toUpperCase(), qcategory: document.getElementById('q-cat').value, answerdetail: document.getElementById('q-exp').value };
+            let id = document.getElementById('q-id').value;
+            const qText = document.getElementById('q-text').value;
+            
+            // Helper function to generate slug for URL
+            const generateSlug = (str) => str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '').substring(0, 50);
+
+            const obj = { 
+                question: qText, 
+                answer1: document.getElementById('q-optA').value, 
+                answer2: document.getElementById('q-optB').value, 
+                answer3: document.getElementById('q-optC').value, 
+                answer4: document.getElementById('q-optD').value, 
+                mainanswer: document.getElementById('q-ans').value.toUpperCase(), 
+                qcategory: document.getElementById('q-cat').value, 
+                answerdetail: document.getElementById('q-exp').value 
+            };
             
             let dbError;
             if (id) {
                 const { error } = await supabaseClient.from('questions').update(obj).eq('id', id);
                 dbError = error;
             } else {
+                // Manually generate a random 9 digit text ID since column type is TEXT
+                const newId = Math.floor(Math.random() * 900000000 + 100000000).toString();
+                obj.id = newId;
+                obj.que_id = newId;
+                obj.questionurl = '-' + generateSlug(qText);
+
                 const { error } = await supabaseClient.from('questions').insert([obj]); 
                 dbError = error;
             }

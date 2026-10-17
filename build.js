@@ -33,7 +33,8 @@ const makeSlug = (str) => str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase()
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
-const catMapScript = `const catMap = ${JSON.stringify(catMap)};`;
+const catMapScript = `const catMap = ${JSON.stringify(catMap)};
+const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -139,7 +140,7 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
     
-    // Canonical tag static string (dynamically inserted below if present)
+    // Canonical tag static string
     const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
@@ -432,7 +433,7 @@ function getIndexTemplate(canonicalUrl = "") {
                 if(qData) {
                     let qHtml = '';
                     qData.forEach(q => {
-                        qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${q.qcategory}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${q.question}</h3><a href="/mcq.html?id=\${q.id}" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
+                        qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${decodeText(q.qcategory)}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><a href="/mcq.html?id=\${q.id}" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
                     });
                     document.getElementById('home-quizzes').innerHTML = qHtml;
                 }
@@ -521,7 +522,7 @@ function getCustomExamTemplate(canonicalUrl = "") {
             function updateTimerUI() { if(timeLeft < 0) return; let h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60; document.getElementById('ui-timer').innerText = (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
             function buildPalette() { const pal = document.getElementById('ui-palette'); pal.innerHTML = ''; examData.forEach((_, i) => { const btn = document.createElement('div'); btn.className = 'q-palette-btn not-visited'; btn.id = 'pal-' + i; btn.innerText = i + 1; btn.onclick = () => { jumpToQ(i); if(window.innerWidth < 991) document.getElementById('mobile-sidebar').classList.remove('show-mobile'); }; pal.appendChild(btn); }); updatePaletteStats(); }
             function updatePaletteStats() { let ans=0, notAns=0; userState.forEach((st, i) => { const btn = document.getElementById('pal-'+i); btn.className = 'q-palette-btn ' + st.status; if(i === currentQ) btn.classList.add('active-q'); if(st.status === 'answered') ans++; else if(st.status === 'not-answered') notAns++; }); document.getElementById('count-ans').innerText = ans; document.getElementById('count-not-ans').innerText = notAns; }
-            function renderQ(idx) { currentQ = idx; const q = examData[idx]; document.getElementById('ui-q-circle').innerText = (idx + 1); document.getElementById('ui-q-cat').innerText = q.qcategory; document.getElementById('ui-q-text').innerText = q.question; const opts = ['A', 'B', 'C', 'D']; const texts = [q.answer1, q.answer2, q.answer3, q.answer4]; document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); document.querySelectorAll('.exam-radio').forEach(r => r.checked = false); opts.forEach((letter, i) => { document.getElementById('ui-opt-' + letter.toLowerCase()).innerText = texts[i]; if(userState[idx].selected === letter) { document.querySelectorAll('.exam-radio')[i].checked = true; document.getElementById('card-opt-' + letter).classList.add('selected'); } }); updatePaletteStats(); }
+            function renderQ(idx) { currentQ = idx; const q = examData[idx]; document.getElementById('ui-q-circle').innerText = (idx + 1); document.getElementById('ui-q-cat').innerText = decodeText(q.qcategory); document.getElementById('ui-q-text').innerText = decodeText(q.question); const opts = ['A', 'B', 'C', 'D']; const texts = [q.answer1, q.answer2, q.answer3, q.answer4]; document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); document.querySelectorAll('.exam-radio').forEach(r => r.checked = false); opts.forEach((letter, i) => { document.getElementById('ui-opt-' + letter.toLowerCase()).innerText = decodeText(texts[i]); if(userState[idx].selected === letter) { document.querySelectorAll('.exam-radio')[i].checked = true; document.getElementById('card-opt-' + letter).classList.add('selected'); } }); updatePaletteStats(); }
             function jumpToQ(idx) { if(userState[currentQ].status === 'not-visited') userState[currentQ].status = 'not-answered'; renderQ(idx); if(userState[idx].status === 'not-visited') userState[idx].status = 'not-answered'; updatePaletteStats(); }
             document.querySelectorAll('.opt-card').forEach(card => { card.addEventListener('click', function() { document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); this.classList.add('selected'); this.querySelector('input').checked = true; }); });
             function getSelectedOption() { const selected = document.querySelector('.exam-radio:checked'); return selected ? selected.value : null; }
@@ -529,7 +530,7 @@ function getCustomExamTemplate(canonicalUrl = "") {
             document.getElementById('btn-mark-next').addEventListener('click', () => { const sel = getSelectedOption(); userState[currentQ].selected = sel; userState[currentQ].status = sel ? 'marked-answered' : 'marked'; if(currentQ < examData.length - 1) jumpToQ(currentQ + 1); else updatePaletteStats(); });
             document.getElementById('btn-clear').addEventListener('click', () => { document.querySelectorAll('.exam-radio').forEach(r => r.checked = false); document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected')); userState[currentQ].selected = null; });
             document.getElementById('btn-submit-exam').addEventListener('click', () => { if(confirm("Submit the exam?")) submitExam(); });
-            function submitExam() { clearInterval(timerInterval); document.querySelector('nav.navbar').style.display = 'block'; document.querySelector('footer').style.display = 'block'; document.getElementById('exam-panel').classList.add('d-none'); document.getElementById('exam-panel').classList.remove('position-absolute'); document.getElementById('result-panel').classList.remove('d-none'); let c=0, ic=0, ua=0, solHtml = ''; examData.forEach((q, i) => { const uAns = userState[i].selected, correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase(), isCorrect = uAns === correct; if(!uAns) ua++; else if(isCorrect) c++; else ic++; let bgClass = !uAns ? 'bg-warning bg-opacity-10 border-warning' : (isCorrect ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger'); let statusIco = !uAns ? '⚠️ Unattempted' : (isCorrect ? '✅ Correct' : '❌ Incorrect'); solHtml += \`<div class="card mb-4 p-4 \${bgClass}"><h5 class="fw-bold mb-3">Q\${i+1}. \${q.question}</h5><p class="mb-2 fw-bold \${!uAns ? 'text-warning' : (isCorrect ? 'text-success' : 'text-danger')}">\${statusIco} (Your Answer: \${uAns || 'None'})</p><p class="mb-3 text-dark fw-bold">Right Answer: \${correct}</p><div class="p-3 bg-white border rounded shadow-sm small text-secondary"><strong>Explanation:</strong> \${q.answerdetail || ''}</div></div>\`; }); document.getElementById('res-total').innerText = examData.length; document.getElementById('res-correct').innerText = c; document.getElementById('res-incorrect').innerText = ic; document.getElementById('res-marks').innerText = ((c * pMarks) - (ic * nMarks)).toFixed(2); document.getElementById('solution-list').innerHTML = solHtml; window.scrollTo(0,0); }
+            function submitExam() { clearInterval(timerInterval); document.querySelector('nav.navbar').style.display = 'block'; document.querySelector('footer').style.display = 'block'; document.getElementById('exam-panel').classList.add('d-none'); document.getElementById('exam-panel').classList.remove('position-absolute'); document.getElementById('result-panel').classList.remove('d-none'); let c=0, ic=0, ua=0, solHtml = ''; examData.forEach((q, i) => { const uAns = userState[i].selected, correct = (q.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase(), isCorrect = uAns === correct; if(!uAns) ua++; else if(isCorrect) c++; else ic++; let bgClass = !uAns ? 'bg-warning bg-opacity-10 border-warning' : (isCorrect ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger'); let statusIco = !uAns ? '⚠️ Unattempted' : (isCorrect ? '✅ Correct' : '❌ Incorrect'); solHtml += \`<div class="card mb-4 p-4 \${bgClass}"><h5 class="fw-bold mb-3">Q\${i+1}. \${decodeText(q.question)}</h5><p class="mb-2 fw-bold \${!uAns ? 'text-warning' : (isCorrect ? 'text-success' : 'text-danger')}">\${statusIco} (Your Answer: \${uAns || 'None'})</p><p class="mb-3 text-dark fw-bold">Right Answer: \${correct}</p><div class="p-3 bg-white border rounded shadow-sm small text-secondary"><strong>Explanation:</strong> \${decodeText(q.answerdetail) || ''}</div></div>\`; }); document.getElementById('res-total').innerText = examData.length; document.getElementById('res-correct').innerText = c; document.getElementById('res-incorrect').innerText = ic; document.getElementById('res-marks').innerText = ((c * pMarks) - (ic * nMarks)).toFixed(2); document.getElementById('solution-list').innerHTML = solHtml; window.scrollTo(0,0); }
         </script>
     `, "", canonicalUrl);
 }
@@ -700,17 +701,19 @@ function getMcqTemplate() {
         </div>
         <script>
             let currentQ = null; let hasAnswered = false;
+            ${catMapScript}
+            
             document.addEventListener('DOMContentLoaded', async () => {
                 const id = new URLSearchParams(window.location.search).get('id');
                 const { data } = await supabaseClient.from('questions').select('*').eq('id', id).single();
                 if(data) {
                     currentQ = data;
-                    document.getElementById('mcq-cat-link').innerText = data.qcategory;
-                    document.getElementById('mcq-cat-link').href = "/category.html?name=" + encodeURIComponent(data.qcategory);
-                    document.getElementById('mcq-qtext').innerText = data.question;
+                    document.getElementById('mcq-cat-link').innerText = decodeText(data.qcategory);
+                    document.getElementById('mcq-cat-link').href = "/categories/" + makeSlug(decodeText(data.qcategory)) + "/index.html";
+                    document.getElementById('mcq-qtext').innerText = decodeText(data.question);
                     
                     // --- DYNAMIC SEO & URL UPDATES ---
-                    const cleanQ = data.question.replace(/<[^>]*>?/gm, '').trim();
+                    const cleanQ = decodeText(data.question).replace(/<[^>]*>?/gm, '').trim();
                     document.title = cleanQ.substring(0, 60) + " | Wedugo";
                     let metaDesc = document.querySelector('meta[name="description"]');
                     if(metaDesc) metaDesc.setAttribute("content", cleanQ.substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.");
@@ -730,7 +733,7 @@ function getMcqTemplate() {
                     // ---------------------------------
 
                     const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
-                    let optHtml = ''; for(let k in opts) { optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${opts[k]}</button>\`; }
+                    let optHtml = ''; for(let k in opts) { optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; }
                     document.getElementById('mcq-options').innerHTML = optHtml;
                     document.getElementById('btn-prev').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)+1);
                     document.getElementById('btn-next').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)-1);
@@ -745,7 +748,7 @@ function getMcqTemplate() {
                 expBox.classList.remove('d-none');
                 if(selected === correct) { btn.classList.add('correct-show'); expBox.classList.add('alert-success', 'border-success'); document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!"; }
                 else { btn.classList.add('incorrect-show'); expBox.classList.add('alert-danger', 'border-danger'); document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct; }
-                document.getElementById('mcq-exp-text').innerText = currentQ.answerdetail || "Practice makes perfect.";
+                document.getElementById('mcq-exp-text').innerText = decodeText(currentQ.answerdetail) || "Practice makes perfect.";
             }
         </script>
     `);
@@ -865,7 +868,7 @@ function getCategoryTemplate(canonicalUrl = "") {
                 if(data && data.length > 0) {
                     let html = ''; 
                     data.forEach((q, i) => { 
-                        html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${q.question.substring(0, 100)}...</a>\`; 
+                        html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${decodeText(q.question).substring(0, 100)}...</a>\`; 
                     });
 
                     if (usePagination) {
@@ -974,7 +977,7 @@ function getMockTemplate(canonicalUrl = "") {
                 }
             });
             function renderQuestions() {
-                let html = ''; mockData.forEach((q, i) => { html += \`<article class="card p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-\${q.id}"><div class="mb-4 pb-3 border-bottom"><span class="badge bg-dark rounded-pill px-3 py-2 fs-6">Question \${i+1}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${q.question}</h3><div class="d-grid gap-3 mb-4"><button class="btn option-btn" data-letter="A" onclick="selOpt('\${q.id}', 'A', this)">A) \${q.answer1}</button><button class="btn option-btn" data-letter="B" onclick="selOpt('\${q.id}', 'B', this)">B) \${q.answer2}</button><button class="btn option-btn" data-letter="C" onclick="selOpt('\${q.id}', 'C', this)">C) \${q.answer3}</button><button class="btn option-btn" data-letter="D" onclick="selOpt('\${q.id}', 'D', this)">D) \${q.answer4}</button></div><div id="exp-\${q.id}" class="alert mt-4 d-none p-4 border bg-light rounded-4"><h5 class="alert-heading fw-bold fs-5 mb-3" id="res-\${q.id}"></h5><hr class="opacity-25 mb-3"><p class="mb-0 text-dark">\${q.answerdetail || ''}</p></div></article>\`; });
+                let html = ''; mockData.forEach((q, i) => { html += \`<article class="card p-4 p-md-5 mb-5 bg-white border border-light rounded-4" id="quiz-block-\${q.id}"><div class="mb-4 pb-3 border-bottom"><span class="badge bg-dark rounded-pill px-3 py-2 fs-6">Question \${i+1}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><div class="d-grid gap-3 mb-4"><button class="btn option-btn" data-letter="A" onclick="selOpt('\${q.id}', 'A', this)">A) \${decodeText(q.answer1)}</button><button class="btn option-btn" data-letter="B" onclick="selOpt('\${q.id}', 'B', this)">B) \${decodeText(q.answer2)}</button><button class="btn option-btn" data-letter="C" onclick="selOpt('\${q.id}', 'C', this)">C) \${decodeText(q.answer3)}</button><button class="btn option-btn" data-letter="D" onclick="selOpt('\${q.id}', 'D', this)">D) \${decodeText(q.answer4)}</button></div><div id="exp-\${q.id}" class="alert mt-4 d-none p-4 border bg-light rounded-4"><h5 class="alert-heading fw-bold fs-5 mb-3" id="res-\${q.id}"></h5><hr class="opacity-25 mb-3"><p class="mb-0 text-dark">\${decodeText(q.answerdetail) || ''}</p></div></article>\`; });
                 document.getElementById('q-container').innerHTML = html;
             }
             function selOpt(qId, letter, btn) { if(testSubmitted) return; document.getElementById('quiz-block-' + qId).querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); userAnswers[qId] = letter; }
@@ -1188,16 +1191,19 @@ function getAdminTemplate(pluginAdminHTML = "") {
     </div>
 
     <!-- Modal for Blogs -->
-    <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write / Edit Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><select id="b-cat" class="form-select"><option value="" disabled selected>Select Category...</option>${catOptionsHtml}</select></div></div><div id="quill-editor" style="height:400px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()">Save Article</button></div></div></div></div>
+    <div class="modal fade" id="blogModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Write / Edit Blog</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="b-id"><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="b-title" class="form-control" placeholder="Title"></div><div class="col-md-6"><select id="b-cat" class="form-select"><option value="" disabled selected>Select Category...</option>${catOptionsHtml}</select></div></div><div id="quill-editor" style="height:400px;background:white;"></div></div><div class="modal-footer border-0"><button class="btn btn-primary px-4 fw-bold" onclick="saveBlog()" id="btn-save-blog">Save Article</button></div></div></div></div>
 
     <!-- Modal for MCQs -->
-    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><select id="q-cat" class="form-select"><option value="" disabled selected>Select Category...</option>${catOptionsHtml}</select></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0 justify-content-between"><button type="button" class="btn btn-warning fw-bold" onclick="fixCurrentModalEncoding()"><i class="bi bi-magic me-1"></i> Fix Text Encoding</button><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()">Save Question</button></div></div></div></div>
+    <div class="modal fade" id="mcqModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Add / Edit Question</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><input type="hidden" id="q-id"><div class="mb-3"><textarea id="q-text" class="form-control" rows="2" placeholder="Question Text"></textarea></div><div class="row g-3 mb-3"><div class="col-md-6"><input type="text" id="q-optA" class="form-control" placeholder="Option A"></div><div class="col-md-6"><input type="text" id="q-optB" class="form-control" placeholder="Option B"></div><div class="col-md-6"><input type="text" id="q-optC" class="form-control" placeholder="Option C"></div><div class="col-md-6"><input type="text" id="q-optD" class="form-control" placeholder="Option D"></div></div><div class="row g-3"><div class="col-md-6"><input type="text" id="q-ans" class="form-control text-uppercase" placeholder="Correct (A/B/C/D)" maxlength="1"></div><div class="col-md-6"><select id="q-cat" class="form-select"><option value="" disabled selected>Select Category...</option>${catOptionsHtml}</select></div><div class="col-12"><textarea id="q-exp" class="form-control" rows="2" placeholder="Explanation"></textarea></div></div></div><div class="modal-footer border-0 justify-content-between"><button type="button" class="btn btn-warning fw-bold" onclick="fixCurrentModalEncoding()"><i class="bi bi-magic me-1"></i> Fix Text Encoding</button><button class="btn btn-primary px-4 fw-bold" onclick="saveMcq()" id="btn-save-mcq">Save Question</button></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const _SU_URL = "${SUPABASE_URL}"; const _SU_KEY = "${SUPABASE_KEY}";
         const supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
         let quill;
+        
+        const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+
         document.addEventListener("DOMContentLoaded", () => {
             const toolbarOptions = [
                 ['bold', 'italic', 'underline', 'strike'],
@@ -1348,7 +1354,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 return;
             }
 
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
             
             document.getElementById('mcq-page-indicator').innerText = \`Page \${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}\`;
         }
@@ -1381,21 +1387,15 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 return;
             }
             
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td>\${q.question.substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
             document.getElementById('mcq-page-indicator').innerText = 'Search Results';
         }
 
-        function decodeMojibake(str) {
-            if (!str || typeof str !== 'string') return str;
-            try { return decodeURIComponent(escape(str)); } 
-            catch (e) { return str; }
-        }
-
         function fixCurrentModalEncoding() {
-            const fields = ['q-text', 'q-optA', 'q-optB', 'q-optC', 'q-optD', 'q-cat', 'q-exp'];
+            const fields = ['q-text', 'q-optA', 'q-optB', 'q-optC', 'q-optD', 'q-exp'];
             fields.forEach(id => {
                 const el = document.getElementById(id);
-                if (el && el.value) { el.value = decodeMojibake(el.value); }
+                if (el && el.value) { el.value = decodeText(el.value); }
             });
         }
 
@@ -1422,13 +1422,13 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
                 if (needsFix) {
                     const updatedObj = {
-                        question: decodeMojibake(q.question),
-                        answer1: decodeMojibake(q.answer1),
-                        answer2: decodeMojibake(q.answer2),
-                        answer3: decodeMojibake(q.answer3),
-                        answer4: decodeMojibake(q.answer4),
-                        answerdetail: decodeMojibake(q.answerdetail),
-                        qcategory: decodeMojibake(q.qcategory)
+                        question: decodeText(q.question),
+                        answer1: decodeText(q.answer1),
+                        answer2: decodeText(q.answer2),
+                        answer3: decodeText(q.answer3),
+                        answer4: decodeText(q.answer4),
+                        answerdetail: decodeText(q.answerdetail),
+                        qcategory: decodeText(q.qcategory)
                     };
                     await supabaseClient.from('questions').update(updatedObj).eq('id', q.id);
                     fixedCount++;
@@ -1451,7 +1451,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-success fw-bold">No gibberish/corrupted questions found!</td></tr>';
                 return;
             }
-            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${q.qcategory}</td><td class="text-danger fw-medium">\${q.question.substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td class="text-danger fw-medium">\${decodeText(q.question).substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
         }
 
         function openMcqModal() { 
@@ -1471,14 +1471,14 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const { data, error } = await supabaseClient.from('questions').select('*').eq('id', id).single();
             if(data && !error) {
                 document.getElementById('q-id').value = data.id;
-                document.getElementById('q-text').value = data.question;
-                document.getElementById('q-optA').value = data.answer1;
-                document.getElementById('q-optB').value = data.answer2;
-                document.getElementById('q-optC').value = data.answer3;
-                document.getElementById('q-optD').value = data.answer4;
+                document.getElementById('q-text').value = decodeText(data.question);
+                document.getElementById('q-optA').value = decodeText(data.answer1);
+                document.getElementById('q-optB').value = decodeText(data.answer2);
+                document.getElementById('q-optC').value = decodeText(data.answer3);
+                document.getElementById('q-optD').value = decodeText(data.answer4);
                 document.getElementById('q-ans').value = data.mainanswer ? data.mainanswer.replace(/[^A-D]/gi, '').toUpperCase() : '';
-                document.getElementById('q-cat').value = data.qcategory;
-                document.getElementById('q-exp').value = data.answerdetail || '';
+                document.getElementById('q-cat').value = decodeText(data.qcategory);
+                document.getElementById('q-exp').value = decodeText(data.answerdetail) || '';
                 new bootstrap.Modal(document.getElementById('mcqModal')).show();
             }
         }
@@ -1486,8 +1486,11 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function saveMcq() {
             let id = document.getElementById('q-id').value;
             const qText = document.getElementById('q-text').value;
+            const btn = document.getElementById('btn-save-mcq');
             
-            // Helper function to generate slug for URL
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
+            btn.disabled = true;
+
             const generateSlug = (str) => str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '').substring(0, 50);
 
             const obj = { 
@@ -1506,7 +1509,6 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 const { error } = await supabaseClient.from('questions').update(obj).eq('id', id);
                 dbError = error;
             } else {
-                // Manually generate a random 9 digit text ID since column type is TEXT
                 const newId = Math.floor(Math.random() * 900000000 + 100000000).toString();
                 obj.id = newId;
                 obj.que_id = newId;
@@ -1519,9 +1521,16 @@ function getAdminTemplate(pluginAdminHTML = "") {
             if (dbError) {
                 alert("Database Error: " + dbError.message);
                 console.error("Supabase Error:", dbError);
+                btn.innerHTML = 'Save Question';
+                btn.disabled = false;
                 return;
             }
             
+            alert("✅ Question saved successfully!");
+            btn.innerHTML = 'Save Question';
+            btn.disabled = false;
+            
+            openMcqModal(); // clear form
             bootstrap.Modal.getInstance(document.getElementById('mcqModal')).hide(); 
             loadMcqs();
         }
@@ -1559,6 +1568,11 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function saveBlog() {
             const id = document.getElementById('b-id').value;
             const t = document.getElementById('b-title').value, c = document.getElementById('b-cat').value, body = quill.root.innerHTML;
+            const btn = document.getElementById('btn-save-blog');
+            
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
+            btn.disabled = true;
+
             const obj = { title: t, slug: t.toLowerCase().replace(/[^a-z0-9]+/g, '-'), category: c, content: body };
             
             if (id) {
@@ -1567,6 +1581,10 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 await supabaseClient.from('blog_posts').insert([obj]); 
             }
             
+            alert("✅ Blog saved successfully!");
+            btn.innerHTML = 'Save Article';
+            btn.disabled = false;
+
             bootstrap.Modal.getInstance(document.getElementById('blogModal')).hide(); 
             loadBlogs();
         }
@@ -1647,6 +1665,29 @@ async function fetchDynamicComponents() {
         }
     } catch(e) { 
         console.log("   -> Warning: Could not fetch dynamic components", e.message); 
+    }
+}
+
+async function getCategoryCount(catName) {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?qcategory=eq.${encodeURIComponent(catName)}&select=id`, {
+            method: 'GET',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Range-Unit': 'items',
+                'Range': '0-0',
+                'Prefer': 'count=exact'
+            }
+        });
+        const countHeader = res.headers.get('content-range');
+        if (countHeader) {
+            const count = countHeader.split('/')[1];
+            return parseInt(count) || 0;
+        }
+        return 0;
+    } catch (e) {
+        return 0;
     }
 }
 
@@ -1740,23 +1781,28 @@ async function buildCSRSite() {
         console.log("3. 🚀 GENERATING PHYSICAL SEO ROUTE FOLDERS TO PREVENT 404s...");
         for (const cat of CATEGORY_LIST) {
             const slug = makeSlug(cat);
+            const totalQuestions = await getCategoryCount(cat);
             
+            // At least 1 page/set even if empty, or calculate required amounts
+            const totalPages = Math.max(1, Math.ceil(totalQuestions / 10));
+            const totalSets = Math.max(1, Math.ceil(totalQuestions / 10));
+
             // Generate /categories/[slug]/index.html
             const catDir = path.join(rootDir, 'categories', slug);
             fs.mkdirSync(catDir, { recursive: true });
             await fsAsync.writeFile(path.join(catDir, 'index.html'), getCategoryTemplate(`${SITE_BASE_URL}/categories/${slug}/index.html`), 'utf8');
 
-            // Generate /mcqs/[slug]/page-1.html TO page-60.html 
+            // Generate exact number of pages required to prevent 404s
             const mcqDir = path.join(rootDir, 'mcqs', slug);
             fs.mkdirSync(mcqDir, { recursive: true });
-            for (let p = 1; p <= 60; p++) {
+            for (let p = 1; p <= totalPages; p++) {
                 await fsAsync.writeFile(path.join(mcqDir, `page-${p}.html`), getCategoryTemplate(`${SITE_BASE_URL}/mcqs/${slug}/page-${p}.html`), 'utf8');
             }
 
-            // Generate /mock-tests/[slug]/set-1.html TO set-30.html
+            // Generate exact number of sets required to prevent 404s
             const mockDir = path.join(rootDir, 'mock-tests', slug);
             fs.mkdirSync(mockDir, { recursive: true });
-            for (let s = 1; s <= 30; s++) {
+            for (let s = 1; s <= totalSets; s++) {
                 await fsAsync.writeFile(path.join(mockDir, `set-${s}.html`), getMockTemplate(`${SITE_BASE_URL}/mock-tests/${slug}/set-${s}.html`), 'utf8');
             }
         }
@@ -1780,7 +1826,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Dynamic SEO Titles, Clean URLs, Default Pagination ON, Physical Routes Generated, 100% Functions Kept)");
+        console.log("✅ BUILD COMPLETE (No 404s, Advanced WYSIWYG, ID Fixes, Auto Decoding)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

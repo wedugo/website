@@ -418,6 +418,8 @@ function getIndexTemplate(canonicalUrl = "") {
             </div>
         </div>
         <script>
+            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+            
             document.addEventListener('DOMContentLoaded', async () => {
                 const { data: blogs } = await supabaseClient.from('blog_posts').select('slug, title, category, created_at').order('created_at', { ascending: false }).limit(6);
                 if(blogs) {
@@ -502,6 +504,8 @@ function getCustomExamTemplate(canonicalUrl = "") {
             <div class="mt-5" id="solution-container"><h3 class="fw-bold border-bottom pb-3 mb-4">Detailed Solutions</h3><div id="solution-list"></div></div>
         </div>
         <script>
+            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+            
             let examData = [], userState = [], currentQ = 0, pMarks = 1, nMarks = 0.33, timerInterval, timeLeft = 0;
             document.getElementById('start-exam-btn').addEventListener('click', async () => {
                 const cats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
@@ -702,6 +706,7 @@ function getMcqTemplate() {
         <script>
             let currentQ = null; let hasAnswered = false;
             ${catMapScript}
+            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
             
             document.addEventListener('DOMContentLoaded', async () => {
                 const id = new URLSearchParams(window.location.search).get('id');
@@ -780,6 +785,7 @@ function getCategoryTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
+            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
             
             let currentOffset = 0; 
             const limit = 10; 
@@ -914,6 +920,8 @@ function getMockTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
+            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+            
             let mockData = []; let userAnswers = {}; let timeLeft = 600, timerInterval, testSubmitted = false;
             
             document.addEventListener('DOMContentLoaded', async () => {

@@ -34,7 +34,8 @@ const makeSlug = (str) => str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase()
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
-const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };`;
+const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+const makeSlug = (str) => str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -140,7 +141,7 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
     
-    // Canonical tag static string
+    // Canonical tag static string (dynamically inserted below if present)
     const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
@@ -418,7 +419,7 @@ function getIndexTemplate(canonicalUrl = "") {
             </div>
         </div>
         <script>
-            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+            ${catMapScript}
             
             document.addEventListener('DOMContentLoaded', async () => {
                 const { data: blogs } = await supabaseClient.from('blog_posts').select('slug, title, category, created_at').order('created_at', { ascending: false }).limit(6);
@@ -504,7 +505,7 @@ function getCustomExamTemplate(canonicalUrl = "") {
             <div class="mt-5" id="solution-container"><h3 class="fw-bold border-bottom pb-3 mb-4">Detailed Solutions</h3><div id="solution-list"></div></div>
         </div>
         <script>
-            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+            ${catMapScript}
             
             let examData = [], userState = [], currentQ = 0, pMarks = 1, nMarks = 0.33, timerInterval, timeLeft = 0;
             document.getElementById('start-exam-btn').addEventListener('click', async () => {
@@ -707,6 +708,7 @@ function getMcqTemplate() {
             let currentQ = null; let hasAnswered = false;
             ${catMapScript}
             const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+            const makeSlug = (str) => str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
             
             document.addEventListener('DOMContentLoaded', async () => {
                 const id = new URLSearchParams(window.location.search).get('id');

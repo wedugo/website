@@ -29,13 +29,16 @@ const CATEGORY_LIST = [
 ];
 
 // Utility: Generate Slugs for SEO Clean URLs
-const makeSlug = (str) => str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+const makeSlug = (str) => {
+    if (!str) return '';
+    return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+};
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');`;
+const makeSlug = (str) => { if (!str) return ''; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -707,8 +710,6 @@ function getMcqTemplate() {
         <script>
             let currentQ = null; let hasAnswered = false;
             ${catMapScript}
-            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-            const makeSlug = (str) => str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
             
             document.addEventListener('DOMContentLoaded', async () => {
                 const id = new URLSearchParams(window.location.search).get('id');
@@ -787,7 +788,6 @@ function getCategoryTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
-            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
             
             let currentOffset = 0; 
             const limit = 10; 
@@ -922,7 +922,6 @@ function getMockTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
-            const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
             
             let mockData = []; let userAnswers = {}; let timeLeft = 600, timerInterval, testSubmitted = false;
             

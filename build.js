@@ -1699,15 +1699,30 @@ async function buildCSRSite() {
                             }
                             document.getElementById('mcq-options').innerHTML = optHtml;
 
+                            // FETCH ADJACENT QUESTIONS FOR NEXT/PREV BUTTONS
                             const btnPrev = document.getElementById('btn-prev-mcq');
                             const btnNext = document.getElementById('btn-next-mcq');
                             
-                            if (data.created_at) {
-                                const { data: prevData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).lt('created_at', data.created_at).order('created_at', {ascending: false}).limit(1).maybeSingle();
-                                if(prevData && prevData.id) { btnPrev.href = "/mcq.html?id=" + prevData.id; btnPrev.classList.remove('disabled'); }
+                            // Get all IDs for this category to find exact Prev/Next positions (works for old & new questions)
+                            const { data: allCatQs } = await supabaseClient.from('questions')
+                                .select('id')
+                                .eq('qcategory', data.qcategory)
+                                .order('id', {ascending: false});
+                            
+                            if(allCatQs && allCatQs.length > 0) {
+                                const curIdx = allCatQs.findIndex(q => String(q.id) === String(data.id));
                                 
-                                const { data: nextData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).gt('created_at', data.created_at).order('created_at', {ascending: true}).limit(1).maybeSingle();
-                                if(nextData && nextData.id) { btnNext.href = "/mcq.html?id=" + nextData.id; btnNext.classList.remove('disabled'); }
+                                // Previous Question (Above in list)
+                                if(curIdx > 0) {
+                                    btnPrev.href = "/mcq.html?id=" + allCatQs[curIdx - 1].id;
+                                    btnPrev.classList.remove('disabled');
+                                }
+                                
+                                // Next Question (Below in list)
+                                if(curIdx >= 0 && curIdx < allCatQs.length - 1) {
+                                    btnNext.href = "/mcq.html?id=" + allCatQs[curIdx + 1].id;
+                                    btnNext.classList.remove('disabled');
+                                }
                             }
                             
                             document.getElementById('mcq-loader').classList.add('d-none'); 

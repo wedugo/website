@@ -1,6 +1,7 @@
 const fs = require('fs');
 const fsAsync = require('fs').promises;
 const path = require('path');
+const https = require('https');
 
 // ==========================================
 // CONFIGURATION & SUPABASE KEYS
@@ -33,12 +34,14 @@ const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
+
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
+const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };`;
 
 // ==========================================
-// UI COMPONENTS
+// ADVERTISEMENT & AFFILIATE UI COMPONENTS
 // ==========================================
 function getAdBannerHtml(label) {
     return `
@@ -1612,7 +1615,7 @@ async function buildCSRSite() {
         `);
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), dynamicBlogHtml, 'utf8');
 
-       // Single Universal MCQ Viewer
+        // Single Universal MCQ Viewer
         const dynamicMcqHtml = getHtmlShell("Loading Question... | Wedugo", `
             <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Loading question from server...</p></div>
             <div id="mcq-content" class="row d-none">
@@ -1666,13 +1669,13 @@ async function buildCSRSite() {
                         
                         // Dynamic SEO setup
                         document.title = cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 50) + " | Wedugo";
-                        document.getElementById('dynamic-canonical').href = "\${SITE_BASE_URL}/mcq.html?id=" + data.id;
+                        document.getElementById('dynamic-canonical').href = "${SITE_BASE_URL}/mcq.html?id=" + data.id;
                         document.getElementById('dynamic-desc').setAttribute("content", cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 150));
                         
                         const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
                         let optHtml = ''; 
                         for(let k in opts) { 
-                            optHtml += \\\`<button class="btn option-btn opt-btn-choice" data-val="\\\${k}" onclick="checkAns(this, '\\\${k}')">\\\${k}) \\\${decodeText(opts[k])}</button>\\\`; 
+                            optHtml += \`<button class="btn option-btn opt-btn-choice" data-val="\${k}" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; 
                         }
                         document.getElementById('mcq-options').innerHTML = optHtml;
 
@@ -1681,11 +1684,11 @@ async function buildCSRSite() {
                         const btnNext = document.getElementById('btn-next-mcq');
                         
                         // Prev Query
-                        const { data: prevData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).gt('id', data.id).order('id', {ascending: true}).limit(1).maybeSingle();
+                        const { data: prevData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).lt('id', data.id).order('id', {ascending: false}).limit(1).maybeSingle();
                         if(prevData && prevData.id) { btnPrev.href = "/mcq.html?id=" + prevData.id; btnPrev.classList.remove('disabled'); }
                         
                         // Next Query
-                        const { data: nextData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).lt('id', data.id).order('id', {ascending: false}).limit(1).maybeSingle();
+                        const { data: nextData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).gt('id', data.id).order('id', {ascending: true}).limit(1).maybeSingle();
                         if(nextData && nextData.id) { btnNext.href = "/mcq.html?id=" + nextData.id; btnNext.classList.remove('disabled'); }
                         
                         document.getElementById('mcq-loader').classList.add('d-none'); 
@@ -1744,7 +1747,7 @@ async function buildCSRSite() {
         if (!fs.existsSync(adminDir)) fs.mkdirSync(adminDir, { recursive: true });
         await fsAsync.writeFile(path.join(adminDir, 'index.html'), getAdminTemplate(loadedPluginsAdmin), 'utf8');
 
-       // 404 Fallback with Smart Auto-Redirector for Old Indexed URLs
+        // 404 Fallback with Smart Auto-Router
         console.log("-> Generating Smart 404 Auto-Router for SEO Redirects...");
         const smart404Html = `<!DOCTYPE html>
 <html lang="en">
@@ -1758,7 +1761,6 @@ async function buildCSRSite() {
         
         function autoRoute() {
             try {
-                // Redirect for /mcqs/[slug]/page-[n].html OR /categories/[slug]/index.html
                 if (path.includes('/mcqs/') || path.includes('/categories/')) {
                     const parts = path.split('/');
                     const slug = parts[2];
@@ -1772,7 +1774,6 @@ async function buildCSRSite() {
                         return true;
                     }
                 }
-                // Redirect for /mock-tests/[slug]/set-[n].html
                 else if (path.includes('/mock-tests/')) {
                     const parts = path.split('/');
                     const slug = parts[2];
@@ -1786,7 +1787,6 @@ async function buildCSRSite() {
                         return true;
                     }
                 }
-                // Redirect for /mcq/[id]/[slug].html
                 else if (path.includes('/mcq/')) {
                     const parts = path.split('/');
                     const id = parts[2];
@@ -1795,7 +1795,6 @@ async function buildCSRSite() {
                         return true;
                     }
                 }
-                // Redirect for /blog/[slug].html
                 else if (path.includes('/blog/')) {
                     const parts = path.split('/');
                     const slug = parts[2].replace('.html', '');
@@ -1809,7 +1808,6 @@ async function buildCSRSite() {
         }
 
         if(!autoRoute()) {
-            // Show normal 404 UI if no old route matched
             document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('fallback-ui').style.display = 'flex';
                 document.getElementById('loader-ui').style.display = 'none';
@@ -1840,7 +1838,7 @@ async function buildCSRSite() {
 </html>`;
         await fsAsync.writeFile(path.join(rootDir, '404.html'), smart404Html, 'utf8');
 
-        console.log("4. Generating SEO Sitemap (Includes dynamic query URLs)...");
+        console.log("5. Generating SEO Sitemap (Includes dynamic query URLs)...");
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         xml += `<url><loc>${SITE_BASE_URL}/</loc><priority>1.0</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/categories.html</loc><priority>0.9</priority></url>\n`;

@@ -862,8 +862,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                     <h2 class="fw-bold mb-0 w-100 mb-2">Manage Questions</h2>
                     <div class="d-flex flex-wrap gap-2 align-items-center w-100">
-                        <div class="input-group input-group-sm" style="width: 200px;">
-                            <input type="text" id="search-q-val" class="form-control" placeholder="Search ID or Text...">
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <input type="text" id="search-q-val" class="form-control" placeholder="Search ID or Keyword...">
                             <button class="btn btn-dark fw-bold" onclick="applyMcqFilters()"><i class="bi bi-search"></i></button>
                         </div>
                         <select id="filter-q-cat" class="form-select form-select-sm w-auto" onchange="applyMcqFilters()">
@@ -1151,37 +1151,45 @@ function getAdminTemplate(pluginAdminHTML = "") {
             
             let query = supabaseClient.from('questions').select('id, qcategory, question').range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1);
             
-            // 1. Sort logic
             query = query.order('id', { ascending: sortVal === 'ASC' });
 
-            // 2. Category Filter
             if (catVal !== "ALL") {
                 query = query.eq('qcategory', catVal);
             }
 
-            // 3. Search Logic
             if (searchVal) {
                 if (/^\\d+$/.test(searchVal)) {
                     query = query.eq('id', searchVal);
                 } else {
-                    query = query.ilike('question', "%" + searchVal + "%");
+                    query = query.ilike('question', '%' + searchVal + '%');
                 }
             }
             
             const { data, error } = await query;
             
             if (error || !data) {
-                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`;
+                tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>';
                 return;
             }
             if (data.length === 0) {
-                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-muted">No questions found.</td></tr>\`;
+                tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No questions found.</td></tr>';
                 return;
             }
 
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+            let trHtml = '';
+            data.forEach(q => {
+                trHtml += '<tr>';
+                trHtml += '<td>#' + q.id + '</td>';
+                trHtml += '<td>' + decodeText(q.qcategory) + '</td>';
+                trHtml += '<td>' + decodeText(q.question).substring(0,50) + '</td>';
+                trHtml += '<td>';
+                trHtml += '<button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq(\\'' + q.id + '\\')"><i class="bi bi-pencil"></i></button>';
+                trHtml += '<button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\\'' + q.id + '\\')"><i class="bi bi-trash"></i></button>';
+                trHtml += '</td>';
+                trHtml += '</tr>';
+            });
+            tb.innerHTML = trHtml;
             
-            // Update Page Number in input box
             const currPage = Math.floor(currentMcqOffset/MCQ_LIMIT) + 1;
             if (document.getElementById('jump-page-input')) {
                 document.getElementById('jump-page-input').value = currPage;
@@ -1189,7 +1197,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
         }
 
         function applyMcqFilters() {
-            currentMcqOffset = 0; // Search ya filter change hone par page 1 se start karein
+            currentMcqOffset = 0; 
             loadMcqs();
         }
 
@@ -1265,7 +1273,20 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-success fw-bold">No gibberish/corrupted questions found!</td></tr>';
                 return;
             }
-            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td class="text-danger fw-medium">\${decodeText(q.question).substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            
+            let trHtml = '';
+            gibberish.forEach(q => {
+                trHtml += '<tr>';
+                trHtml += '<td>#' + q.id + '</td>';
+                trHtml += '<td>' + decodeText(q.qcategory) + '</td>';
+                trHtml += '<td class="text-danger fw-medium">' + decodeText(q.question).substring(0,60) + '...</td>';
+                trHtml += '<td>';
+                trHtml += '<button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq(\\'' + q.id + '\\')"><i class="bi bi-pencil"></i></button>';
+                trHtml += '<button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq(\\'' + q.id + '\\')"><i class="bi bi-trash"></i></button>';
+                trHtml += '</td>';
+                trHtml += '</tr>';
+            });
+            tb.innerHTML = trHtml;
         }
 
         function openMcqModal() { 
@@ -1344,7 +1365,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             btn.innerHTML = 'Save Question';
             btn.disabled = false;
             
-            openMcqModal(); // clear form
+            openMcqModal(); 
             bootstrap.Modal.getInstance(document.getElementById('mcqModal')).hide(); 
             loadMcqs();
         }
@@ -1355,9 +1376,22 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function loadBlogs() { 
             const tb = document.getElementById('blog-tbody'); 
             const { data, error } = await supabaseClient.from('blog_posts').select('*').order('created_at',{ascending:false}); 
-            if(error || !data) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-danger py-4 fw-bold">Error loading blogs.</td></tr>\`; return; }
-            if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-muted py-4">No blogs found.</td></tr>\`; return; }
-            tb.innerHTML = data.map(b=>\`<tr><td>\${b.title}</td><td>\${b.category}</td><td>\${new Date(b.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editBlog('\${b.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteBlog('\${b.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+            if(error || !data) { tb.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4 fw-bold">Error loading blogs.</td></tr>'; return; }
+            if(data.length === 0) { tb.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No blogs found.</td></tr>'; return; }
+            
+            let trHtml = '';
+            data.forEach(b => {
+                trHtml += '<tr>';
+                trHtml += '<td>' + b.title + '</td>';
+                trHtml += '<td>' + b.category + '</td>';
+                trHtml += '<td>' + new Date(b.created_at).toLocaleDateString() + '</td>';
+                trHtml += '<td>';
+                trHtml += '<button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editBlog(\\'' + b.id + '\\')"><i class="bi bi-pencil"></i></button>';
+                trHtml += '<button class="btn btn-sm btn-danger shadow-sm" onclick="deleteBlog(\\'' + b.id + '\\')"><i class="bi bi-trash"></i></button>';
+                trHtml += '</td>';
+                trHtml += '</tr>';
+            });
+            tb.innerHTML = trHtml;
         }
         
         function openBlogModal() { 
@@ -1408,9 +1442,19 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function loadUsers() { 
             const tb = document.getElementById('users-tbody'); 
             const { data, error } = await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}); 
-            if(error || !data) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-danger py-4 fw-bold">Error loading users. (Check RLS Policies)</td></tr>\`; return; }
-            if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="4" class="text-center text-muted py-4">No users found.</td></tr>\`; return; }
-            tb.innerHTML = data.map(u=>\`<tr><td>\${u.id.substring(0,8)}</td><td>\${u.role}</td><td>Active</td><td><button class="btn btn-sm btn-outline-dark" onclick="toggleRole('\${u.id}','\${u.role}')">Toggle</button></td></tr>\`).join(''); 
+            if(error || !data) { tb.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4 fw-bold">Error loading users. (Check RLS Policies)</td></tr>'; return; }
+            if(data.length === 0) { tb.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No users found.</td></tr>'; return; }
+            
+            let trHtml = '';
+            data.forEach(u => {
+                trHtml += '<tr>';
+                trHtml += '<td>' + u.id.substring(0,8) + '</td>';
+                trHtml += '<td>' + u.role + '</td>';
+                trHtml += '<td>Active</td>';
+                trHtml += '<td><button class="btn btn-sm btn-outline-dark" onclick="toggleRole(\\'' + u.id + '\\',\\'' + u.role + '\\')">Toggle</button></td>';
+                trHtml += '</tr>';
+            });
+            tb.innerHTML = trHtml;
         }
         async function toggleRole(id, role) { const nr = role==='admin'?'student':'admin'; if(confirm("Change role to "+nr+"?")) { await supabaseClient.from('profiles').update({ role: nr }).eq('id', id); loadUsers(); } }
     </script>

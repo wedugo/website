@@ -28,18 +28,17 @@ const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
-// Utility: Generate Slugs for Categories
-const makeSlug = (str) => {
-    if (!str) return 'category';
-    return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-};
+// Utility Functions
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
+const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
 
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
+const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -420,6 +419,8 @@ function getIndexTemplate(canonicalUrl = "") {
                     });
                     document.getElementById('home-blogs').innerHTML = blogHtml;
                 }
+                
+                // Fetch Latest 5 Questions Globally
                 const { data: qData } = await supabaseClient.from('questions').select('id, qcategory, question').order('created_at', { ascending: false }).limit(5);
                 if(qData) {
                     let qHtml = '';
@@ -1586,9 +1587,14 @@ async function buildCSRSite() {
                         <h1 class="blog-title text-dark display-5 mb-4" id="blog-title">Title</h1>
                         <div class="d-flex justify-content-center align-items-center text-muted small fw-medium"><span><i class="bi bi-calendar3 me-1"></i><span id="blog-date">Date</span></span></div>
                     </div>
-                    ${getAdBannerHtml("Sponsored")}
+                    <div class="ad-banner-wrapper my-4 text-center">
+                        <span class="text-muted d-block small mb-1" style="font-size: 0.70rem; letter-spacing: 0.5px; text-transform: uppercase;">Sponsored</span>
+                        <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #fafafa; border-radius: 8px;">
+                            <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                            <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
+                        </div>
+                    </div>
                     <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white"><article class="article-content" id="blog-body"></article></div>
-                    ${BLOG_BOTTOM_CODE ? `<div class="mt-4">${BLOG_BOTTOM_CODE}</div>` : ''}
                 </div>
                 ${getAdSidebar()}
             </div>
@@ -1620,12 +1626,18 @@ async function buildCSRSite() {
         `);
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), dynamicBlogHtml, 'utf8');
 
-        // Single Universal MCQ Viewer (FIXED NEXT/PREV & HANGING)
+        // Single Universal MCQ Viewer
         const dynamicMcqHtml = getHtmlShell("Loading Question... | Wedugo", `
             <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Loading question from server...</p></div>
             <div id="mcq-content" class="row d-none">
                 <div class="col-lg-8">
-                    \${getAdBannerHtml("Sponsored")}
+                    <div class="ad-banner-wrapper my-4 text-center">
+                        <span class="text-muted d-block small mb-1" style="font-size: 0.70rem; letter-spacing: 0.5px; text-transform: uppercase;">Sponsored</span>
+                        <div class="ad-container shadow-sm border-0 mb-0" style="min-height: 100px; background: #fafafa; border-radius: 8px;">
+                            <ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                            <script>try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}</script>
+                        </div>
+                    </div>
                     <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
                         <header class="mb-4 border-bottom pb-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1644,10 +1656,8 @@ async function buildCSRSite() {
                             <a id="btn-next-mcq" href="#" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm disabled">Next</a>
                         </div>
                     </article>
-                    
-                    \${MCQ_BOTTOM_CODE ? \`<div class="mt-4 mb-5">\${MCQ_BOTTOM_CODE}</div>\` : ''}
                 </div>
-                \${getAdSidebar()}
+                ${getAdSidebar()}
             </div>
             <script>
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1656,7 +1666,8 @@ async function buildCSRSite() {
                 let hasAnswered = false;
                 let hintsLeft = 2; 
                 
-                \${catMapScript}
+                const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+                const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
                 
                 document.addEventListener('DOMContentLoaded', async () => {
                     if(!CURRENT_MCQ_ID) { window.location.href = '/categories.html'; return; }
@@ -1676,34 +1687,27 @@ async function buildCSRSite() {
                             document.getElementById('mcq-qtext').innerText = cleanQText;
                             
                             document.title = cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 50) + " | Wedugo";
-                            document.getElementById('dynamic-canonical').href = "\${SITE_BASE_URL}/mcq.html?id=" + data.id;
+                            document.getElementById('dynamic-canonical').href = "${SITE_BASE_URL}/mcq.html?id=" + data.id;
                             document.getElementById('dynamic-desc').setAttribute("content", cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 150));
                             
                             const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
                             let optHtml = ''; 
                             for(let k in opts) { 
                                 if(opts[k] && decodeText(opts[k]).trim() !== '') {
-                                    optHtml += '<button class="btn option-btn opt-btn-choice" data-val="' + k + '" onclick="checkAns(this, \\'' + k + '\\')">' + k + ') ' + decodeText(opts[k]) + '</button>'; 
+                                    optHtml += "<button class='btn option-btn opt-btn-choice' data-val='" + k + "' onclick='checkAns(this, \\"" + k + "\\")'>" + k + ") " + decodeText(opts[k]) + "</button>"; 
                                 }
                             }
                             document.getElementById('mcq-options').innerHTML = optHtml;
 
-                            // FETCH ADJACENT QUESTIONS FOR NEXT/PREV BUTTONS
                             const btnPrev = document.getElementById('btn-prev-mcq');
                             const btnNext = document.getElementById('btn-next-mcq');
                             
-                            const { data: allCatQs } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).order('created_at', {ascending: false});
-                            
-                            if(allCatQs && allCatQs.length > 0) {
-                                const curIdx = allCatQs.findIndex(q => q.id === data.id);
-                                if(curIdx > 0) {
-                                    btnPrev.href = "/mcq.html?id=" + allCatQs[curIdx - 1].id;
-                                    btnPrev.classList.remove('disabled');
-                                }
-                                if(curIdx >= 0 && curIdx < allCatQs.length - 1) {
-                                    btnNext.href = "/mcq.html?id=" + allCatQs[curIdx + 1].id;
-                                    btnNext.classList.remove('disabled');
-                                }
+                            if (data.created_at) {
+                                const { data: prevData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).lt('created_at', data.created_at).order('created_at', {ascending: false}).limit(1).maybeSingle();
+                                if(prevData && prevData.id) { btnPrev.href = "/mcq.html?id=" + prevData.id; btnPrev.classList.remove('disabled'); }
+                                
+                                const { data: nextData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).gt('created_at', data.created_at).order('created_at', {ascending: true}).limit(1).maybeSingle();
+                                if(nextData && nextData.id) { btnNext.href = "/mcq.html?id=" + nextData.id; btnNext.classList.remove('disabled'); }
                             }
                             
                             document.getElementById('mcq-loader').classList.add('d-none'); 
@@ -1893,7 +1897,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
         console.log("✅ PURE DYNAMIC BUILD COMPLETE (No static HTML folders generated, 0 404s guaranteed)");
-    } catch(e) { console.error("Build failed:", e); }
+    } catch(e) { console.error("Build failed:", e); process.exit(1); }
 }
 
 buildCSRSite();

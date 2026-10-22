@@ -1,7 +1,6 @@
 const fs = require('fs');
 const fsAsync = require('fs').promises;
 const path = require('path');
-const https = require('https');
 
 // ==========================================
 // CONFIGURATION & SUPABASE KEYS
@@ -28,29 +27,18 @@ const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
-// Utility: Generate Slugs for Categories
-const makeSlug = (str) => {
-    if (!str) return 'category';
-    return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-};
-
-// Utility: Generate Bulletproof Slugs for MCQs to prevent 404s
-const createSlug = (str) => {
-    if (!str) return 'question';
-    let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-    return s.substring(0, 100).replace(/-+$/, '') || 'question';
-};
+// Utility Functions
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
+const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
-
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
-const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };`;
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
 
 // ==========================================
-// ADVERTISEMENT & AFFILIATE UI COMPONENTS
+// UI COMPONENTS
 // ==========================================
 function getAdBannerHtml(label) {
     return `
@@ -89,13 +77,8 @@ function getAdSidebar() {
 
 function getNavbar() {
     let toolsDropdownList = `<li><a class="dropdown-item fw-medium py-2" href="/tools.html"><i class="bi bi-collection me-2 text-secondary"></i>All Tools Explorer</a></li><li><hr class="dropdown-divider"></li>`;
-    
-    if(TOOL_SCORE_ESTIMATOR) {
-        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
-    }
-    if(TOOL_PDF_READER) {
-        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
-    }
+    if(TOOL_SCORE_ESTIMATOR) toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
+    if(TOOL_PDF_READER) toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
 
     return `
     <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm py-3 border-bottom sticky-top">
@@ -112,17 +95,11 @@ function getNavbar() {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/categories.html"><i class="bi bi-grid me-1"></i>Categories</a></li>
                     <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="/custom-exam.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-tools me-1"></i>Tools
-                        </a>
-                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">
-                            ${toolsDropdownList}
-                        </ul>
+                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-tools me-1"></i>Tools</a>
+                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">${toolsDropdownList}</ul>
                     </li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/blogs.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
-                    <li class="nav-item ms-lg-2" id="auth-nav-container">
-                        <button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button>
-                    </li>
+                    <li class="nav-item ms-lg-2" id="auth-nav-container"><button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button></li>
                 </ul>
             </div>
         </div>
@@ -134,9 +111,7 @@ function getFooter() {
     <footer class="bg-white border-top py-5 mt-auto">
         <div class="container">
             <div class="row text-center text-md-start align-items-center">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p>
-                </div>
+                <div class="col-md-6 mb-3 mb-md-0"><p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p></div>
                 <div class="col-md-6 text-md-end">
                     <a href="/tools.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">Study Tools</a>
                     <a href="/about.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">About Us</a>
@@ -148,20 +123,19 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH INJECTIONS
+// 🟢 MASTER HTML SHELL
 function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
-    
-    const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
+    const canonicalTag = canonicalUrl ? `<link rel="canonical" id="dynamic-canonical" href="${canonicalUrl}">` : '<link rel="canonical" id="dynamic-canonical" href="">';
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>${displayTitle}</title>
-    <meta name="description" content="${cleanDesc}">
+    <title id="dynamic-title">${displayTitle}</title>
+    <meta name="description" id="dynamic-desc" content="${cleanDesc}">
     ${canonicalTag}
     <link rel="icon" href="/main_images/icon.png" type="image/png">
 
@@ -267,33 +241,29 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
         let supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
         let currentUser = null;
 
-        // FETCH LIVE MODULE SETTINGS
         async function fetchLiveModuleSettings() {
             try {
                 const { data } = await supabaseClient.from('dynamic_components').select('*');
                 if(data) {
                     const getVal = (name) => { const obj = data.find(s => s.component_name === name); return obj ? obj.is_active : true; };
-                    
                     if(getVal('TOOL_PDF_READER')) {
                         if(document.getElementById('nav-tool-pdf')) document.getElementById('nav-tool-pdf').classList.remove('d-none');
                         if(document.getElementById('tool-card-pdf')) document.getElementById('tool-card-pdf').classList.remove('d-none');
                     } else {
                         if(window.location.pathname.includes('pdf-reader')) window.location.href = '/tools.html';
                     }
-
                     if(getVal('TOOL_SCORE_ESTIMATOR')) {
                         if(document.getElementById('nav-tool-score')) document.getElementById('nav-tool-score').classList.remove('d-none');
                         if(document.getElementById('tool-card-score')) document.getElementById('tool-card-score').classList.remove('d-none');
                     }
                 }
-            } catch(e) { console.error("Error fetching live settings."); }
+            } catch(e) {}
         }
 
         async function initAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateNavUI(session?.user);
             checkModuleLock();
-
             supabaseClient.auth.onAuthStateChange((_event, session) => {
                 updateNavUI(session?.user);
                 checkModuleLock();
@@ -356,7 +326,7 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
         }
 
         async function checkModuleLock() {
-            const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html') || window.location.href.includes('/mock-tests/');
+            const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html');
             if(!isProtected) return;
 
             const { data } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'LOCK_MOCK_TESTS').maybeSingle();
@@ -405,6 +375,7 @@ function getBreadcrumbs(pathArray) {
     return `<nav aria-label="breadcrumb" class="mb-4 mt-2"><ol class="breadcrumb bg-transparent p-0 mb-0">${list}</ol></nav>`;
 }
 
+// 🟢 INDEX (HOMEPAGE)
 function getIndexTemplate(canonicalUrl = "") {
     return getHtmlShell("Wedugo Education: Master Your Exams", `
         <div class="mt-4 mb-5 text-center">
@@ -431,15 +402,14 @@ function getIndexTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
-            
             document.addEventListener('DOMContentLoaded', async () => {
                 const { data: blogs } = await supabaseClient.from('blog_posts').select('slug, title, category, created_at').order('created_at', { ascending: false }).limit(6);
                 if(blogs) {
                     let blogHtml = '';
                     blogs.forEach((b, i) => {
                         const date = new Date(b.created_at).toLocaleDateString();
-                        if(i===0) blogHtml += \`<div class="col-12 mb-2"><a href="/blog/\${b.slug}.html" class="card shadow border-0 rounded-4 overflow-hidden text-decoration-none bg-dark text-white card-hover p-4 p-md-5"><span class="badge bg-primary w-auto align-self-start mb-3 px-3 py-2 text-uppercase fw-bold">\${b.category}</span><h2 class="display-5 fw-bold mb-3 lh-sm text-white">\${b.title}</h2><div class="small fw-medium text-white-50"><i class="bi bi-clock me-1"></i>\${date}</div></a></div>\`;
-                        else blogHtml += \`<div class="col-md-6 col-lg-4"><a href="/blog/\${b.slug}.html" class="card h-100 p-4 shadow-sm border border-light text-decoration-none card-hover bg-white d-flex flex-column"><span class="text-primary small fw-bold text-uppercase mb-2">\${b.category}</span><h3 class="h5 fw-bold text-dark mb-3 lh-base">\${b.title}</h3><small class="text-muted mt-auto"><i class="bi bi-calendar3 me-1"></i>\${date}</small></a></div>\`;
+                        if(i===0) blogHtml += \`<div class="col-12 mb-2"><a href="/blog.html?slug=\${b.slug}" class="card shadow border-0 rounded-4 overflow-hidden text-decoration-none bg-dark text-white card-hover p-4 p-md-5"><span class="badge bg-primary w-auto align-self-start mb-3 px-3 py-2 text-uppercase fw-bold">\${b.category}</span><h2 class="display-5 fw-bold mb-3 lh-sm text-white">\${b.title}</h2><div class="small fw-medium text-white-50"><i class="bi bi-clock me-1"></i>\${date}</div></a></div>\`;
+                        else blogHtml += \`<div class="col-md-6 col-lg-4"><a href="/blog.html?slug=\${b.slug}" class="card h-100 p-4 shadow-sm border border-light text-decoration-none card-hover bg-white d-flex flex-column"><span class="text-primary small fw-bold text-uppercase mb-2">\${b.category}</span><h3 class="h5 fw-bold text-dark mb-3 lh-base">\${b.title}</h3><small class="text-muted mt-auto"><i class="bi bi-calendar3 me-1"></i>\${date}</small></a></div>\`;
                     });
                     document.getElementById('home-blogs').innerHTML = blogHtml;
                 }
@@ -447,8 +417,7 @@ function getIndexTemplate(canonicalUrl = "") {
                 if(qData) {
                     let qHtml = '';
                     qData.forEach(q => {
-                        const qSlug = createSlug(decodeText(q.question));
-                        qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${decodeText(q.qcategory)}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><a href="/mcq/\${q.id}/\${qSlug}.html" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
+                        qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${decodeText(q.qcategory)}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><a href="/mcq.html?id=\${q.id}" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
                     });
                     document.getElementById('home-quizzes').innerHTML = qHtml;
                 }
@@ -460,10 +429,9 @@ function getIndexTemplate(canonicalUrl = "") {
 
 function getCategoriesTemplate(canonicalUrl = "") {
     let catsHtml = CATEGORY_LIST.map(cat => {
-        const slug = makeSlug(cat);
         return `
         <div class="col-md-6 col-lg-4">
-            <a href="/categories/${slug}/index.html" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
+            <a href="/category.html?name=${encodeURIComponent(cat)}" class="card shadow-sm h-100 card-hover border-light rounded-4 bg-white text-decoration-none p-4 text-center d-flex flex-column justify-content-center">
                 <h3 class="h5 fw-bold mb-2 text-dark">${cat}</h3>
                 <p class="text-secondary small mb-0">Explore MCQs & Mocks</p>
             </a>
@@ -518,7 +486,6 @@ function getCustomExamTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
-            
             let examData = [], userState = [], currentQ = 0, pMarks = 1, nMarks = 0.33, timerInterval, timeLeft = 0;
             document.getElementById('start-exam-btn').addEventListener('click', async () => {
                 const cats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
@@ -637,7 +604,7 @@ function getBlogsTemplate(canonicalUrl = "") {
                 if(data) {
                     let html = '';
                     data.forEach(post => {
-                        html += \`<div class="col-md-6"><a href="/blog/\${post.slug}.html" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white"><span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">\${post.category}</span><h3 class="h5 fw-bold mb-3 text-dark lh-base">\${post.title}</h3><p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>\${new Date(post.created_at).toLocaleDateString()}</p></a></div>\`;
+                        html += \`<div class="col-md-6"><a href="/blog.html?slug=\${post.slug}" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white"><span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">\${post.category}</span><h3 class="h5 fw-bold mb-3 text-dark lh-base">\${post.title}</h3><p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>\${new Date(post.created_at).toLocaleDateString()}</p></a></div>\`;
                     });
                     document.getElementById('blogs-container').innerHTML = html;
                     document.getElementById('blogs-loader').classList.add('d-none');
@@ -645,146 +612,6 @@ function getBlogsTemplate(canonicalUrl = "") {
             });
         </script>
     `, "", canonicalUrl);
-}
-
-// SEO Fix: Hybrid Single Blog Template (Static Head, Live Body via JS)
-function getHybridBlogTemplate(slug, title, desc, canonicalUrl) {
-    return getHtmlShell(title, `
-        <div id="blog-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
-        <div id="blog-content" class="row justify-content-center mt-3 d-none">
-            <div class="col-lg-8">
-                <div class="mb-4 text-center">
-                    <span id="blog-cat" class="badge bg-primary bg-opacity-10 text-primary badge-cat text-decoration-none mb-3 border border-primary-subtle">Category</span>
-                    <h1 class="blog-title text-dark display-5 mb-4" id="blog-title">Title</h1>
-                    <div class="d-flex justify-content-center align-items-center text-muted small fw-medium"><span><i class="bi bi-calendar3 me-1"></i><span id="blog-date">Date</span></span></div>
-                </div>
-                ${getAdBannerHtml("Sponsored")}
-                <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white"><article class="article-content" id="blog-body"></article></div>
-                
-                <!-- DYNAMIC BLOG POST BOTTOM INJECTION CODE -->
-                ${BLOG_BOTTOM_CODE ? `<div class="mt-4">${BLOG_BOTTOM_CODE}</div>` : ''}
-
-            </div>
-            ${getAdSidebar()}
-        </div>
-        <script>
-            const CURRENT_BLOG_SLUG = "${slug}";
-            document.addEventListener('DOMContentLoaded', async () => {
-                const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', CURRENT_BLOG_SLUG).single();
-                if(data) {
-                    document.getElementById('blog-title').innerText = data.title;
-                    document.getElementById('blog-cat').innerText = data.category;
-                    document.getElementById('blog-date').innerText = new Date(data.created_at).toLocaleDateString();
-                    document.getElementById('blog-body').innerHTML = data.content;
-                    document.getElementById('blog-loader').classList.add('d-none'); document.getElementById('blog-content').classList.remove('d-none');
-                }
-            });
-        </script>
-    `, desc, canonicalUrl);
-}
-
-// SEO Fix: Hybrid MCQ Template (Static Head, Live Body via JS) + STATIC PAGINATION LINKS
-function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug, prevUrl, nextUrl) {
-    return getHtmlShell(title, `
-        <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
-        <div id="mcq-content" class="row d-none">
-            <div class="col-lg-8">
-                ${getAdBannerHtml("Sponsored")}
-                <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
-                    <header class="mb-4 border-bottom pb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <a id="mcq-cat-link" href="#" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill">Category</a>
-                            <button id="btn-hint" class="btn btn-warning btn-sm fw-bold rounded-pill shadow-sm px-3" onclick="useHint()">💡 Hint (2 Left)</button>
-                        </div>
-                        <h1 class="h4 fw-bold text-dark lh-base mt-3" id="mcq-qtext"></h1>
-                    </header>
-                    <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
-                    <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
-                    
-                    <!-- Pre-Computed Static Pagination (100% No 404s) -->
-                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                        <a href="${prevUrl}" class="btn btn-outline-secondary fw-bold px-4 rounded-pill ${prevUrl === '#' ? 'disabled' : ''}">Prev</a>
-                        <a href="${nextUrl}" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm ${nextUrl === '#' ? 'disabled' : ''}">Next</a>
-                    </div>
-                </article>
-                
-                <!-- DYNAMIC MCQ BOTTOM INJECTION CODE -->
-                ${MCQ_BOTTOM_CODE ? `<div class="mt-4 mb-5">${MCQ_BOTTOM_CODE}</div>` : ''}
-            </div>
-            ${getAdSidebar()}
-        </div>
-        <script>
-            let currentQ = null; 
-            let hasAnswered = false;
-            let hintsLeft = 2; 
-            
-            ${catMapScript}
-            const CURRENT_MCQ_ID = "${id}";
-            
-            document.addEventListener('DOMContentLoaded', async () => {
-                const { data } = await supabaseClient.from('questions').select('*').eq('id', CURRENT_MCQ_ID).single();
-                if(data) {
-                    currentQ = data;
-                    document.getElementById('mcq-cat-link').innerText = decodeText(data.qcategory);
-                    document.getElementById('mcq-cat-link').href = "/categories/" + makeSlug(decodeText(data.qcategory)) + "/index.html";
-                    document.getElementById('mcq-qtext').innerText = decodeText(data.question);
-                    
-                    const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
-                    let optHtml = ''; 
-                    for(let k in opts) { 
-                        optHtml += \`<button class="btn option-btn opt-btn-choice" data-val="\${k}" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; 
-                    }
-                    document.getElementById('mcq-options').innerHTML = optHtml;
-                    
-                    document.getElementById('mcq-loader').classList.add('d-none'); 
-                    document.getElementById('mcq-content').classList.remove('d-none');
-                }
-            });
-
-            function useHint() {
-                if(hasAnswered || hintsLeft <= 0) return;
-                const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
-                
-                const wrongBtns = Array.from(document.querySelectorAll('.opt-btn-choice')).filter(btn => {
-                    return btn.getAttribute('data-val') !== correct && !btn.classList.contains('d-none');
-                });
-                
-                if(wrongBtns.length > 0) {
-                    const randomIdx = Math.floor(Math.random() * wrongBtns.length);
-                    wrongBtns[randomIdx].classList.add('d-none'); 
-                    
-                    hintsLeft--;
-                    const hintBtn = document.getElementById('btn-hint');
-                    if(hintsLeft > 0) {
-                        hintBtn.innerText = "💡 Hint (" + hintsLeft + " Left)";
-                    } else {
-                        hintBtn.innerText = "💡 No Hints Left";
-                        hintBtn.disabled = true;
-                        hintBtn.classList.replace('btn-warning', 'btn-secondary');
-                    }
-                }
-            }
-
-            function checkAns(btn, selected) {
-                if(hasAnswered) return; hasAnswered = true;
-                const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
-                const expBox = document.getElementById('mcq-exp-box');
-                
-                document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-                document.getElementById('btn-hint').disabled = true; 
-                
-                expBox.classList.remove('d-none');
-                if(selected === correct) { 
-                    btn.classList.add('correct-show'); expBox.classList.add('alert-success', 'border-success'); 
-                    document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!"; 
-                } else { 
-                    btn.classList.add('incorrect-show'); expBox.classList.add('alert-danger', 'border-danger'); 
-                    document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct; 
-                }
-                document.getElementById('mcq-exp-text').innerText = decodeText(currentQ.answerdetail) || "Practice makes perfect.";
-            }
-        </script>
-    `, desc, canonicalUrl);
 }
 
 function getCategoryTemplate(canonicalUrl = "") {
@@ -805,7 +632,6 @@ function getCategoryTemplate(canonicalUrl = "") {
             <h3 class="fw-bold mb-4 mt-5">Question Bank</h3>
             <div id="mcq-list" class="list-group shadow-sm border-0 rounded-4 mb-4"></div>
 
-            <!-- Load More / Pagination Wrapper -->
             <div class="text-center mb-5" id="pagination-wrapper">
                 <button class="btn btn-outline-dark fw-bold rounded-pill px-4 d-none" id="btn-load-more" onclick="loadMoreQuestions()">Load More</button>
                 <div id="pagination-controls" class="d-none mt-4"></div>
@@ -813,57 +639,29 @@ function getCategoryTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
-            
             let currentOffset = 0; 
             const limit = 10; 
             let catName = "";
-            let currentSlug = "";
             let currentPage = 1;
-            let usePagination = true; // DEFAULT ON
+            let usePagination = true; 
             let totalQuestions = 0;
 
             document.addEventListener('DOMContentLoaded', async () => {
-                const path = window.location.pathname;
+                catName = new URLSearchParams(window.location.search).get('name');
+                currentPage = parseInt(new URLSearchParams(window.location.search).get('page')) || 1;
                 
-                // --- SMART ROUTER LOGIC ---
-                if (path.includes('/mcqs/')) {
-                    const parts = path.split('/');
-                    currentSlug = parts[parts.length - 2];
-                    const pageFile = parts[parts.length - 1]; 
-                    catName = catMap[currentSlug];
-                    currentPage = parseInt(pageFile.replace('page-', '').replace('.html', '')) || 1;
-                } else if (path.includes('/categories/')) {
-                    const parts = path.split('/');
-                    currentSlug = parts[parts.length - 2] || parts[parts.length - 1];
-                    catName = catMap[currentSlug];
-                    currentPage = 1;
-                } else {
-                    catName = new URLSearchParams(window.location.search).get('name');
-                    currentSlug = Object.keys(catMap).find(k => catMap[k] === catName) || "";
-                }
-                
-                if(!catName) return;
+                if(!catName) { window.location.href = '/categories.html'; return; }
                 currentOffset = (currentPage - 1) * limit;
 
                 document.getElementById('cat-title').innerText = catName + " - Study Hub"; 
-
-                // --- DYNAMIC SEO & URL UPDATES ---
                 document.title = catName + " Important MCQs & Mock Tests | Wedugo";
-                let metaDesc = document.querySelector('meta[name="description"]');
-                if(metaDesc) metaDesc.setAttribute("content", "Practice top " + catName + " objective questions, mock tests, and previous year MCQs online for free. Page " + currentPage);
                 
-                window.history.replaceState(null, '', '/mcqs/' + currentSlug + '/page-' + currentPage + '.html');
-                // ---------------------------------
-
-                // Fetch Pagination Settings
                 const { data: prefData } = await supabaseClient.from('dynamic_components').select('is_active').eq('component_name', 'USE_PAGINATION').maybeSingle();
                 if(prefData) usePagination = prefData.is_active;
 
                 if (usePagination) {
                     document.getElementById('btn-load-more').classList.add('d-none');
                     document.getElementById('pagination-controls').classList.remove('d-none');
-                } else {
-                    document.getElementById('pagination-controls').classList.add('d-none');
                 }
 
                 const { count } = await supabaseClient.from('questions').select('*', { count: 'exact', head: true }).eq('qcategory', catName);
@@ -872,7 +670,7 @@ function getCategoryTemplate(canonicalUrl = "") {
                 const totalSets = Math.ceil(totalQuestions / 10);
                 let setsHtml = '';
                 for(let i=1; i<=totalSets; i++) {
-                    setsHtml += \`<a href="/mock-tests/\${currentSlug}/set-\${i}.html" class="btn btn-outline-primary fw-bold px-4 rounded-pill m-1">Set \${i}</a>\`;
+                    setsHtml += \`<a href="/mock.html?cat=\${encodeURIComponent(catName)}&set=\${i}" class="btn btn-outline-primary fw-bold px-4 rounded-pill m-1">Set \${i}</a>\`;
                 }
                 document.getElementById('mock-sets-container').innerHTML = setsHtml || '<p class="text-muted mb-0">Not enough questions.</p>';
 
@@ -881,19 +679,10 @@ function getCategoryTemplate(canonicalUrl = "") {
             });
 
             window.changePage = async function(newPage) {
-                if(currentSlug) {
-                    window.location.href = \`/mcqs/\${currentSlug}/page-\${newPage}.html\`;
-                } else {
-                    currentOffset = (newPage - 1) * limit;
-                    document.getElementById('mcq-list').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-                    await loadQuestionsData();
-                    window.scrollTo(0, document.getElementById('mcq-list').offsetTop - 100);
-                }
+                window.location.href = '/category.html?name=' + encodeURIComponent(catName) + '&page=' + newPage;
             };
 
-            window.loadMoreQuestions = async function() {
-                await loadQuestionsData();
-            };
+            window.loadMoreQuestions = async function() { await loadQuestionsData(); };
 
             async function loadQuestionsData() {
                 const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1).order('id', {ascending: false});
@@ -901,8 +690,7 @@ function getCategoryTemplate(canonicalUrl = "") {
                 if(data && data.length > 0) {
                     let html = ''; 
                     data.forEach((q, i) => { 
-                        const qSlug = createSlug(decodeText(q.question));
-                        html += \`<a href="/mcq/\${q.id}/\${qSlug}.html" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${decodeText(q.question).substring(0, 100)}...</a>\`; 
+                        html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${decodeText(q.question).substring(0, 100)}...</a>\`; 
                     });
 
                     if (usePagination) {
@@ -948,67 +736,39 @@ function getMockTemplate(canonicalUrl = "") {
         </div>
         <script>
             ${catMapScript}
-            
             let mockData = []; let userAnswers = {}; let timeLeft = 600, timerInterval, testSubmitted = false;
             
             document.addEventListener('DOMContentLoaded', async () => {
-                const path = window.location.pathname;
-                let catName = "";
-                let setNum = 1;
-                let currentSlug = "";
+                let catName = new URLSearchParams(window.location.search).get('cat');
+                let setNum = parseInt(new URLSearchParams(window.location.search).get('set')) || 1;
 
-                if (path.includes('/mock-tests/')) {
-                    const parts = path.split('/');
-                    currentSlug = parts[parts.length - 2];
-                    const setFile = parts[parts.length - 1]; 
-                    catName = catMap[currentSlug];
-                    setNum = parseInt(setFile.replace('set-', '').replace('.html', '')) || 1;
-                } else {
-                    catName = new URLSearchParams(window.location.search).get('cat');
-                    setNum = parseInt(new URLSearchParams(window.location.search).get('set')) || 1;
-                    currentSlug = Object.keys(catMap).find(k => catMap[k] === catName) || "";
-                }
+                if(!catName) { window.location.href = '/categories.html'; return; }
 
-                if(!catName) return;
-
-                let pageTitle = catName + " Mock Test";
-                if(setNum) pageTitle += " (Set " + setNum + ")";
-
-                // --- DYNAMIC SEO UPDATES ---
+                let pageTitle = catName + " Mock Test" + (setNum ? " (Set " + setNum + ")" : "");
                 document.title = pageTitle + " | Wedugo";
-                let metaDesc = document.querySelector('meta[name="description"]');
-                if(metaDesc) metaDesc.setAttribute("content", "Attempt live " + pageTitle + " with timer and negative marking to evaluate your preparation.");
-                // ---------------------------
 
                 document.getElementById('mock-title').innerText = pageTitle; 
-                document.getElementById('btn-back-cat').href = "/categories/" + currentSlug + "/index.html";
+                document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
 
                 let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('id', {ascending: false});
-
                 if (setNum) {
                     const offset = (setNum - 1) * 10;
                     query = query.range(offset, offset + 9);
                 } else {
-                    query = query.limit(50); // Fallback for random
+                    query = query.limit(50);
                 }
 
                 const { data } = await query;
 
                 if(data && data.length > 0) {
-                    if (setNum) {
-                        mockData = data; 
-                    } else {
-                        mockData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
-                    }
-
+                    mockData = setNum ? data : data.sort(() => 0.5 - Math.random()).slice(0, 10);
                     document.getElementById('mock-subtitle').innerText = mockData.length + " Questions";
                     renderQuestions();
-
                     document.getElementById('mock-loader').classList.add('d-none'); document.getElementById('mock-content').classList.remove('d-none');
                     timerInterval = setInterval(() => { if(testSubmitted) return; timeLeft--; let m = Math.floor(timeLeft / 60), s = timeLeft % 60; document.getElementById('timer-display').innerText = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s; if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); } }, 1000);
                 } else {
                     alert("No questions found for this set.");
-                    window.location.href = "/categories/" + currentSlug + "/index.html";
+                    window.location.href = "/category.html?name=" + encodeURIComponent(catName);
                 }
             });
             function renderQuestions() {
@@ -1103,9 +863,19 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                     <h2 class="fw-bold mb-0">Manage Questions</h2>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <div class="input-group input-group-sm" style="width: 250px;">
-                            <input type="text" id="search-q-val" class="form-control" placeholder="Search ID or Keyword...">
-                            <button class="btn btn-dark fw-bold" onclick="searchMcq()"><i class="bi bi-search"></i></button>
+                        <div class="d-flex gap-2">
+                            <select id="filter-cat" class="form-select form-select-sm" style="width: 150px;" onchange="currentMcqOffset=0; loadMcqs()">
+                                <option value="">All Categories</option>
+                                ${catOptionsHtml}
+                            </select>
+                            <select id="sort-mcq" class="form-select form-select-sm" style="width: 130px;" onchange="currentMcqOffset=0; loadMcqs()">
+                                <option value="created_at.desc">Newest First</option>
+                                <option value="created_at.asc">Oldest First</option>
+                            </select>
+                            <div class="input-group input-group-sm" style="width: 200px;">
+                                <input type="text" id="search-q-val" class="form-control" placeholder="Search...">
+                                <button class="btn btn-dark fw-bold" onclick="searchMcq()"><i class="bi bi-search"></i></button>
+                            </div>
                         </div>
                         <button class="btn btn-warning btn-sm fw-bold shadow-sm" onclick="loadGibberishMCQs()"><i class="bi bi-funnel-fill"></i></button>
                         <button class="btn btn-success btn-sm fw-bold shadow-sm" onclick="autoFixAllGibberish()"><i class="bi bi-magic"></i> Auto Fix</button>
@@ -1114,8 +884,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 </div>
                 <div class="card p-0 overflow-hidden">
                     <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Actions</th></tr></thead>
-                        <tbody id="mcq-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody>
+                        <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Feature</th><th>Actions</th></tr></thead>
+                        <tbody id="mcq-tbody"><tr><td colspan="5" class="text-center py-4">Loading...</td></tr></tbody>
                     </table>
                     <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
                         <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="prevMcqPage()"><i class="bi bi-chevron-left me-1"></i>Previous</button>
@@ -1140,7 +910,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
             <div id="tab-ads" class="admin-tab d-none">
                 <h2 class="fw-bold mb-4">Ads & Custom Snippets</h2>
-                <div class="alert alert-info small fw-medium">Paste your raw HTML/JS snippets here (e.g., Google Analytics, Disqus, Affiliates). <strong>Note:</strong> Re-run the <code>build.js</code> script on your server after saving to apply changes.</div>
+                <div class="alert alert-info small fw-medium">Paste your raw HTML/JS snippets here (e.g., Google Analytics, Disqus, Affiliates). <strong>Note:</strong> Re-run the <code>node build.js</code> script on your server after saving to apply changes.</div>
                 
                 <div class="row g-4 mb-4">
                     <!-- Standard Affiliates/Banners -->
@@ -1365,7 +1135,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 { setting_key: 'blog_bottom_code', setting_value: blogCode },
                 { setting_key: 'mcq_bottom_code', setting_value: mcqCode }
             ]);
-            alert("Snippets saved successfully! Please re-run build.js to apply these changes to the static website.");
+            alert("Snippets saved successfully! Please re-run node build.js to apply these changes.");
         }
 
         // --- MANAGE QUESTIONS LOGIC ---
@@ -1374,25 +1144,37 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
         async function loadMcqs() { 
             const tb = document.getElementById('mcq-tbody'); 
-            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
+            tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
             
-            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question')
-                .order('id', {ascending: false})
+            const catFilter = document.getElementById('filter-cat').value;
+            const sortVal = document.getElementById('sort-mcq').value.split('.');
+            
+            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured, created_at')
+                .order(sortVal[0], {ascending: sortVal[1] === 'asc'})
                 .range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1); 
             
-            if (error || !data) {
-                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`;
-                return;
-            }
-            if (data.length === 0) {
-                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-muted">No questions found.</td></tr>\`;
-                return;
-            }
+            if(catFilter) query = query.eq('qcategory', catFilter);
 
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
+            const { data, error } = await query; 
+            
+            if(error || !data) { tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`; return; }
+            if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-muted">No questions found.</td></tr>\`; return; }
+
+            tb.innerHTML = data.map(q=>\`<tr>
+                <td>#\${q.id.substring(0,6)}</td>
+                <td>\${decodeText(q.qcategory)}</td>
+                <td>\${decodeText(q.question).substring(0,50)}</td>
+                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
+            </tr>\`).join(''); 
             
             document.getElementById('mcq-page-indicator').innerText = \`Page \${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}\`;
         }
+
+        async function toggleFeature(id, currentStatus) {
+            await supabaseClient.from('questions').update({ is_featured: !currentStatus }).eq('id', id);
+            loadMcqs();
+        }            
 
         function nextMcqPage() { currentMcqOffset += MCQ_LIMIT; loadMcqs(); }
         function prevMcqPage() { if (currentMcqOffset >= MCQ_LIMIT) { currentMcqOffset -= MCQ_LIMIT; loadMcqs(); } }
@@ -1405,9 +1187,9 @@ function getAdminTemplate(pluginAdminHTML = "") {
             }
             
             const tb = document.getElementById('mcq-tbody'); 
-            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
+            tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
             
-            let query = supabaseClient.from('questions').select('id, qcategory, question').limit(50);
+            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured').limit(50);
             
             if (/^\\d+$/.test(val)) {
                 query = query.eq('id', val);
@@ -1418,11 +1200,17 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const { data, error } = await query;
             
             if (error || !data || data.length === 0) {
-                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">No results found for "\${val}"</td></tr>\`;
+                tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">No results found for "\${val}"</td></tr>\`;
                 return;
             }
             
-            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            tb.innerHTML = data.map(q=>\`<tr>
+                <td>#\${q.id.substring(0,6)}</td>
+                <td>\${decodeText(q.qcategory)}</td>
+                <td>\${decodeText(q.question).substring(0,50)}</td>
+                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
+            </tr>\`).join('');
             document.getElementById('mcq-page-indicator').innerText = 'Search Results';
         }
 
@@ -1438,7 +1226,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             if (!confirm("Are you sure you want to scan and automatically fix all Gibberish/Corrupted questions in the database?")) return;
             
             const tb = document.getElementById('mcq-tbody');
-            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-primary fw-bold"><div class="spinner-border spinner-border-sm me-2"></div> Fixing records in Supabase... Please wait.</td></tr>';
+            tb.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-primary fw-bold"><div class="spinner-border spinner-border-sm me-2"></div> Fixing records in Supabase... Please wait.</td></tr>';
             
             const { data, error } = await supabaseClient.from('questions').select('*').limit(3000);
             if (error || !data) return alert("Error fetching questions: " + (error?.message || ''));
@@ -1476,17 +1264,23 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
         async function loadGibberishMCQs() {
             const tb = document.getElementById('mcq-tbody');
-            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
-            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
+            tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question, is_featured').order('id',{ascending:false}).limit(1000);
             if(error || !data) return;
             const badChars = ['Ã', 'â', '€', '™', 'Â', 'œ', '”', 'à'];
             const gibberish = data.filter(q => badChars.some(char => q.question.includes(char)));
             
             if(gibberish.length === 0) {
-                tb.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-success fw-bold">No gibberish/corrupted questions found!</td></tr>';
+                tb.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-success fw-bold">No gibberish/corrupted questions found!</td></tr>';
                 return;
             }
-            tb.innerHTML = gibberish.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td class="text-danger fw-medium">\${decodeText(q.question).substring(0,60)}...</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
+            tb.innerHTML = gibberish.map(q=>\`<tr>
+                <td>#\${q.id.substring(0,6)}</td>
+                <td>\${decodeText(q.qcategory)}</td>
+                <td class="text-danger fw-medium">\${decodeText(q.question).substring(0,60)}...</td>
+                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
+            </tr>\`).join('');
         }
 
         function openMcqModal() { 
@@ -1703,31 +1497,8 @@ async function fetchDynamicComponents() {
     }
 }
 
-async function getCategoryCount(catName) {
-    try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?qcategory=eq.${encodeURIComponent(catName)}&select=id`, {
-            method: 'GET',
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Range-Unit': 'items',
-                'Range': '0-0',
-                'Prefer': 'count=exact'
-            }
-        });
-        const countHeader = res.headers.get('content-range');
-        if (countHeader) {
-            const count = countHeader.split('/')[1];
-            return parseInt(count) || 0;
-        }
-        return 0;
-    } catch (e) {
-        return 0;
-    }
-}
-
 // ==========================================
-// BUILD SCRIPT WITH PLUGIN SCANNER & PHYSICAL ROUTING
+// BUILD SCRIPT (PURE DYNAMIC ARCHITECTURE)
 // ==========================================
 async function buildCSRSite() {
     try {
@@ -1782,8 +1553,9 @@ async function buildCSRSite() {
             }
         }
 
-        console.log("2. Generating Full Client-Side Application Templates in ROOT...");
+        console.log("2. Generating Root Application Templates...");
 
+        // Generate ONLY root pages. NO NESTED DIRECTORIES.
         await fsAsync.writeFile(path.join(rootDir, 'index.html'), getIndexTemplate(`${SITE_BASE_URL}/`), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'categories.html'), getCategoriesTemplate(`${SITE_BASE_URL}/categories.html`), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(loadedPluginsTools, `${SITE_BASE_URL}/tools.html`), 'utf8');
@@ -1792,6 +1564,155 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'category.html'), getCategoryTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(`${SITE_BASE_URL}/pdf-reader.html`), 'utf8');
+
+        // Dynamic Universal Renderers
+        console.log("3. Generating Universal Render Templates (mcq.html, blog.html)...");
+        
+        // Single Universal Blog Viewer
+        const dynamicBlogHtml = getHtmlShell("Loading Article... | Wedugo", `
+            <div id="blog-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+            <div id="blog-content" class="row justify-content-center mt-3 d-none">
+                <div class="col-lg-8">
+                    <div class="mb-4 text-center">
+                        <span id="blog-cat" class="badge bg-primary bg-opacity-10 text-primary badge-cat text-decoration-none mb-3 border border-primary-subtle">Category</span>
+                        <h1 class="blog-title text-dark display-5 mb-4" id="blog-title">Title</h1>
+                        <div class="d-flex justify-content-center align-items-center text-muted small fw-medium"><span><i class="bi bi-calendar3 me-1"></i><span id="blog-date">Date</span></span></div>
+                    </div>
+                    ${getAdBannerHtml("Sponsored")}
+                    <div class="card p-4 p-md-5 mb-5 shadow-sm border-0 bg-white"><article class="article-content" id="blog-body"></article></div>
+                    ${BLOG_BOTTOM_CODE ? `<div class="mt-4">${BLOG_BOTTOM_CODE}</div>` : ''}
+                </div>
+                ${getAdSidebar()}
+            </div>
+            <script>
+                const urlParams = new URLSearchParams(window.location.search);
+                const CURRENT_BLOG_SLUG = urlParams.get('slug');
+                
+                document.addEventListener('DOMContentLoaded', async () => {
+                    if(!CURRENT_BLOG_SLUG) { window.location.href = '/blogs.html'; return; }
+                    const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', CURRENT_BLOG_SLUG).single();
+                    if(data) {
+                        document.getElementById('blog-title').innerText = data.title;
+                        document.title = data.title + " | Wedugo";
+                        document.getElementById('dynamic-canonical').href = "${SITE_BASE_URL}/blog.html?slug=" + data.slug;
+                        
+                        document.getElementById('blog-cat').innerText = data.category;
+                        document.getElementById('blog-date').innerText = new Date(data.created_at).toLocaleDateString();
+                        document.getElementById('blog-body').innerHTML = data.content;
+                        
+                        const plainTextDesc = data.content.replace(/<[^>]*>?/gm, '').replace(/\\s+/g, ' ').trim().substring(0, 150) + "...";
+                        document.getElementById('dynamic-desc').setAttribute("content", plainTextDesc);
+                        
+                        document.getElementById('blog-loader').classList.add('d-none'); document.getElementById('blog-content').classList.remove('d-none');
+                    } else {
+                        document.getElementById('blog-loader').innerHTML = '<h4 class="text-danger mt-4">Article not found!</h4><a href="/blogs.html" class="btn btn-primary mt-3">Browse Blogs</a>';
+                    }
+                });
+            </script>
+        `);
+        await fsAsync.writeFile(path.join(rootDir, 'blog.html'), dynamicBlogHtml, 'utf8');
+
+        // Single Universal MCQ Viewer
+        const dynamicMcqHtml = getHtmlShell("Loading Question... | Wedugo", `
+            <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Loading question from server...</p></div>
+            <div id="mcq-content" class="row d-none">
+                <div class="col-lg-8">
+                    ${getAdBannerHtml("Sponsored")}
+                    <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
+                        <header class="mb-4 border-bottom pb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <a id="mcq-cat-link" href="#" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill">Category</a>
+                                <button id="btn-hint" class="btn btn-warning btn-sm fw-bold rounded-pill shadow-sm px-3" onclick="useHint()">💡 Hint (2 Left)</button>
+                            </div>
+                            <h1 class="h4 fw-bold text-dark lh-base mt-3" id="mcq-qtext"></h1>
+                        </header>
+                        <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
+                        <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
+                    </article>
+                    
+                    <div class="text-center mt-4 pt-4 border-top">
+                        <a id="back-hub-btn" href="/categories.html" class="btn btn-outline-dark fw-bold px-5 rounded-pill shadow-sm">Back to Category Hub</a>
+                    </div>
+                    
+                    ${MCQ_BOTTOM_CODE ? `<div class="mt-4 mb-5">${MCQ_BOTTOM_CODE}</div>` : ''}
+                </div>
+                ${getAdSidebar()}
+            </div>
+            <script>
+                const urlParams = new URLSearchParams(window.location.search);
+                const CURRENT_MCQ_ID = urlParams.get('id');
+                let currentQ = null; 
+                let hasAnswered = false;
+                let hintsLeft = 2; 
+                
+                ${catMapScript}
+                
+                document.addEventListener('DOMContentLoaded', async () => {
+                    if(!CURRENT_MCQ_ID) { window.location.href = '/categories.html'; return; }
+                    const { data } = await supabaseClient.from('questions').select('*').eq('id', CURRENT_MCQ_ID).single();
+                    
+                    if(data) {
+                        currentQ = data;
+                        const catName = decodeText(data.qcategory);
+                        document.getElementById('mcq-cat-link').innerText = catName;
+                        document.getElementById('mcq-cat-link').href = "/category.html?name=" + encodeURIComponent(catName);
+                        document.getElementById('back-hub-btn').href = "/category.html?name=" + encodeURIComponent(catName);
+                        
+                        const cleanQText = decodeText(data.question);
+                        document.getElementById('mcq-qtext').innerText = cleanQText;
+                        
+                        // Dynamic SEO setup
+                        document.title = cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 50) + " | Wedugo";
+                        document.getElementById('dynamic-canonical').href = "${SITE_BASE_URL}/mcq.html?id=" + data.id;
+                        document.getElementById('dynamic-desc').setAttribute("content", cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 150));
+                        
+                        const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
+                        let optHtml = ''; 
+                        for(let k in opts) { 
+                            optHtml += \`<button class="btn option-btn opt-btn-choice" data-val="\${k}" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; 
+                        }
+                        document.getElementById('mcq-options').innerHTML = optHtml;
+                        
+                        document.getElementById('mcq-loader').classList.add('d-none'); 
+                        document.getElementById('mcq-content').classList.remove('d-none');
+                    } else {
+                        document.getElementById('mcq-loader').innerHTML = '<h4 class="text-danger mt-4">Question not found!</h4><a href="/categories.html" class="btn btn-primary mt-3">Go Back</a>';
+                    }
+                });
+
+                function useHint() {
+                    if(hasAnswered || hintsLeft <= 0) return;
+                    const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
+                    const wrongBtns = Array.from(document.querySelectorAll('.opt-btn-choice')).filter(btn => btn.getAttribute('data-val') !== correct && !btn.classList.contains('d-none'));
+                    if(wrongBtns.length > 0) {
+                        const randomIdx = Math.floor(Math.random() * wrongBtns.length);
+                        wrongBtns[randomIdx].classList.add('d-none'); 
+                        hintsLeft--;
+                        const hintBtn = document.getElementById('btn-hint');
+                        if(hintsLeft > 0) hintBtn.innerText = "💡 Hint (" + hintsLeft + " Left)"; 
+                        else { hintBtn.innerText = "💡 No Hints Left"; hintBtn.disabled = true; hintBtn.classList.replace('btn-warning', 'btn-secondary'); }
+                    }
+                }
+
+                function checkAns(btn, selected) {
+                    if(hasAnswered) return; hasAnswered = true;
+                    const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
+                    const expBox = document.getElementById('mcq-exp-box');
+                    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+                    document.getElementById('btn-hint').disabled = true; 
+                    expBox.classList.remove('d-none');
+                    if(selected === correct) { 
+                        btn.classList.add('correct-show'); expBox.classList.add('alert-success', 'border-success'); 
+                        document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!"; 
+                    } else { 
+                        btn.classList.add('incorrect-show'); expBox.classList.add('alert-danger', 'border-danger'); 
+                        document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct; 
+                    }
+                    document.getElementById('mcq-exp-text').innerText = decodeText(currentQ.answerdetail) || "Practice makes perfect.";
+                }
+            </script>
+        `);
+        await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), dynamicMcqHtml, 'utf8');
 
         // Legal & Static Pages
         const aboutContent = `<p class="fs-5 text-secondary lh-lg mb-5">Wedugo Education is an authoritative editorial platform dedicated to providing students with high-quality study materials, in-depth conceptual guides, and robust examination practice tools.</p><div class="row g-5"><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Our Editorial Standard</h3><p class="text-secondary lh-lg">Every article and mock test on Wedugo is designed to meet strict educational standards, ensuring you receive factual, up-to-date, and highly relevant content to boost your competitive edge.</p></div><div class="col-md-6"><h3 class="h4 fw-bold mb-3 text-dark">Custom Practice Engine</h3><p class="text-secondary lh-lg">We introduced the Custom Mock Test builder to allow aspirants to simulate exact real-world portal environments, featuring adjustable negative marking, category mixes, and timers.</p></div></div>`;
@@ -1811,123 +1732,7 @@ async function buildCSRSite() {
         // 404 Fallback
         await fsAsync.writeFile(path.join(rootDir, '404.html'), getStaticPageTemplate('404 - Page Not Found', '<p class="lead">Oops! The page you are looking for does not exist.</p><a href="/index.html" class="btn btn-primary fw-bold mt-3 px-4 py-2 rounded-pill">Go back to homepage</a>'), 'utf8');
 
-        console.log("3. 🚀 GENERATING PHYSICAL SEO ROUTE FOLDERS TO PREVENT 404s...");
-        for (const cat of CATEGORY_LIST) {
-            const slug = makeSlug(cat);
-            const totalQuestions = await getCategoryCount(cat);
-            
-            // At least 1 page/set even if empty, or calculate required amounts
-            const totalPages = Math.max(1, Math.ceil(totalQuestions / 10));
-            const totalSets = Math.max(1, Math.ceil(totalQuestions / 10));
-
-            // Generate /categories/[slug]/index.html
-            const catDir = path.join(rootDir, 'categories', slug);
-            fs.mkdirSync(catDir, { recursive: true });
-            await fsAsync.writeFile(path.join(catDir, 'index.html'), getCategoryTemplate(`${SITE_BASE_URL}/categories/${slug}/index.html`), 'utf8');
-
-            // Generate exact number of pages required to prevent 404s
-            const mcqCatDir = path.join(rootDir, 'mcqs', slug);
-            fs.mkdirSync(mcqCatDir, { recursive: true });
-            for (let p = 1; p <= totalPages; p++) {
-                await fsAsync.writeFile(path.join(mcqCatDir, `page-${p}.html`), getCategoryTemplate(`${SITE_BASE_URL}/mcqs/${slug}/page-${p}.html`), 'utf8');
-            }
-
-            // Generate exact number of sets required to prevent 404s
-            const mockDir = path.join(rootDir, 'mock-tests', slug);
-            fs.mkdirSync(mockDir, { recursive: true });
-            for (let s = 1; s <= totalSets; s++) {
-                await fsAsync.writeFile(path.join(mockDir, `set-${s}.html`), getMockTemplate(`${SITE_BASE_URL}/mock-tests/${slug}/set-${s}.html`), 'utf8');
-            }
-        }
-
-        // --- HYBRID SEO FIX: STATIC META TAGS + LIVE SUPABASE DATA FOR BLOGS ---
-        console.log("-> Generating Hybrid Blog Pages for SEO + Live Data...");
-        const blogRes = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        let seoBlogs = [];
-        if(blogRes.ok) seoBlogs = await blogRes.json();
-        
-        if (seoBlogs && seoBlogs.length > 0) {
-            const blogDir = path.join(rootDir, 'blog');
-            if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true });
-            
-            for (const post of seoBlogs) {
-                const canonicalUrl = `${SITE_BASE_URL}/blog/${post.slug}.html`;
-                const plainTextDesc = post.content.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 150) + "...";
-                const title = post.title + " | Wedugo";
-                
-                const hybridBlogHtml = getHybridBlogTemplate(post.slug, title, plainTextDesc, canonicalUrl);
-                await fsAsync.writeFile(path.join(blogDir, `${post.slug}.html`), hybridBlogHtml, 'utf8');
-            }
-        }
-
-        // --- HYBRID SEO FIX: STATIC PAGINATION & LIVE SUPABASE DATA FOR MCQS ---
-        console.log("-> Generating Hybrid MCQ Pages for SEO + Static Pagination...");
-        let seoMcqs = [];
-        let hasMore = true;
-        let offset = 0;
-        const fetchLimit = 1000;
-        
-        // Fetch ALL MCQs
-        while (hasMore) {
-            const mcqRes = await fetch(`${SUPABASE_URL}/rest/v1/questions?select=id,question,qcategory,answer1,answer2,answer3,answer4,answerdetail,mainanswer&limit=${fetchLimit}&offset=${offset}`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
-            if(mcqRes.ok) {
-                const chunk = await mcqRes.json();
-                if(chunk.length > 0) {
-                    seoMcqs = seoMcqs.concat(chunk);
-                    offset += fetchLimit;
-                } else {
-                    hasMore = false;
-                }
-            } else {
-                hasMore = false;
-            }
-        }
-
-        if (seoMcqs && seoMcqs.length > 0) {
-            const mcqDir = path.join(rootDir, 'mcq');
-            if (!fs.existsSync(mcqDir)) fs.mkdirSync(mcqDir, { recursive: true });
-            
-            // SORT to ensure Prev/Next logic works flawlessly
-            seoMcqs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-            
-            for (let i = 0; i < seoMcqs.length; i++) {
-                const q = seoMcqs[i];
-                const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-                const cleanQ = decodeText(q.question);
-                const qSlug = createSlug(cleanQ);
-                const canonicalUrl = `${SITE_BASE_URL}/mcq/${q.id}/${qSlug}.html`;
-                const title = cleanQ.replace(/<[^>]*>?/gm, '').trim().substring(0, 60) + " | Wedugo";
-                const plainTextDesc = cleanQ.replace(/<[^>]*>?/gm, '').trim().substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.";
-                
-                // --- PRE-CALCULATE STATIC NEXT/PREV URLS ---
-                let prevUrl = '#';
-                let nextUrl = '#';
-                
-                if (i > 0) {
-                    const prevQ = seoMcqs[i - 1];
-                    const pSlug = createSlug(decodeText(prevQ.question));
-                    prevUrl = `/mcq/${prevQ.id}/${pSlug}.html`;
-                }
-                if (i < seoMcqs.length - 1) {
-                    const nextQ = seoMcqs[i + 1];
-                    const nSlug = createSlug(decodeText(nextQ.question));
-                    nextUrl = `/mcq/${nextQ.id}/${nSlug}.html`;
-                }
-
-                const hybridMcqHtml = getHybridMcqTemplate(q.id, title, plainTextDesc, canonicalUrl, qSlug, prevUrl, nextUrl);
-                
-                const nestedDir = path.join(mcqDir, String(q.id));
-                if (!fs.existsSync(nestedDir)) fs.mkdirSync(nestedDir, { recursive: true });
-                
-                await fsAsync.writeFile(path.join(nestedDir, `${qSlug}.html`), hybridMcqHtml, 'utf8');
-            }
-        }
-
-        console.log("4. Generating SEO Sitemap...");
+        console.log("4. Generating SEO Sitemap (Includes dynamic query URLs)...");
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         xml += `<url><loc>${SITE_BASE_URL}/</loc><priority>1.0</priority></url>\n`;
         xml += `<url><loc>${SITE_BASE_URL}/categories.html</loc><priority>0.9</priority></url>\n`;
@@ -1937,108 +1742,34 @@ async function buildCSRSite() {
         if(TOOL_PDF_READER) xml += `<url><loc>${SITE_BASE_URL}/pdf-reader.html</loc><priority>0.8</priority></url>\n`;
         
         CATEGORY_LIST.forEach(cat => {
-            const slug = makeSlug(cat);
-            xml += `<url><loc>${SITE_BASE_URL}/categories/${slug}/index.html</loc><priority>0.8</priority></url>\n`;
+            xml += `<url><loc>${SITE_BASE_URL}/category.html?name=${encodeURIComponent(cat)}</loc><priority>0.8</priority></url>\n`;
         });
 
-        // --- SEO FIX: ADD PHYSICAL BLOGS TO SITEMAP ---
-        if (seoBlogs && seoBlogs.length > 0) {
-            seoBlogs.forEach(post => {
-                xml += `<url><loc>${SITE_BASE_URL}/blog/${post.slug}.html</loc><priority>0.9</priority></url>\n`;
-            });
+        // Fetch Blogs for sitemap
+        const blogRes = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=slug`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+        if(blogRes.ok) {
+            const seoBlogs = await blogRes.json();
+            seoBlogs.forEach(post => { xml += `<url><loc>${SITE_BASE_URL}/blog.html?slug=${post.slug}</loc><priority>0.9</priority></url>\n`; });
         }
 
-        // --- SEO FIX: ADD PHYSICAL MCQs TO SITEMAP ---
-        if (seoMcqs && seoMcqs.length > 0) {
-            const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-            seoMcqs.forEach(q => {
-                const qSlug = createSlug(decodeText(q.question));
-                xml += `<url><loc>${SITE_BASE_URL}/mcq/${q.id}/${qSlug}.html</loc><priority>0.8</priority></url>\n`;
-            });
+        // Fetch MCQs for sitemap (Fetching IDs only to keep memory low)
+        let hasMore = true; let offset = 0; const fetchLimit = 1000;
+        while (hasMore) {
+            const mcqRes = await fetch(`${SUPABASE_URL}/rest/v1/questions?select=id&limit=${fetchLimit}&offset=${offset}`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+            if(mcqRes.ok) {
+                const chunk = await mcqRes.json();
+                if(chunk.length > 0) {
+                    chunk.forEach(q => { xml += `<url><loc>${SITE_BASE_URL}/mcq.html?id=${q.id}</loc><priority>0.7</priority></url>\n`; });
+                    offset += fetchLimit;
+                } else { hasMore = false; }
+            } else { hasMore = false; }
         }
 
         xml += `</urlset>`;
-
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        // --- SEO FIX: LEGACY URL SMART AUTO-ROUTER ---
-        console.log("5. Generating Fallback Redirects for Old Indexed Links...");
-        
-        const legacyMcqHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Redirecting...</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const _SU_URL = "${SUPABASE_URL}";
-        const _SU_KEY = "${SUPABASE_KEY}";
-        const supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        
-        const createSlug = (str) => {
-            if (!str) return 'question';
-            let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-            return s.substring(0, 100).replace(/-+$/, '') || 'question';
-        };
-        
-        async function doRedirect() {
-            if(id) {
-                const { data } = await supabaseClient.from('questions').select('question').eq('id', id).single();
-                if(data && data.question) {
-                    const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-                    const generatedSlug = createSlug(decodeText(data.question));
-                    window.location.replace('/mcq/' + id + '/' + generatedSlug + '.html');
-                } else {
-                    window.location.replace('/categories.html');
-                }
-            } else {
-                window.location.replace('/categories.html');
-            }
-        }
-        doRedirect();
-    </script>
-</head>
-<body>
-    <div style="text-align:center; padding:100px 20px; font-family:sans-serif; color:#334155;">
-        <div style="width:40px; height:40px; border:4px solid #3b82f6; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px auto;"></div>
-        <h2>Locating Question...</h2>
-        <p>Please wait while we route you to the optimized page.</p>
-        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
-    </div>
-</body>
-</html>`;
-        await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), legacyMcqHtml, 'utf8');
-
-        const legacyBlogHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Redirecting...</title>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const slug = urlParams.get('slug');
-        if(slug) {
-            window.location.replace('/blog/' + slug + '.html');
-        } else {
-            window.location.replace('/blogs.html');
-        }
-    </script>
-</head>
-<body>
-    <div style="text-align:center; padding:100px 20px; font-family:sans-serif; color:#334155;">
-        <div style="width:40px; height:40px; border:4px solid #3b82f6; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px auto;"></div>
-        <h2>Loading Article...</h2>
-        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
-    </div>
-</body>
-</html>`;
-        await fsAsync.writeFile(path.join(rootDir, 'blog.html'), legacyBlogHtml, 'utf8');
-
-        console.log("✅ BUILD COMPLETE (Hybrid SEO Implementation Done - URL Slugs & Static Pagination perfectly matched)");
+        console.log("✅ PURE DYNAMIC BUILD COMPLETE (No static HTML folders generated, 0 404s guaranteed)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

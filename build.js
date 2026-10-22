@@ -28,9 +28,18 @@ const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
-// Utility Functions
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
-const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };
+// Utility: Generate Slugs for Categories
+const makeSlug = (str) => {
+    if (!str) return 'category';
+    return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+};
+
+// Utility: Generate Bulletproof Slugs for MCQs to prevent 404s
+const createSlug = (str) => {
+    if (!str) return 'question';
+    let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+    return s.substring(0, 100).replace(/-+$/, '') || 'question';
+};
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
@@ -80,8 +89,13 @@ function getAdSidebar() {
 
 function getNavbar() {
     let toolsDropdownList = `<li><a class="dropdown-item fw-medium py-2" href="/tools.html"><i class="bi bi-collection me-2 text-secondary"></i>All Tools Explorer</a></li><li><hr class="dropdown-divider"></li>`;
-    if(TOOL_SCORE_ESTIMATOR) toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
-    if(TOOL_PDF_READER) toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
+    
+    if(TOOL_SCORE_ESTIMATOR) {
+        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
+    }
+    if(TOOL_PDF_READER) {
+        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
+    }
 
     return `
     <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm py-3 border-bottom sticky-top">
@@ -98,11 +112,17 @@ function getNavbar() {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/categories.html"><i class="bi bi-grid me-1"></i>Categories</a></li>
                     <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="/custom-exam.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-tools me-1"></i>Tools</a>
-                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">${toolsDropdownList}</ul>
+                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tools me-1"></i>Tools
+                        </a>
+                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">
+                            ${toolsDropdownList}
+                        </ul>
                     </li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/blogs.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
-                    <li class="nav-item ms-lg-2" id="auth-nav-container"><button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button></li>
+                    <li class="nav-item ms-lg-2" id="auth-nav-container">
+                        <button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -114,7 +134,9 @@ function getFooter() {
     <footer class="bg-white border-top py-5 mt-auto">
         <div class="container">
             <div class="row text-center text-md-start align-items-center">
-                <div class="col-md-6 mb-3 mb-md-0"><p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p></div>
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p>
+                </div>
                 <div class="col-md-6 text-md-end">
                     <a href="/tools.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">Study Tools</a>
                     <a href="/about.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">About Us</a>
@@ -126,10 +148,11 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL
+// 🟢 MASTER HTML SHELL WITH INJECTIONS
 function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
+    
     const canonicalTag = canonicalUrl ? `<link rel="canonical" id="dynamic-canonical" href="${canonicalUrl}">` : '<link rel="canonical" id="dynamic-canonical" href="">';
 
     return `<!DOCTYPE html>
@@ -249,24 +272,27 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
                 const { data } = await supabaseClient.from('dynamic_components').select('*');
                 if(data) {
                     const getVal = (name) => { const obj = data.find(s => s.component_name === name); return obj ? obj.is_active : true; };
+                    
                     if(getVal('TOOL_PDF_READER')) {
                         if(document.getElementById('nav-tool-pdf')) document.getElementById('nav-tool-pdf').classList.remove('d-none');
                         if(document.getElementById('tool-card-pdf')) document.getElementById('tool-card-pdf').classList.remove('d-none');
                     } else {
                         if(window.location.pathname.includes('pdf-reader')) window.location.href = '/tools.html';
                     }
+
                     if(getVal('TOOL_SCORE_ESTIMATOR')) {
                         if(document.getElementById('nav-tool-score')) document.getElementById('nav-tool-score').classList.remove('d-none');
                         if(document.getElementById('tool-card-score')) document.getElementById('tool-card-score').classList.remove('d-none');
                     }
                 }
-            } catch(e) {}
+            } catch(e) { console.error("Error fetching live settings."); }
         }
 
         async function initAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateNavUI(session?.user);
             checkModuleLock();
+
             supabaseClient.auth.onAuthStateChange((_event, session) => {
                 updateNavUI(session?.user);
                 checkModuleLock();
@@ -329,7 +355,7 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
         }
 
         async function checkModuleLock() {
-            const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html');
+            const isProtected = window.location.href.includes('mock.html') || window.location.href.includes('custom-exam.html') || window.location.href.includes('/mock-tests/');
             if(!isProtected) return;
 
             const { data } = await supabaseClient.from('dynamic_components').select('*').eq('component_name', 'LOCK_MOCK_TESTS').maybeSingle();
@@ -1333,7 +1359,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 answer4: document.getElementById('q-optD').value, 
                 mainanswer: document.getElementById('q-ans').value.toUpperCase(), 
                 qcategory: document.getElementById('q-cat').value, 
-                answerdetail: document.getElementById('q-exp').value 
+                answerdetail: document.getElementById('q-exp').value,
+                created_at: new Date().toISOString()
             };
             
             let dbError;
@@ -1615,7 +1642,7 @@ async function buildCSRSite() {
         `);
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), dynamicBlogHtml, 'utf8');
 
-        // Single Universal MCQ Viewer
+        // Single Universal MCQ Viewer (FIXED NEXT/PREV & HANGING)
         const dynamicMcqHtml = getHtmlShell("Loading Question... | Wedugo", `
             <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Loading question from server...</p></div>
             <div id="mcq-content" class="row d-none">
@@ -1655,46 +1682,58 @@ async function buildCSRSite() {
                 
                 document.addEventListener('DOMContentLoaded', async () => {
                     if(!CURRENT_MCQ_ID) { window.location.href = '/categories.html'; return; }
-                    const { data } = await supabaseClient.from('questions').select('*').eq('id', CURRENT_MCQ_ID).single();
                     
-                    if(data) {
-                        currentQ = data;
-                        const catName = decodeText(data.qcategory);
-                        document.getElementById('mcq-cat-link').innerText = catName;
-                        document.getElementById('mcq-cat-link').href = "/category.html?name=" + encodeURIComponent(catName);
-                        document.getElementById('back-hub-btn').href = "/category.html?name=" + encodeURIComponent(catName);
+                    try {
+                        const { data, error } = await supabaseClient.from('questions').select('*').eq('id', CURRENT_MCQ_ID).single();
+                        if(error) throw error;
                         
-                        const cleanQText = decodeText(data.question);
-                        document.getElementById('mcq-qtext').innerText = cleanQText;
-                        
-                        // Dynamic SEO setup
-                        document.title = cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 50) + " | Wedugo";
-                        document.getElementById('dynamic-canonical').href = "${SITE_BASE_URL}/mcq.html?id=" + data.id;
-                        document.getElementById('dynamic-desc').setAttribute("content", cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 150));
-                        
-                        const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
-                        let optHtml = ''; 
-                        for(let k in opts) { 
-                            optHtml += \`<button class="btn option-btn opt-btn-choice" data-val="\${k}" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; 
-                        }
-                        document.getElementById('mcq-options').innerHTML = optHtml;
+                        if(data) {
+                            currentQ = data;
+                            const catName = decodeText(data.qcategory);
+                            document.getElementById('mcq-cat-link').innerText = catName;
+                            document.getElementById('mcq-cat-link').href = "/category.html?name=" + encodeURIComponent(catName);
+                            document.getElementById('back-hub-btn').href = "/category.html?name=" + encodeURIComponent(catName);
+                            
+                            const cleanQText = decodeText(data.question);
+                            document.getElementById('mcq-qtext').innerText = cleanQText;
+                            
+                            document.title = cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 50) + " | Wedugo";
+                            document.getElementById('dynamic-canonical').href = "\${SITE_BASE_URL}/mcq.html?id=" + data.id;
+                            document.getElementById('dynamic-desc').setAttribute("content", cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 150));
+                            
+                            const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
+                            let optHtml = ''; 
+                            for(let k in opts) { 
+                                if(opts[k] && decodeText(opts[k]).trim() !== '') {
+                                    optHtml += \\\`<button class="btn option-btn opt-btn-choice" data-val="\\\${k}" onclick="checkAns(this, '\\\${k}')">\\\${k}) \\\${decodeText(opts[k])}</button>\\\`; 
+                                }
+                            }
+                            document.getElementById('mcq-options').innerHTML = optHtml;
 
-                        // FETCH ADJACENT QUESTIONS FOR NEXT/PREV BUTTONS
-                        const btnPrev = document.getElementById('btn-prev-mcq');
-                        const btnNext = document.getElementById('btn-next-mcq');
-                        
-                        // Prev Query
-                        const { data: prevData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).lt('id', data.id).order('id', {ascending: false}).limit(1).maybeSingle();
-                        if(prevData && prevData.id) { btnPrev.href = "/mcq.html?id=" + prevData.id; btnPrev.classList.remove('disabled'); }
-                        
-                        // Next Query
-                        const { data: nextData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).gt('id', data.id).order('id', {ascending: true}).limit(1).maybeSingle();
-                        if(nextData && nextData.id) { btnNext.href = "/mcq.html?id=" + nextData.id; btnNext.classList.remove('disabled'); }
-                        
-                        document.getElementById('mcq-loader').classList.add('d-none'); 
-                        document.getElementById('mcq-content').classList.remove('d-none');
-                    } else {
-                        document.getElementById('mcq-loader').innerHTML = '<h4 class="text-danger mt-4">Question not found!</h4><a href="/categories.html" class="btn btn-primary mt-3">Go Back</a>';
+                            // FETCH ADJACENT QUESTIONS FOR NEXT/PREV BUTTONS
+                            const btnPrev = document.getElementById('btn-prev-mcq');
+                            const btnNext = document.getElementById('btn-next-mcq');
+                            
+                            const { data: allCatQs } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).order('created_at', {ascending: true});
+                            
+                            if(allCatQs && allCatQs.length > 0) {
+                                const curIdx = allCatQs.findIndex(q => q.id === data.id);
+                                if(curIdx > 0) {
+                                    btnPrev.href = "/mcq.html?id=" + allCatQs[curIdx - 1].id;
+                                    btnPrev.classList.remove('disabled');
+                                }
+                                if(curIdx >= 0 && curIdx < allCatQs.length - 1) {
+                                    btnNext.href = "/mcq.html?id=" + allCatQs[curIdx + 1].id;
+                                    btnNext.classList.remove('disabled');
+                                }
+                            }
+                            
+                            document.getElementById('mcq-loader').classList.add('d-none'); 
+                            document.getElementById('mcq-content').classList.remove('d-none');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        document.getElementById('mcq-loader').innerHTML = '<h4 class="text-danger mt-4">Question not found or error loading!</h4><p class="text-muted">' + err.message + '</p><a href="/categories.html" class="btn btn-primary mt-3">Go Back to Categories</a>';
                     }
                 });
 
@@ -1729,7 +1768,7 @@ async function buildCSRSite() {
                     document.getElementById('mcq-exp-text').innerText = decodeText(currentQ.answerdetail) || "Practice makes perfect.";
                 }
             </script>
-        `);
+        \`);
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), dynamicMcqHtml, 'utf8');
 
         // Legal & Static Pages

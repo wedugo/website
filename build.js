@@ -30,7 +30,7 @@ const CATEGORY_LIST = [
 
 // Utility: Generate Slugs for SEO Clean URLs
 const makeSlug = (str) => {
-    if (!str) return '';
+    if (!str) return 'question';
     return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
 };
 
@@ -38,7 +38,7 @@ const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return ''; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
+const makeSlug = (str) => { if (!str) return 'question'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -144,7 +144,7 @@ function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
     
-    // Canonical tag static string (dynamically inserted below if present)
+    // Canonical tag static string
     const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
@@ -430,8 +430,8 @@ function getIndexTemplate(canonicalUrl = "") {
                     let blogHtml = '';
                     blogs.forEach((b, i) => {
                         const date = new Date(b.created_at).toLocaleDateString();
-                        if(i===0) blogHtml += \`<div class="col-12 mb-2"><a href="/blog.html?slug=\${b.slug}" class="card shadow border-0 rounded-4 overflow-hidden text-decoration-none bg-dark text-white card-hover p-4 p-md-5"><span class="badge bg-primary w-auto align-self-start mb-3 px-3 py-2 text-uppercase fw-bold">\${b.category}</span><h2 class="display-5 fw-bold mb-3 lh-sm text-white">\${b.title}</h2><div class="small fw-medium text-white-50"><i class="bi bi-clock me-1"></i>\${date}</div></a></div>\`;
-                        else blogHtml += \`<div class="col-md-6 col-lg-4"><a href="/blog.html?slug=\${b.slug}" class="card h-100 p-4 shadow-sm border border-light text-decoration-none card-hover bg-white d-flex flex-column"><span class="text-primary small fw-bold text-uppercase mb-2">\${b.category}</span><h3 class="h5 fw-bold text-dark mb-3 lh-base">\${b.title}</h3><small class="text-muted mt-auto"><i class="bi bi-calendar3 me-1"></i>\${date}</small></a></div>\`;
+                        if(i===0) blogHtml += \`<div class="col-12 mb-2"><a href="/blog/\${b.slug}.html" class="card shadow border-0 rounded-4 overflow-hidden text-decoration-none bg-dark text-white card-hover p-4 p-md-5"><span class="badge bg-primary w-auto align-self-start mb-3 px-3 py-2 text-uppercase fw-bold">\${b.category}</span><h2 class="display-5 fw-bold mb-3 lh-sm text-white">\${b.title}</h2><div class="small fw-medium text-white-50"><i class="bi bi-clock me-1"></i>\${date}</div></a></div>\`;
+                        else blogHtml += \`<div class="col-md-6 col-lg-4"><a href="/blog/\${b.slug}.html" class="card h-100 p-4 shadow-sm border border-light text-decoration-none card-hover bg-white d-flex flex-column"><span class="text-primary small fw-bold text-uppercase mb-2">\${b.category}</span><h3 class="h5 fw-bold text-dark mb-3 lh-base">\${b.title}</h3><small class="text-muted mt-auto"><i class="bi bi-calendar3 me-1"></i>\${date}</small></a></div>\`;
                     });
                     document.getElementById('home-blogs').innerHTML = blogHtml;
                 }
@@ -439,7 +439,8 @@ function getIndexTemplate(canonicalUrl = "") {
                 if(qData) {
                     let qHtml = '';
                     qData.forEach(q => {
-                        qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${decodeText(q.qcategory)}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><a href="/mcq.html?id=\${q.id}" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
+                        const qSlug = makeSlug(decodeText(q.question)).substring(0, 60) || 'question';
+                        qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${decodeText(q.qcategory)}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><a href="/mcq/\${q.id}/\${qSlug}.html" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
                     });
                     document.getElementById('home-quizzes').innerHTML = qHtml;
                 }
@@ -628,7 +629,7 @@ function getBlogsTemplate(canonicalUrl = "") {
                 if(data) {
                     let html = '';
                     data.forEach(post => {
-                        html += \`<div class="col-md-6"><a href="/blog.html?slug=\${post.slug}" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white"><span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">\${post.category}</span><h3 class="h5 fw-bold mb-3 text-dark lh-base">\${post.title}</h3><p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>\${new Date(post.created_at).toLocaleDateString()}</p></a></div>\`;
+                        html += \`<div class="col-md-6"><a href="/blog/\${post.slug}.html" class="card h-100 p-4 shadow-sm text-decoration-none card-hover border border-light bg-white"><span class="badge bg-light text-secondary border mb-3 w-auto align-self-start">\${post.category}</span><h3 class="h5 fw-bold mb-3 text-dark lh-base">\${post.title}</h3><p class="text-muted small mb-0 mt-auto"><i class="bi bi-clock me-1"></i>\${new Date(post.created_at).toLocaleDateString()}</p></a></div>\`;
                     });
                     document.getElementById('blogs-container').innerHTML = html;
                     document.getElementById('blogs-loader').classList.add('d-none');
@@ -638,8 +639,9 @@ function getBlogsTemplate(canonicalUrl = "") {
     `, "", canonicalUrl);
 }
 
-function getSingleBlogTemplate(canonicalUrl = "") {
-    return getHtmlShell("Read Article", `
+// SEO Fix: Hybrid Single Blog Template (Static Head, Live Body via JS)
+function getHybridBlogTemplate(slug, title, desc, canonicalUrl) {
+    return getHtmlShell(title, `
         <div id="blog-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="blog-content" class="row justify-content-center mt-3 d-none">
             <div class="col-lg-8">
@@ -658,26 +660,10 @@ function getSingleBlogTemplate(canonicalUrl = "") {
             ${getAdSidebar()}
         </div>
         <script>
+            const CURRENT_BLOG_SLUG = "${slug}";
             document.addEventListener('DOMContentLoaded', async () => {
-                const slug = new URLSearchParams(window.location.search).get('slug');
-                const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', slug).single();
+                const { data } = await supabaseClient.from('blog_posts').select('*').eq('slug', CURRENT_BLOG_SLUG).single();
                 if(data) {
-                    // --- DYNAMIC SEO UPDATES ---
-                    document.title = data.title + " | Wedugo";
-                    let metaDesc = document.querySelector('meta[name="description"]');
-                    let plainText = data.content.replace(/<[^>]*>?/gm, '').replace(/\\s+/g, ' ').trim().substring(0, 150);
-                    if(metaDesc) metaDesc.setAttribute("content", plainText + "...");
-
-                    // Inject Canonical Tag Dynamically
-                    let canonicalLink = document.querySelector("link[rel='canonical']");
-                    if (!canonicalLink) {
-                        canonicalLink = document.createElement('link');
-                        canonicalLink.rel = 'canonical';
-                        document.head.appendChild(canonicalLink);
-                    }
-                    canonicalLink.href = "https://www.wedugo.com/blog.html?slug=" + data.slug;
-                    // ---------------------------
-
                     document.getElementById('blog-title').innerText = data.title;
                     document.getElementById('blog-cat').innerText = data.category;
                     document.getElementById('blog-date').innerText = new Date(data.created_at).toLocaleDateString();
@@ -686,20 +672,30 @@ function getSingleBlogTemplate(canonicalUrl = "") {
                 }
             });
         </script>
-    `, "", canonicalUrl);
+    `, desc, canonicalUrl);
 }
 
-function getMcqTemplate() {
-    return getHtmlShell("View MCQ", `
+// SEO Fix: Hybrid MCQ Template (Static Head, Live Body via JS) - HINT BUTTON ADDED
+function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
+    return getHtmlShell(title, `
         <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="mcq-content" class="row d-none">
             <div class="col-lg-8">
                 ${getAdBannerHtml("Sponsored")}
                 <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
-                    <header class="mb-4 border-bottom pb-4"><a id="mcq-cat-link" href="#" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill mb-3">Category</a><h1 class="h4 fw-bold text-dark lh-base mt-3" id="mcq-qtext"></h1></header>
+                    <header class="mb-4 border-bottom pb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <a id="mcq-cat-link" href="#" class="badge bg-primary text-decoration-none px-3 py-2 rounded-pill">Category</a>
+                            <button id="btn-hint" class="btn btn-warning btn-sm fw-bold rounded-pill shadow-sm px-3" onclick="useHint()">💡 Hint (2 Left)</button>
+                        </div>
+                        <h1 class="h4 fw-bold text-dark lh-base mt-3" id="mcq-qtext"></h1>
+                    </header>
                     <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
                     <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
-                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top"><button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" id="btn-prev">Prev</button><button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" id="btn-next">Next</button></div>
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                        <button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" onclick="window.location.href='/mcq.html?id=${parseInt(id)+1}'">Prev</button>
+                        <button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" onclick="window.location.href='/mcq.html?id=${parseInt(id)-1}'">Next</button>
+                    </div>
                 </article>
                 
                 <!-- DYNAMIC MCQ BOTTOM INJECTION CODE -->
@@ -708,58 +704,79 @@ function getMcqTemplate() {
             ${getAdSidebar()}
         </div>
         <script>
-            let currentQ = null; let hasAnswered = false;
+            let currentQ = null; 
+            let hasAnswered = false;
+            let hintsLeft = 2; // HINT FEATURE STATE
+            
             ${catMapScript}
+            const CURRENT_MCQ_ID = "${id}";
             
             document.addEventListener('DOMContentLoaded', async () => {
-                const id = new URLSearchParams(window.location.search).get('id');
-                const { data } = await supabaseClient.from('questions').select('*').eq('id', id).single();
+                const { data } = await supabaseClient.from('questions').select('*').eq('id', CURRENT_MCQ_ID).single();
                 if(data) {
                     currentQ = data;
                     document.getElementById('mcq-cat-link').innerText = decodeText(data.qcategory);
                     document.getElementById('mcq-cat-link').href = "/categories/" + makeSlug(decodeText(data.qcategory)) + "/index.html";
                     document.getElementById('mcq-qtext').innerText = decodeText(data.question);
                     
-                    // --- DYNAMIC SEO & URL UPDATES ---
-                    const cleanQ = decodeText(data.question).replace(/<[^>]*>?/gm, '').trim();
-                    document.title = cleanQ.substring(0, 60) + " | Wedugo";
-                    let metaDesc = document.querySelector('meta[name="description"]');
-                    if(metaDesc) metaDesc.setAttribute("content", cleanQ.substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.");
-                    
-                    const urlSlug = cleanQ.substring(0, 60).replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-                    const newRelativeUrl = '/mcq.html?id=' + data.id + '&q=' + urlSlug;
-                    window.history.replaceState(null, '', newRelativeUrl);
-
-                    // Inject Canonical Tag Dynamically
-                    let canonicalLink = document.querySelector("link[rel='canonical']");
-                    if (!canonicalLink) {
-                        canonicalLink = document.createElement('link');
-                        canonicalLink.rel = 'canonical';
-                        document.head.appendChild(canonicalLink);
-                    }
-                    canonicalLink.href = "https://www.wedugo.com" + newRelativeUrl;
-                    // ---------------------------------
-
                     const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
-                    let optHtml = ''; for(let k in opts) { optHtml += \`<button class="btn option-btn" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; }
+                    let optHtml = ''; 
+                    for(let k in opts) { 
+                        optHtml += \`<button class="btn option-btn opt-btn-choice" data-val="\${k}" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; 
+                    }
                     document.getElementById('mcq-options').innerHTML = optHtml;
-                    document.getElementById('btn-prev').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)+1);
-                    document.getElementById('btn-next').onclick = () => window.location.href = "/mcq.html?id=" + (parseInt(id)-1);
-                    document.getElementById('mcq-loader').classList.add('d-none'); document.getElementById('mcq-content').classList.remove('d-none');
+                    
+                    document.getElementById('mcq-loader').classList.add('d-none'); 
+                    document.getElementById('mcq-content').classList.remove('d-none');
                 }
             });
+
+            // HINT BUTTON LOGIC
+            function useHint() {
+                if(hasAnswered || hintsLeft <= 0) return;
+                const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
+                
+                // Find visible wrong options
+                const wrongBtns = Array.from(document.querySelectorAll('.opt-btn-choice')).filter(btn => {
+                    return btn.getAttribute('data-val') !== correct && !btn.classList.contains('d-none');
+                });
+                
+                if(wrongBtns.length > 0) {
+                    const randomIdx = Math.floor(Math.random() * wrongBtns.length);
+                    wrongBtns[randomIdx].classList.add('d-none'); // Hide one wrong option
+                    
+                    hintsLeft--;
+                    const hintBtn = document.getElementById('btn-hint');
+                    if(hintsLeft > 0) {
+                        hintBtn.innerText = "💡 Hint (" + hintsLeft + " Left)";
+                    } else {
+                        hintBtn.innerText = "💡 No Hints Left";
+                        hintBtn.disabled = true;
+                        hintBtn.classList.replace('btn-warning', 'btn-secondary');
+                    }
+                }
+            }
+
             function checkAns(btn, selected) {
                 if(hasAnswered) return; hasAnswered = true;
                 const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
                 const expBox = document.getElementById('mcq-exp-box');
+                
                 document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+                document.getElementById('btn-hint').disabled = true; // Disable hint after answering
+                
                 expBox.classList.remove('d-none');
-                if(selected === correct) { btn.classList.add('correct-show'); expBox.classList.add('alert-success', 'border-success'); document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!"; }
-                else { btn.classList.add('incorrect-show'); expBox.classList.add('alert-danger', 'border-danger'); document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct; }
+                if(selected === correct) { 
+                    btn.classList.add('correct-show'); expBox.classList.add('alert-success', 'border-success'); 
+                    document.getElementById('mcq-res-title').innerText = "✨ Correct Answer!"; 
+                } else { 
+                    btn.classList.add('incorrect-show'); expBox.classList.add('alert-danger', 'border-danger'); 
+                    document.getElementById('mcq-res-title').innerText = "❌ Incorrect. Right answer is " + correct; 
+                }
                 document.getElementById('mcq-exp-text').innerText = decodeText(currentQ.answerdetail) || "Practice makes perfect.";
             }
         </script>
-    `);
+    `, desc, canonicalUrl);
 }
 
 function getCategoryTemplate(canonicalUrl = "") {
@@ -804,7 +821,7 @@ function getCategoryTemplate(canonicalUrl = "") {
                 if (path.includes('/mcqs/')) {
                     const parts = path.split('/');
                     currentSlug = parts[parts.length - 2];
-                    const pageFile = parts[parts.length - 1]; // "page-14.html"
+                    const pageFile = parts[parts.length - 1]; 
                     catName = catMap[currentSlug];
                     currentPage = parseInt(pageFile.replace('page-', '').replace('.html', '')) || 1;
                 } else if (path.includes('/categories/')) {
@@ -876,7 +893,8 @@ function getCategoryTemplate(canonicalUrl = "") {
                 if(data && data.length > 0) {
                     let html = ''; 
                     data.forEach((q, i) => { 
-                        html += \`<a href="/mcq.html?id=\${q.id}" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${decodeText(q.question).substring(0, 100)}...</a>\`; 
+                        const qSlug = makeSlug(decodeText(q.question)).substring(0, 60) || 'question';
+                        html += \`<a href="/mcq/\${q.id}/\${qSlug}.html" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${decodeText(q.question).substring(0, 100)}...</a>\`; 
                     });
 
                     if (usePagination) {
@@ -1763,10 +1781,8 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'tools.html'), getToolsTemplate(loadedPluginsTools, `${SITE_BASE_URL}/tools.html`), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'blogs.html'), getBlogsTemplate(`${SITE_BASE_URL}/blogs.html`), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'custom-exam.html'), getCustomExamTemplate(`${SITE_BASE_URL}/custom-exam.html`), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), getMcqTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'category.html'), getCategoryTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'mock.html'), getMockTemplate(), 'utf8');
-        await fsAsync.writeFile(path.join(rootDir, 'blog.html'), getSingleBlogTemplate(), 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'pdf-reader.html'), getPdfReaderTemplate(`${SITE_BASE_URL}/pdf-reader.html`), 'utf8');
 
         // Legal & Static Pages
@@ -1802,10 +1818,10 @@ async function buildCSRSite() {
             await fsAsync.writeFile(path.join(catDir, 'index.html'), getCategoryTemplate(`${SITE_BASE_URL}/categories/${slug}/index.html`), 'utf8');
 
             // Generate exact number of pages required to prevent 404s
-            const mcqDir = path.join(rootDir, 'mcqs', slug);
-            fs.mkdirSync(mcqDir, { recursive: true });
+            const mcqCatDir = path.join(rootDir, 'mcqs', slug);
+            fs.mkdirSync(mcqCatDir, { recursive: true });
             for (let p = 1; p <= totalPages; p++) {
-                await fsAsync.writeFile(path.join(mcqDir, `page-${p}.html`), getCategoryTemplate(`${SITE_BASE_URL}/mcqs/${slug}/page-${p}.html`), 'utf8');
+                await fsAsync.writeFile(path.join(mcqCatDir, `page-${p}.html`), getCategoryTemplate(`${SITE_BASE_URL}/mcqs/${slug}/page-${p}.html`), 'utf8');
             }
 
             // Generate exact number of sets required to prevent 404s
@@ -1813,6 +1829,74 @@ async function buildCSRSite() {
             fs.mkdirSync(mockDir, { recursive: true });
             for (let s = 1; s <= totalSets; s++) {
                 await fsAsync.writeFile(path.join(mockDir, `set-${s}.html`), getMockTemplate(`${SITE_BASE_URL}/mock-tests/${slug}/set-${s}.html`), 'utf8');
+            }
+        }
+
+        // --- HYBRID SEO FIX: STATIC META TAGS + LIVE SUPABASE DATA FOR BLOGS ---
+        console.log("-> Generating Hybrid Blog Pages for SEO + Live Data...");
+        // API Call directly to avoid importing Supabase in Node context unnecessarily
+        const blogRes = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        let seoBlogs = [];
+        if(blogRes.ok) seoBlogs = await blogRes.json();
+        
+        if (seoBlogs && seoBlogs.length > 0) {
+            const blogDir = path.join(rootDir, 'blog');
+            if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true });
+            
+            for (const post of seoBlogs) {
+                const canonicalUrl = `${SITE_BASE_URL}/blog/${post.slug}.html`;
+                const plainTextDesc = post.content.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 150) + "...";
+                const title = post.title + " | Wedugo";
+                
+                const hybridBlogHtml = getHybridBlogTemplate(post.slug, title, plainTextDesc, canonicalUrl);
+                await fsAsync.writeFile(path.join(blogDir, `${post.slug}.html`), hybridBlogHtml, 'utf8');
+            }
+        }
+
+        // --- HYBRID SEO FIX: STATIC META TAGS + LIVE SUPABASE DATA FOR MCQS ---
+        console.log("-> Generating Hybrid MCQ Pages for SEO + Live Data (Fetching all IDs)...");
+        let seoMcqs = [];
+        let hasMore = true;
+        let offset = 0;
+        const fetchLimit = 1000;
+        
+        // Loop to fetch all MCQs safely using Supabase REST API
+        while (hasMore) {
+            const mcqRes = await fetch(`${SUPABASE_URL}/rest/v1/questions?select=id,question,qcategory,answer1,answer2,answer3,answer4,answerdetail,mainanswer&limit=${fetchLimit}&offset=${offset}`, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
+            if(mcqRes.ok) {
+                const chunk = await mcqRes.json();
+                if(chunk.length > 0) {
+                    seoMcqs = seoMcqs.concat(chunk);
+                    offset += fetchLimit;
+                } else {
+                    hasMore = false;
+                }
+            } else {
+                hasMore = false;
+            }
+        }
+
+        if (seoMcqs && seoMcqs.length > 0) {
+            const mcqDir = path.join(rootDir, 'mcq');
+            if (!fs.existsSync(mcqDir)) fs.mkdirSync(mcqDir, { recursive: true });
+            
+            for (const q of seoMcqs) {
+                const cleanQ = decodeText(q.question).replace(/<[^>]*>?/gm, '').trim();
+                const qSlug = makeSlug(cleanQ).substring(0, 60) || 'question';
+                const canonicalUrl = `${SITE_BASE_URL}/mcq/${q.id}/${qSlug}.html`;
+                const title = cleanQ.substring(0, 60) + " | Wedugo";
+                const plainTextDesc = cleanQ.substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.";
+                
+                const hybridMcqHtml = getHybridMcqTemplate(q.id, title, plainTextDesc, canonicalUrl, qSlug);
+                
+                const nestedDir = path.join(mcqDir, String(q.id));
+                if (!fs.existsSync(nestedDir)) fs.mkdirSync(nestedDir, { recursive: true });
+                
+                await fsAsync.writeFile(path.join(nestedDir, `${qSlug}.html`), hybridMcqHtml, 'utf8');
             }
         }
 
@@ -1830,12 +1914,95 @@ async function buildCSRSite() {
             xml += `<url><loc>${SITE_BASE_URL}/categories/${slug}/index.html</loc><priority>0.8</priority></url>\n`;
         });
 
+        // --- SEO FIX: ADD PHYSICAL BLOGS TO SITEMAP ---
+        if (seoBlogs && seoBlogs.length > 0) {
+            seoBlogs.forEach(post => {
+                xml += `<url><loc>${SITE_BASE_URL}/blog/${post.slug}.html</loc><priority>0.9</priority></url>\n`;
+            });
+        }
+
+        // --- SEO FIX: ADD PHYSICAL MCQs TO SITEMAP ---
+        if (seoMcqs && seoMcqs.length > 0) {
+            seoMcqs.forEach(q => {
+                const cleanQ = decodeText(q.question).replace(/<[^>]*>?/gm, '').trim();
+                const qSlug = makeSlug(cleanQ).substring(0, 60) || 'question';
+                xml += `<url><loc>${SITE_BASE_URL}/mcq/${q.id}/${qSlug}.html</loc><priority>0.8</priority></url>\n`;
+            });
+        }
+
         xml += `</urlset>`;
 
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (No 404s, Advanced WYSIWYG, ID Fixes, Auto Decoding)");
+        // --- SEO FIX: LEGACY URL REDIRECTS (Purani Indexed Links Bachaane Ke Liye) ---
+        console.log("5. Generating Fallback Redirects for Old Indexed Links...");
+        
+        const legacyMcqHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _SU_URL = "${SUPABASE_URL}";
+        const _SU_KEY = "${SUPABASE_KEY}";
+        const supabaseClient = window.supabase.createClient(_SU_URL, _SU_KEY);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        const qParam = urlParams.get('q');
+        
+        const makeSlug = (str) => {
+            if (!str) return 'question';
+            return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '').substring(0, 60);
+        };
+        
+        async function doRedirect() {
+            if(id && qParam) {
+                window.location.replace('/mcq/' + id + '/' + qParam + '.html');
+            } else if(id) {
+                // Generate perfect SEO link if old link missed the 'q' parameter
+                const { data } = await supabaseClient.from('questions').select('question').eq('id', id).single();
+                if(data && data.question) {
+                    const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+                    const cleanText = decodeText(data.question).replace(/<[^>]*>?/gm, '').trim();
+                    const generatedSlug = makeSlug(cleanText) || 'question';
+                    window.location.replace('/mcq/' + id + '/' + generatedSlug + '.html');
+                } else {
+                    window.location.replace('/categories.html');
+                }
+            } else {
+                window.location.replace('/categories.html');
+            }
+        }
+        doRedirect();
+    </script>
+</head>
+<body><p>Redirecting to the new page...</p></body>
+</html>`;
+        await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), legacyMcqHtml, 'utf8');
+
+        const legacyBlogHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const slug = urlParams.get('slug');
+        if(slug) {
+            window.location.replace('/blog/' + slug + '.html');
+        } else {
+            window.location.replace('/blogs.html');
+        }
+    </script>
+</head>
+<body><p>Redirecting to the new page...</p></body>
+</html>`;
+        await fsAsync.writeFile(path.join(rootDir, 'blog.html'), legacyBlogHtml, 'utf8');
+
+        console.log("✅ BUILD COMPLETE (Hybrid SEO Implementation Done - GSC Errors Resolved)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

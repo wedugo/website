@@ -34,20 +34,12 @@ const makeSlug = (str) => {
     return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
 };
 
-// Utility: Generate Bulletproof Slugs for MCQs to prevent 404s
-const createSlug = (str) => {
-    if (!str) return 'question';
-    let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-    return s.substring(0, 100).replace(/-+$/, '') || 'question';
-};
-
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
 
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
-const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };`;
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -89,13 +81,8 @@ function getAdSidebar() {
 
 function getNavbar() {
     let toolsDropdownList = `<li><a class="dropdown-item fw-medium py-2" href="/tools.html"><i class="bi bi-collection me-2 text-secondary"></i>All Tools Explorer</a></li><li><hr class="dropdown-divider"></li>`;
-    
-    if(TOOL_SCORE_ESTIMATOR) {
-        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
-    }
-    if(TOOL_PDF_READER) {
-        toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
-    }
+    if(TOOL_SCORE_ESTIMATOR) toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/tools.html#estimator"><i class="bi bi-calculator me-2 text-primary"></i>Score Estimator</a></li>`;
+    if(TOOL_PDF_READER) toolsDropdownList += `<li><a class="dropdown-item fw-medium py-2" href="/pdf-reader.html"><i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>PDF Reader</a></li>`;
 
     return `
     <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm py-3 border-bottom sticky-top">
@@ -112,17 +99,11 @@ function getNavbar() {
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/categories.html"><i class="bi bi-grid me-1"></i>Categories</a></li>
                     <li class="nav-item"><a class="nav-link text-primary px-3 rounded-pill bg-primary bg-opacity-10 fw-bold border border-primary-subtle" href="/custom-exam.html"><i class="bi bi-gear-wide-connected me-1"></i>Custom Exam</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-tools me-1"></i>Tools
-                        </a>
-                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">
-                            ${toolsDropdownList}
-                        </ul>
+                        <a class="nav-link dropdown-toggle text-dark px-3 rounded-pill hover-bg-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-tools me-1"></i>Tools</a>
+                        <ul class="dropdown-menu border-0 shadow-sm mt-2 rounded-4">${toolsDropdownList}</ul>
                     </li>
                     <li class="nav-item"><a class="nav-link text-dark px-3 rounded-pill hover-bg-light" href="/blogs.html"><i class="bi bi-journal-text me-1"></i>Blog</a></li>
-                    <li class="nav-item ms-lg-2" id="auth-nav-container">
-                        <button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button>
-                    </li>
+                    <li class="nav-item ms-lg-2" id="auth-nav-container"><button class="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#authModal">Login / Join</button></li>
                 </ul>
             </div>
         </div>
@@ -134,9 +115,7 @@ function getFooter() {
     <footer class="bg-white border-top py-5 mt-auto">
         <div class="container">
             <div class="row text-center text-md-start align-items-center">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p>
-                </div>
+                <div class="col-md-6 mb-3 mb-md-0"><p class="mb-0 text-muted small fw-medium">© ${new Date().getFullYear()} Wedugo Education. All Rights Reserved.</p></div>
                 <div class="col-md-6 text-md-end">
                     <a href="/tools.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">Study Tools</a>
                     <a href="/about.html" class="text-secondary text-decoration-none small me-3 hover-text-primary">About Us</a>
@@ -148,11 +127,10 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH INJECTIONS
+// 🟢 MASTER HTML SHELL
 function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
-    
     const canonicalTag = canonicalUrl ? `<link rel="canonical" id="dynamic-canonical" href="${canonicalUrl}">` : '<link rel="canonical" id="dynamic-canonical" href="">';
 
     return `<!DOCTYPE html>
@@ -714,7 +692,7 @@ function getCategoryTemplate(canonicalUrl = "") {
             window.loadMoreQuestions = async function() { await loadQuestionsData(); };
 
             async function loadQuestionsData() {
-                const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1).order('id', {ascending: false});
+                const { data } = await supabaseClient.from('questions').select('id, question').eq('qcategory', catName).range(currentOffset, currentOffset + limit - 1).order('created_at', {ascending: false});
 
                 if(data && data.length > 0) {
                     let html = ''; 
@@ -779,7 +757,7 @@ function getMockTemplate(canonicalUrl = "") {
                 document.getElementById('mock-title').innerText = pageTitle; 
                 document.getElementById('btn-back-cat').href = "/category.html?name=" + encodeURIComponent(catName);
 
-                let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('id', {ascending: false});
+                let query = supabaseClient.from('questions').select('*').eq('qcategory', catName).order('created_at', {ascending: false});
                 if (setNum) {
                     const offset = (setNum - 1) * 10;
                     query = query.range(offset, offset + 9);
@@ -1705,7 +1683,7 @@ async function buildCSRSite() {
                             let optHtml = ''; 
                             for(let k in opts) { 
                                 if(opts[k] && decodeText(opts[k]).trim() !== '') {
-                                    optHtml += \\\`<button class="btn option-btn opt-btn-choice" data-val="\\\${k}" onclick="checkAns(this, '\\\${k}')">\\\${k}) \\\${decodeText(opts[k])}</button>\\\`; 
+                                    optHtml += '<button class="btn option-btn opt-btn-choice" data-val="' + k + '" onclick="checkAns(this, \\'' + k + '\\')">' + k + ') ' + decodeText(opts[k]) + '</button>'; 
                                 }
                             }
                             document.getElementById('mcq-options').innerHTML = optHtml;
@@ -1714,7 +1692,7 @@ async function buildCSRSite() {
                             const btnPrev = document.getElementById('btn-prev-mcq');
                             const btnNext = document.getElementById('btn-next-mcq');
                             
-                            const { data: allCatQs } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).order('created_at', {ascending: true});
+                            const { data: allCatQs } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).order('created_at', {ascending: false});
                             
                             if(allCatQs && allCatQs.length > 0) {
                                 const curIdx = allCatQs.findIndex(q => q.id === data.id);
@@ -1768,7 +1746,7 @@ async function buildCSRSite() {
                     document.getElementById('mcq-exp-text').innerText = decodeText(currentQ.answerdetail) || "Practice makes perfect.";
                 }
             </script>
-        \`);
+        `);
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), dynamicMcqHtml, 'utf8');
 
         // Legal & Static Pages

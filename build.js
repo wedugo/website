@@ -1612,12 +1612,12 @@ async function buildCSRSite() {
         `);
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), dynamicBlogHtml, 'utf8');
 
-        // Single Universal MCQ Viewer
+       // Single Universal MCQ Viewer
         const dynamicMcqHtml = getHtmlShell("Loading Question... | Wedugo", `
             <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Loading question from server...</p></div>
             <div id="mcq-content" class="row d-none">
                 <div class="col-lg-8">
-                    ${getAdBannerHtml("Sponsored")}
+                    \${getAdBannerHtml("Sponsored")}
                     <article class="card p-4 p-md-5 mb-4 bg-white shadow-sm border-0 rounded-4">
                         <header class="mb-4 border-bottom pb-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1628,15 +1628,18 @@ async function buildCSRSite() {
                         </header>
                         <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
                         <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
+                        
+                        <!-- NEXT / PREV DYNAMIC BUTTONS -->
+                        <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                            <a id="btn-prev-mcq" href="#" class="btn btn-outline-secondary fw-bold px-4 rounded-pill disabled">Prev</a>
+                            <a id="back-hub-btn" href="/categories.html" class="btn btn-outline-dark fw-bold px-4 rounded-pill shadow-sm d-none d-sm-inline-block">Category Hub</a>
+                            <a id="btn-next-mcq" href="#" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm disabled">Next</a>
+                        </div>
                     </article>
                     
-                    <div class="text-center mt-4 pt-4 border-top">
-                        <a id="back-hub-btn" href="/categories.html" class="btn btn-outline-dark fw-bold px-5 rounded-pill shadow-sm">Back to Category Hub</a>
-                    </div>
-                    
-                    ${MCQ_BOTTOM_CODE ? `<div class="mt-4 mb-5">${MCQ_BOTTOM_CODE}</div>` : ''}
+                    \${MCQ_BOTTOM_CODE ? \`<div class="mt-4 mb-5">\${MCQ_BOTTOM_CODE}</div>\` : ''}
                 </div>
-                ${getAdSidebar()}
+                \${getAdSidebar()}
             </div>
             <script>
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1645,7 +1648,7 @@ async function buildCSRSite() {
                 let hasAnswered = false;
                 let hintsLeft = 2; 
                 
-                ${catMapScript}
+                \${catMapScript}
                 
                 document.addEventListener('DOMContentLoaded', async () => {
                     if(!CURRENT_MCQ_ID) { window.location.href = '/categories.html'; return; }
@@ -1663,15 +1666,27 @@ async function buildCSRSite() {
                         
                         // Dynamic SEO setup
                         document.title = cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 50) + " | Wedugo";
-                        document.getElementById('dynamic-canonical').href = "${SITE_BASE_URL}/mcq.html?id=" + data.id;
+                        document.getElementById('dynamic-canonical').href = "\${SITE_BASE_URL}/mcq.html?id=" + data.id;
                         document.getElementById('dynamic-desc').setAttribute("content", cleanQText.replace(/<[^>]*>?/gm, '').trim().substring(0, 150));
                         
                         const opts = { 'A': data.answer1, 'B': data.answer2, 'C': data.answer3, 'D': data.answer4 };
                         let optHtml = ''; 
                         for(let k in opts) { 
-                            optHtml += \`<button class="btn option-btn opt-btn-choice" data-val="\${k}" onclick="checkAns(this, '\${k}')">\${k}) \${decodeText(opts[k])}</button>\`; 
+                            optHtml += \\\`<button class="btn option-btn opt-btn-choice" data-val="\\\${k}" onclick="checkAns(this, '\\\${k}')">\\\${k}) \\\${decodeText(opts[k])}</button>\\\`; 
                         }
                         document.getElementById('mcq-options').innerHTML = optHtml;
+
+                        // FETCH ADJACENT QUESTIONS FOR NEXT/PREV BUTTONS
+                        const btnPrev = document.getElementById('btn-prev-mcq');
+                        const btnNext = document.getElementById('btn-next-mcq');
+                        
+                        // Prev Query
+                        const { data: prevData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).gt('id', data.id).order('id', {ascending: true}).limit(1).maybeSingle();
+                        if(prevData && prevData.id) { btnPrev.href = "/mcq.html?id=" + prevData.id; btnPrev.classList.remove('disabled'); }
+                        
+                        // Next Query
+                        const { data: nextData } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).lt('id', data.id).order('id', {ascending: false}).limit(1).maybeSingle();
+                        if(nextData && nextData.id) { btnNext.href = "/mcq.html?id=" + nextData.id; btnNext.classList.remove('disabled'); }
                         
                         document.getElementById('mcq-loader').classList.add('d-none'); 
                         document.getElementById('mcq-content').classList.remove('d-none');

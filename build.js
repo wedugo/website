@@ -28,17 +28,26 @@ const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
-// Utility: Generate Slugs for SEO Clean URLs
+// Utility: Generate Slugs for Categories
 const makeSlug = (str) => {
-    if (!str) return 'question';
+    if (!str) return 'category';
     return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+};
+
+// Utility: Generate Bulletproof Slugs for MCQs to prevent 404s
+const createSlug = (str) => {
+    if (!str) return 'question';
+    let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+    return s.substring(0, 100).replace(/-+$/, '') || 'question'; // Max 100 chars, no trailing hyphens
 };
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
+
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return 'question'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
+const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -139,12 +148,11 @@ function getFooter() {
     </footer>`;
 }
 
-// 🟢 MASTER HTML SHELL WITH INJECTIONS (Canonical Included)
+// 🟢 MASTER HTML SHELL WITH INJECTIONS
 function getHtmlShell(title, content, seoDescription = "", canonicalUrl = "") {
     const cleanDesc = (seoDescription || 'In-depth educational articles, study guides, and free custom MCQ mock tests to master your competitive exams at Wedugo Education.').replace(/"/g, '&quot;').substring(0, 160);
     const displayTitle = title.includes("Wedugo Education") ? title : `${title} | Wedugo Education`;
     
-    // Canonical tag static string
     const canonicalTag = canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : '';
 
     return `<!DOCTYPE html>
@@ -439,7 +447,7 @@ function getIndexTemplate(canonicalUrl = "") {
                 if(qData) {
                     let qHtml = '';
                     qData.forEach(q => {
-                        const qSlug = makeSlug(decodeText(q.question)).substring(0, 60) || 'question';
+                        const qSlug = createSlug(decodeText(q.question));
                         qHtml += \`<div class="col-12"><div class="card p-4 p-md-5 bg-white shadow-sm border border-light rounded-4 card-hover"><div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2 rounded-pill">\${decodeText(q.qcategory)}</span></div><h3 class="h4 fw-bold text-dark mb-4 lh-base">\${decodeText(q.question)}</h3><a href="/mcq/\${q.id}/\${qSlug}.html" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Solve Question <i class="bi bi-arrow-right"></i></a></div></div>\`;
                     });
                     document.getElementById('home-quizzes').innerHTML = qHtml;
@@ -675,7 +683,7 @@ function getHybridBlogTemplate(slug, title, desc, canonicalUrl) {
     `, desc, canonicalUrl);
 }
 
-// SEO Fix: Hybrid MCQ Template (Static Head, Live Body via JS) - HINT BUTTON ADDED
+// SEO Fix: Hybrid MCQ Template (Static Head, Live Body via JS) - HINT BUTTON INCLUDED
 function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
     return getHtmlShell(title, `
         <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
@@ -693,6 +701,7 @@ function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
                     <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
                     <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
                     <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                        <!-- Navigation relies on the fallback redirect script for clean transition between sequential IDs -->
                         <button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" onclick="window.location.href='/mcq.html?id=${parseInt(id)+1}'">Prev</button>
                         <button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" onclick="window.location.href='/mcq.html?id=${parseInt(id)-1}'">Next</button>
                     </div>
@@ -893,7 +902,7 @@ function getCategoryTemplate(canonicalUrl = "") {
                 if(data && data.length > 0) {
                     let html = ''; 
                     data.forEach((q, i) => { 
-                        const qSlug = makeSlug(decodeText(q.question)).substring(0, 60) || 'question';
+                        const qSlug = createSlug(decodeText(q.question));
                         html += \`<a href="/mcq/\${q.id}/\${qSlug}.html" class="list-group-item list-group-item-action p-4 border-light"><strong>Q\${currentOffset+i+1}.</strong> \${decodeText(q.question).substring(0, 100)}...</a>\`; 
                     });
 
@@ -1834,7 +1843,6 @@ async function buildCSRSite() {
 
         // --- HYBRID SEO FIX: STATIC META TAGS + LIVE SUPABASE DATA FOR BLOGS ---
         console.log("-> Generating Hybrid Blog Pages for SEO + Live Data...");
-        // API Call directly to avoid importing Supabase in Node context unnecessarily
         const blogRes = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -1885,11 +1893,12 @@ async function buildCSRSite() {
             if (!fs.existsSync(mcqDir)) fs.mkdirSync(mcqDir, { recursive: true });
             
             for (const q of seoMcqs) {
-                const cleanQ = decodeText(q.question).replace(/<[^>]*>?/gm, '').trim();
-                const qSlug = makeSlug(cleanQ).substring(0, 60) || 'question';
+                const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
+                const cleanQ = decodeText(q.question);
+                const qSlug = createSlug(cleanQ);
                 const canonicalUrl = `${SITE_BASE_URL}/mcq/${q.id}/${qSlug}.html`;
-                const title = cleanQ.substring(0, 60) + " | Wedugo";
-                const plainTextDesc = cleanQ.substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.";
+                const title = cleanQ.replace(/<[^>]*>?/gm, '').trim().substring(0, 60) + " | Wedugo";
+                const plainTextDesc = cleanQ.replace(/<[^>]*>?/gm, '').trim().substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.";
                 
                 const hybridMcqHtml = getHybridMcqTemplate(q.id, title, plainTextDesc, canonicalUrl, qSlug);
                 
@@ -1923,9 +1932,9 @@ async function buildCSRSite() {
 
         // --- SEO FIX: ADD PHYSICAL MCQs TO SITEMAP ---
         if (seoMcqs && seoMcqs.length > 0) {
+            const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
             seoMcqs.forEach(q => {
-                const cleanQ = decodeText(q.question).replace(/<[^>]*>?/gm, '').trim();
-                const qSlug = makeSlug(cleanQ).substring(0, 60) || 'question';
+                const qSlug = createSlug(decodeText(q.question));
                 xml += `<url><loc>${SITE_BASE_URL}/mcq/${q.id}/${qSlug}.html</loc><priority>0.8</priority></url>\n`;
             });
         }
@@ -1935,7 +1944,7 @@ async function buildCSRSite() {
         await fsAsync.writeFile(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
         await fsAsync.writeFile(path.join(rootDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_BASE_URL}/sitemap.xml\n`, 'utf8');
 
-        // --- SEO FIX: LEGACY URL REDIRECTS (Purani Indexed Links Bachaane Ke Liye) ---
+        // --- SEO FIX: LEGACY URL SMART AUTO-ROUTER ---
         console.log("5. Generating Fallback Redirects for Old Indexed Links...");
         
         const legacyMcqHtml = `<!DOCTYPE html>
@@ -1951,23 +1960,19 @@ async function buildCSRSite() {
         
         const urlParams = new URLSearchParams(window.location.search);
         const id = urlParams.get('id');
-        const qParam = urlParams.get('q');
         
-        const makeSlug = (str) => {
+        const createSlug = (str) => {
             if (!str) return 'question';
-            return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '').substring(0, 60);
+            let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+            return s.substring(0, 100).replace(/-+$/, '') || 'question';
         };
         
         async function doRedirect() {
-            if(id && qParam) {
-                window.location.replace('/mcq/' + id + '/' + qParam + '.html');
-            } else if(id) {
-                // Generate perfect SEO link if old link missed the 'q' parameter
+            if(id) {
                 const { data } = await supabaseClient.from('questions').select('question').eq('id', id).single();
                 if(data && data.question) {
                     const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-                    const cleanText = decodeText(data.question).replace(/<[^>]*>?/gm, '').trim();
-                    const generatedSlug = makeSlug(cleanText) || 'question';
+                    const generatedSlug = createSlug(decodeText(data.question));
                     window.location.replace('/mcq/' + id + '/' + generatedSlug + '.html');
                 } else {
                     window.location.replace('/categories.html');
@@ -1979,7 +1984,14 @@ async function buildCSRSite() {
         doRedirect();
     </script>
 </head>
-<body><p>Redirecting to the new page...</p></body>
+<body>
+    <div style="text-align:center; padding:100px 20px; font-family:sans-serif; color:#334155;">
+        <div style="width:40px; height:40px; border:4px solid #3b82f6; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px auto;"></div>
+        <h2>Locating Question...</h2>
+        <p>Please wait while we route you to the optimized page.</p>
+        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+    </div>
+</body>
 </html>`;
         await fsAsync.writeFile(path.join(rootDir, 'mcq.html'), legacyMcqHtml, 'utf8');
 
@@ -1998,11 +2010,17 @@ async function buildCSRSite() {
         }
     </script>
 </head>
-<body><p>Redirecting to the new page...</p></body>
+<body>
+    <div style="text-align:center; padding:100px 20px; font-family:sans-serif; color:#334155;">
+        <div style="width:40px; height:40px; border:4px solid #3b82f6; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px auto;"></div>
+        <h2>Loading Article...</h2>
+        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+    </div>
+</body>
 </html>`;
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), legacyBlogHtml, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Hybrid SEO Implementation Done - GSC Errors Resolved)");
+        console.log("✅ BUILD COMPLETE (Hybrid SEO Implementation Done - URL Slugs perfectly matched & Redirects applied)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

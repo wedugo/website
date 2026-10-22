@@ -38,7 +38,7 @@ const makeSlug = (str) => {
 const createSlug = (str) => {
     if (!str) return 'question';
     let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
-    return s.substring(0, 100).replace(/-+$/, '') || 'question'; // Max 100 chars, no trailing hyphens
+    return s.substring(0, 100).replace(/-+$/, '') || 'question';
 };
 
 const catMap = {};
@@ -683,8 +683,8 @@ function getHybridBlogTemplate(slug, title, desc, canonicalUrl) {
     `, desc, canonicalUrl);
 }
 
-// SEO Fix: Hybrid MCQ Template (Static Head, Live Body via JS) - HINT BUTTON INCLUDED
-function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
+// SEO Fix: Hybrid MCQ Template (Static Head, Live Body via JS) + STATIC PAGINATION LINKS
+function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug, prevUrl, nextUrl) {
     return getHtmlShell(title, `
         <div id="mcq-loader" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         <div id="mcq-content" class="row d-none">
@@ -700,10 +700,11 @@ function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
                     </header>
                     <div class="d-grid gap-3 mb-4" id="mcq-options"></div>
                     <div id="mcq-exp-box" class="alert mt-4 d-none p-4 rounded-4 border"><h5 class="alert-heading fw-bold mb-3" id="mcq-res-title"></h5><hr class="opacity-25"><h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Detailed Solution:</h6><p class="mb-0 text-dark lh-lg" id="mcq-exp-text"></p></div>
+                    
+                    <!-- Pre-Computed Static Pagination (100% No 404s) -->
                     <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                        <!-- Navigation relies on the fallback redirect script for clean transition between sequential IDs -->
-                        <button class="btn btn-outline-secondary fw-bold px-4 rounded-pill" onclick="window.location.href='/mcq.html?id=${parseInt(id)+1}'">Prev</button>
-                        <button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" onclick="window.location.href='/mcq.html?id=${parseInt(id)-1}'">Next</button>
+                        <a href="${prevUrl}" class="btn btn-outline-secondary fw-bold px-4 rounded-pill ${prevUrl === '#' ? 'disabled' : ''}">Prev</a>
+                        <a href="${nextUrl}" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm ${nextUrl === '#' ? 'disabled' : ''}">Next</a>
                     </div>
                 </article>
                 
@@ -715,7 +716,7 @@ function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
         <script>
             let currentQ = null; 
             let hasAnswered = false;
-            let hintsLeft = 2; // HINT FEATURE STATE
+            let hintsLeft = 2; 
             
             ${catMapScript}
             const CURRENT_MCQ_ID = "${id}";
@@ -740,19 +741,17 @@ function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
                 }
             });
 
-            // HINT BUTTON LOGIC
             function useHint() {
                 if(hasAnswered || hintsLeft <= 0) return;
                 const correct = (currentQ.mainanswer||'').replace(/[^A-D]/gi, '').toUpperCase();
                 
-                // Find visible wrong options
                 const wrongBtns = Array.from(document.querySelectorAll('.opt-btn-choice')).filter(btn => {
                     return btn.getAttribute('data-val') !== correct && !btn.classList.contains('d-none');
                 });
                 
                 if(wrongBtns.length > 0) {
                     const randomIdx = Math.floor(Math.random() * wrongBtns.length);
-                    wrongBtns[randomIdx].classList.add('d-none'); // Hide one wrong option
+                    wrongBtns[randomIdx].classList.add('d-none'); 
                     
                     hintsLeft--;
                     const hintBtn = document.getElementById('btn-hint');
@@ -772,7 +771,7 @@ function getHybridMcqTemplate(id, title, desc, canonicalUrl, qSlug) {
                 const expBox = document.getElementById('mcq-exp-box');
                 
                 document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-                document.getElementById('btn-hint').disabled = true; // Disable hint after answering
+                document.getElementById('btn-hint').disabled = true; 
                 
                 expBox.classList.remove('d-none');
                 if(selected === correct) { 
@@ -1863,14 +1862,14 @@ async function buildCSRSite() {
             }
         }
 
-        // --- HYBRID SEO FIX: STATIC META TAGS + LIVE SUPABASE DATA FOR MCQS ---
-        console.log("-> Generating Hybrid MCQ Pages for SEO + Live Data (Fetching all IDs)...");
+        // --- HYBRID SEO FIX: STATIC PAGINATION & LIVE SUPABASE DATA FOR MCQS ---
+        console.log("-> Generating Hybrid MCQ Pages for SEO + Static Pagination...");
         let seoMcqs = [];
         let hasMore = true;
         let offset = 0;
         const fetchLimit = 1000;
         
-        // Loop to fetch all MCQs safely using Supabase REST API
+        // Fetch ALL MCQs
         while (hasMore) {
             const mcqRes = await fetch(`${SUPABASE_URL}/rest/v1/questions?select=id,question,qcategory,answer1,answer2,answer3,answer4,answerdetail,mainanswer&limit=${fetchLimit}&offset=${offset}`, {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
@@ -1892,7 +1891,11 @@ async function buildCSRSite() {
             const mcqDir = path.join(rootDir, 'mcq');
             if (!fs.existsSync(mcqDir)) fs.mkdirSync(mcqDir, { recursive: true });
             
-            for (const q of seoMcqs) {
+            // SORT to ensure Prev/Next logic works flawlessly
+            seoMcqs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+            
+            for (let i = 0; i < seoMcqs.length; i++) {
+                const q = seoMcqs[i];
                 const decodeText = (str) => { try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
                 const cleanQ = decodeText(q.question);
                 const qSlug = createSlug(cleanQ);
@@ -1900,7 +1903,22 @@ async function buildCSRSite() {
                 const title = cleanQ.replace(/<[^>]*>?/gm, '').trim().substring(0, 60) + " | Wedugo";
                 const plainTextDesc = cleanQ.replace(/<[^>]*>?/gm, '').trim().substring(0, 150) + " - Find the correct answer and detailed explanation on Wedugo.";
                 
-                const hybridMcqHtml = getHybridMcqTemplate(q.id, title, plainTextDesc, canonicalUrl, qSlug);
+                // --- PRE-CALCULATE STATIC NEXT/PREV URLS ---
+                let prevUrl = '#';
+                let nextUrl = '#';
+                
+                if (i > 0) {
+                    const prevQ = seoMcqs[i - 1];
+                    const pSlug = createSlug(decodeText(prevQ.question));
+                    prevUrl = `/mcq/${prevQ.id}/${pSlug}.html`;
+                }
+                if (i < seoMcqs.length - 1) {
+                    const nextQ = seoMcqs[i + 1];
+                    const nSlug = createSlug(decodeText(nextQ.question));
+                    nextUrl = `/mcq/${nextQ.id}/${nSlug}.html`;
+                }
+
+                const hybridMcqHtml = getHybridMcqTemplate(q.id, title, plainTextDesc, canonicalUrl, qSlug, prevUrl, nextUrl);
                 
                 const nestedDir = path.join(mcqDir, String(q.id));
                 if (!fs.existsSync(nestedDir)) fs.mkdirSync(nestedDir, { recursive: true });
@@ -2020,7 +2038,7 @@ async function buildCSRSite() {
 </html>`;
         await fsAsync.writeFile(path.join(rootDir, 'blog.html'), legacyBlogHtml, 'utf8');
 
-        console.log("✅ BUILD COMPLETE (Hybrid SEO Implementation Done - URL Slugs perfectly matched & Redirects applied)");
+        console.log("✅ BUILD COMPLETE (Hybrid SEO Implementation Done - URL Slugs & Static Pagination perfectly matched)");
     } catch(e) { console.error("Build failed:", e); }
 }
 

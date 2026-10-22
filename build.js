@@ -1729,8 +1729,101 @@ async function buildCSRSite() {
         if (!fs.existsSync(adminDir)) fs.mkdirSync(adminDir, { recursive: true });
         await fsAsync.writeFile(path.join(adminDir, 'index.html'), getAdminTemplate(loadedPluginsAdmin), 'utf8');
 
-        // 404 Fallback
-        await fsAsync.writeFile(path.join(rootDir, '404.html'), getStaticPageTemplate('404 - Page Not Found', '<p class="lead">Oops! The page you are looking for does not exist.</p><a href="/index.html" class="btn btn-primary fw-bold mt-3 px-4 py-2 rounded-pill">Go back to homepage</a>'), 'utf8');
+       // 404 Fallback with Smart Auto-Redirector for Old Indexed URLs
+        console.log("-> Generating Smart 404 Auto-Router for SEO Redirects...");
+        const smart404Html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <script>
+        const catMap = ${JSON.stringify(catMap)};
+        const path = window.location.pathname;
+        
+        function autoRoute() {
+            try {
+                // Redirect for /mcqs/[slug]/page-[n].html OR /categories/[slug]/index.html
+                if (path.includes('/mcqs/') || path.includes('/categories/')) {
+                    const parts = path.split('/');
+                    const slug = parts[2];
+                    let page = 1;
+                    if (path.includes('page-')) {
+                        const match = path.match(/page-([0-9]+)/);
+                        if (match) page = match[1];
+                    }
+                    if (slug && catMap[slug]) {
+                        window.location.replace('/category.html?name=' + encodeURIComponent(catMap[slug]) + '&page=' + page);
+                        return true;
+                    }
+                }
+                // Redirect for /mock-tests/[slug]/set-[n].html
+                else if (path.includes('/mock-tests/')) {
+                    const parts = path.split('/');
+                    const slug = parts[2];
+                    let setNum = 1;
+                    if (path.includes('set-')) {
+                        const match = path.match(/set-([0-9]+)/);
+                        if (match) setNum = match[1];
+                    }
+                    if (slug && catMap[slug]) {
+                        window.location.replace('/mock.html?cat=' + encodeURIComponent(catMap[slug]) + '&set=' + setNum);
+                        return true;
+                    }
+                }
+                // Redirect for /mcq/[id]/[slug].html
+                else if (path.includes('/mcq/')) {
+                    const parts = path.split('/');
+                    const id = parts[2];
+                    if (id && !isNaN(id)) {
+                        window.location.replace('/mcq.html?id=' + id);
+                        return true;
+                    }
+                }
+                // Redirect for /blog/[slug].html
+                else if (path.includes('/blog/')) {
+                    const parts = path.split('/');
+                    const slug = parts[2].replace('.html', '');
+                    if (slug) {
+                        window.location.replace('/blog.html?slug=' + slug);
+                        return true;
+                    }
+                }
+            } catch(e) { console.error(e); }
+            return false;
+        }
+
+        if(!autoRoute()) {
+            // Show normal 404 UI if no old route matched
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('fallback-ui').style.display = 'flex';
+                document.getElementById('loader-ui').style.display = 'none';
+                document.title = '404 - Page Not Found';
+            });
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .btn { padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 50px; font-weight: bold; margin-top: 20px; display: inline-block; transition: background 0.3s; }
+        .btn:hover { background-color: #2563eb; }
+    </style>
+</head>
+<body>
+    <div id="loader-ui" style="text-align: center;">
+        <div class="spinner"></div>
+        <h2>Routing to optimized page...</h2>
+    </div>
+    <div id="fallback-ui" style="display: none; flex-direction: column; align-items: center; text-align: center;">
+        <h1 style="font-size: 4rem; margin-bottom: 10px; color: #0f172a;">404</h1>
+        <h2 style="margin-bottom: 10px;">Page Not Found</h2>
+        <p style="margin-bottom: 20px; color: #64748b;">Oops! The page you are looking for does not exist or has been moved.</p>
+        <a href="/index.html" class="btn">Go back to homepage</a>
+    </div>
+</body>
+</html>`;
+        await fsAsync.writeFile(path.join(rootDir, '404.html'), smart404Html, 'utf8');
 
         console.log("4. Generating SEO Sitemap (Includes dynamic query URLs)...");
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;

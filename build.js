@@ -1114,8 +1114,8 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 </div>
                 <div class="card p-0 overflow-hidden">
                     <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Feature</th><th>Actions</th></tr></thead>
-                        <tbody id="mcq-tbody"><tr><td colspan="5" class="text-center py-4">Loading...</td></tr></tbody>
+                        <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Actions</th></tr></thead>
+                        <tbody id="mcq-tbody"><tr><td colspan="4" class="text-center py-4">Loading...</td></tr></tbody>
                     </table>
                     <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
                         <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="prevMcqPage()"><i class="bi bi-chevron-left me-1"></i>Previous</button>
@@ -1374,37 +1374,25 @@ function getAdminTemplate(pluginAdminHTML = "") {
 
         async function loadMcqs() { 
             const tb = document.getElementById('mcq-tbody'); 
-            tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
+            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
             
-            const catFilter = document.getElementById('filter-cat').value;
-            const sortVal = document.getElementById('sort-mcq').value.split('.');
-            
-            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured, created_at')
-                .order(sortVal[0], {ascending: sortVal[1] === 'asc'})
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question')
+                .order('id', {ascending: false})
                 .range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1); 
             
-            if(catFilter) query = query.eq('qcategory', catFilter);
+            if (error || !data) {
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`;
+                return;
+            }
+            if (data.length === 0) {
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-muted">No questions found.</td></tr>\`;
+                return;
+            }
 
-            const { data, error } = await query; 
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join(''); 
             
-            if(error || !data) { tb.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>`; return; }
-            if(data.length === 0) { tb.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No questions found.</td></tr>`; return; }
-
-            tb.innerHTML = data.map(q=>`<tr>
-                <td>#${q.id.substring(0,6)}</td>
-                <td>${decodeText(q.qcategory)}</td>
-                <td>${decodeText(q.question).substring(0,50)}</td>
-                <td><button class="btn btn-sm ${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('${q.id}', ${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
-                <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('${q.id}')"><i class="bi bi-trash"></i></button></td>
-            </tr>`).join(''); 
-            
-            document.getElementById('mcq-page-indicator').innerText = `Page ${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}`;
+            document.getElementById('mcq-page-indicator').innerText = \`Page \${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}\`;
         }
-
-        async function toggleFeature(id, currentStatus) {
-            await supabaseClient.from('questions').update({ is_featured: !currentStatus }).eq('id', id);
-            loadMcqs();
-        }            
 
         function nextMcqPage() { currentMcqOffset += MCQ_LIMIT; loadMcqs(); }
         function prevMcqPage() { if (currentMcqOffset >= MCQ_LIMIT) { currentMcqOffset -= MCQ_LIMIT; loadMcqs(); } }
@@ -1417,9 +1405,9 @@ function getAdminTemplate(pluginAdminHTML = "") {
             }
             
             const tb = document.getElementById('mcq-tbody'); 
-            tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
+            tb.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
             
-            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured').limit(50);
+            let query = supabaseClient.from('questions').select('id, qcategory, question').limit(50);
             
             if (/^\\d+$/.test(val)) {
                 query = query.eq('id', val);
@@ -1430,17 +1418,11 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const { data, error } = await query;
             
             if (error || !data || data.length === 0) {
-                tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">No results found for "\${val}"</td></tr>\`;
+                tb.innerHTML = \`<tr><td colspan="4" class="text-center py-4 text-danger fw-bold">No results found for "\${val}"</td></tr>\`;
                 return;
             }
             
-            tb.innerHTML = data.map(q=>\`<tr>
-                <td>#\${q.id.substring(0,6)}</td>
-                <td>\${decodeText(q.qcategory)}</td>
-                <td>\${decodeText(q.question).substring(0,50)}</td>
-                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
-                <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
-            </tr>\`).join('');
+            tb.innerHTML = data.map(q=>\`<tr><td>#\${q.id}</td><td>\${decodeText(q.qcategory)}</td><td>\${decodeText(q.question).substring(0,50)}</td><td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td></tr>\`).join('');
             document.getElementById('mcq-page-indicator').innerText = 'Search Results';
         }
 

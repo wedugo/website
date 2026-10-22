@@ -443,7 +443,7 @@ function getIndexTemplate(canonicalUrl = "") {
                     });
                     document.getElementById('home-blogs').innerHTML = blogHtml;
                 }
-                const { data: qData } = await supabaseClient.from('questions').select('id, qcategory, question').order('id', { ascending: false }).limit(5);
+                const { data: qData } = await supabaseClient.from('questions').select('id, qcategory, question').order('created_at', { ascending: false }).limit(5);
                 if(qData) {
                     let qHtml = '';
                     qData.forEach(q => {

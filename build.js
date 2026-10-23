@@ -1151,7 +1151,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             alert("Snippets saved successfully! Please re-run node build.js to apply these changes.");
         }
 
-        // --- MANAGE QUESTIONS LOGIC ---
+       // --- MANAGE QUESTIONS LOGIC ---
         let currentMcqOffset = 0;
         const MCQ_LIMIT = 20;
         let totalMcqPages = 1;
@@ -1163,7 +1163,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const catFilter = document.getElementById('filter-cat').value;
             const sortVal = document.getElementById('sort-mcq').value.split('.');
             
-            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured, created_at', { count: 'exact' })
+            let query = supabaseClient.from('questions').select('id, qcategory, question, created_at', { count: 'exact' })
                 .order(sortVal[0], {ascending: sortVal[1] === 'asc'})
                 .range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1); 
             
@@ -1181,17 +1181,12 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td>#\${String(q.id).substring(0,6)}</td>
                 <td>\${decodeText(q.qcategory)}</td>
                 <td>\${decodeText(q.question).substring(0,50)}</td>
-                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="alert('Is feature ke liye Supabase me is_featured column banayein!')"><i class="bi bi-star-fill"></i></button></td>
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join(''); 
             
             document.getElementById('mcq-page-indicator').innerText = \`Page \${currentPage} of \${totalMcqPages}\`;
         }
-
-        async function toggleFeature(id, currentStatus) {
-            await supabaseClient.from('questions').update({ is_featured: !currentStatus }).eq('id', id);
-            loadMcqs();
-        }            
 
         function nextMcqPage() { 
             if (currentMcqOffset + MCQ_LIMIT < totalMcqPages * MCQ_LIMIT) {
@@ -1224,7 +1219,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const tb = document.getElementById('mcq-tbody'); 
             tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
             
-            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured').limit(50);
+            let query = supabaseClient.from('questions').select('id, qcategory, question').limit(50);
             
             if (/^\\d+$/.test(val)) {
                 query = query.eq('id', val);
@@ -1243,7 +1238,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td>#\${String(q.id).substring(0,6)}</td>
                 <td>\${decodeText(q.qcategory)}</td>
                 <td>\${decodeText(q.question).substring(0,50)}</td>
-                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="alert('Is feature ke liye Supabase me is_featured column banayein!')"><i class="bi bi-star-fill"></i></button></td>
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join('');
             document.getElementById('mcq-page-indicator').innerText = 'Search Results';
@@ -1300,7 +1295,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function loadGibberishMCQs() {
             const tb = document.getElementById('mcq-tbody');
             tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
-            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question, is_featured').order('id',{ascending:false}).limit(1000);
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
             if(error || !data) return;
             const badChars = ['Ã', 'â', '€', '™', 'Â', 'œ', '”', 'à'];
             const gibberish = data.filter(q => badChars.some(char => (q.question || '').includes(char)));
@@ -1313,7 +1308,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td>#\${String(q.id).substring(0,6)}</td>
                 <td>\${decodeText(q.qcategory)}</td>
                 <td class="text-danger fw-medium">\${decodeText(q.question).substring(0,60)}...</td>
-                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="alert('Is feature ke liye Supabase me is_featured column banayein!')"><i class="bi bi-star-fill"></i></button></td>
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join('');
         }

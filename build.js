@@ -895,9 +895,13 @@ function getAdminTemplate(pluginAdminHTML = "") {
                         <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Feature</th><th>Actions</th></tr></thead>
                         <tbody id="mcq-tbody"><tr><td colspan="5" class="text-center py-4">Loading...</td></tr></tbody>
                     </table>
-                    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                   <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light flex-wrap gap-2">
                         <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="prevMcqPage()"><i class="bi bi-chevron-left me-1"></i>Previous</button>
-                        <span class="small fw-bold text-muted" id="mcq-page-indicator">Page 1</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small fw-bold text-muted" id="mcq-page-indicator">Page 1</span>
+                            <input type="number" id="jump-page-input" class="form-control form-control-sm text-center shadow-sm" style="width: 70px;" min="1" placeholder="Go">
+                            <button class="btn btn-sm btn-dark fw-bold shadow-sm" onclick="jumpToMcqPage()">Go</button>
+                        </div>
                         <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="nextMcqPage()">Next<i class="bi bi-chevron-right ms-1"></i></button>
                     </div>
                 </div>
@@ -1149,6 +1153,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
         // --- MANAGE QUESTIONS LOGIC ---
         let currentMcqOffset = 0;
         const MCQ_LIMIT = 20;
+        let totalMcqPages = 1;
 
         async function loadMcqs() { 
             const tb = document.getElementById('mcq-tbody'); 
@@ -1157,16 +1162,21 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const catFilter = document.getElementById('filter-cat').value;
             const sortVal = document.getElementById('sort-mcq').value.split('.');
             
-            let query = supabaseClient.from('questions').select('id, qcategory, question, created_at')
+            // Added { count: 'exact' } to get total records
+            let query = supabaseClient.from('questions').select('id, qcategory, question, created_at', { count: 'exact' })
                 .order(sortVal[0], {ascending: sortVal[1] === 'asc'})
                 .range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1); 
             
             if(catFilter) query = query.eq('qcategory', catFilter);
 
-            const { data, error } = await query; 
+            const { data, count, error } = await query; 
             
             if(error || !data) { tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`; return; }
             if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-muted">No questions found.</td></tr>\`; return; }
+
+            // Logic for Total Pages calculation
+            totalMcqPages = Math.ceil((count || 0) / MCQ_LIMIT);
+            const currentPage = Math.floor(currentMcqOffset / MCQ_LIMIT) + 1;
 
             tb.innerHTML = data.map(q=>\`<tr>
                 <td>#\${String(q.id).substring(0,6)}</td>
@@ -1176,11 +1186,29 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join(''); 
             
-            document.getElementById('mcq-page-indicator').innerText = \`Page \${Math.floor(currentMcqOffset/MCQ_LIMIT) + 1}\`;
+            document.getElementById('mcq-page-indicator').innerText = \`Page \${currentPage} of \${totalMcqPages}\`;
         }
 
-        function nextMcqPage() { currentMcqOffset += MCQ_LIMIT; loadMcqs(); }
-        function prevMcqPage() { if (currentMcqOffset >= MCQ_LIMIT) { currentMcqOffset -= MCQ_LIMIT; loadMcqs(); } }
+        function nextMcqPage() { 
+            if (currentMcqOffset + MCQ_LIMIT < totalMcqPages * MCQ_LIMIT) {
+                currentMcqOffset += MCQ_LIMIT; loadMcqs(); 
+            }
+        }
+        function prevMcqPage() { 
+            if (currentMcqOffset >= MCQ_LIMIT) { 
+                currentMcqOffset -= MCQ_LIMIT; loadMcqs(); 
+            } 
+        }
+        
+        function jumpToMcqPage() {
+            let p = parseInt(document.getElementById('jump-page-input').value);
+            if(p && p >= 1 && p <= totalMcqPages) {
+                currentMcqOffset = (p - 1) * MCQ_LIMIT;
+                loadMcqs();
+            } else {
+                alert("Please enter a valid page number between 1 and " + totalMcqPages);
+            }
+        }
 
         async function searchMcq() {
             const val = document.getElementById('search-q-val').value.trim();

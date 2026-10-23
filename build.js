@@ -28,17 +28,18 @@ const CATEGORY_LIST = [
     "Indian Geography","World Organisations","Inventions","Physics","Indian Economy","Days and Years","Technology","Chemistry","Honours and Awards","General Science","General Knowledge","Reasoning","Civil Engineering","Hindi","Sports","Computer","Biology","World Geography","Famous Personalities","Aptitude","Madhya Pradesh GK","Solar System","English","Series","Average","Sets","Percentage","Simple Interest","Surds and Indices","Ratio and Proportion","Time and Work","Trains Time","Age","Area","Profit and Loss","Calendar","Simplification","Indian Polity and Constitution","Indian History","World History","History","Environmental Science and Ecology","Blood Relation","Biochemistry","Fats and Fatty Acid Metabolism","Vitamins","Enzymes","Mineral Metabolism","Hormone Metabolism","Distance and Direction","Nucleic Acids","Water and Electrolyte Balance","History of Microbiology","Microbiology","Bacteria and Gram Staining","Agriculture","Solid Mechanics","Child Development and Pedagogy","Virus","Pharmacology","Anatomy","Psychology","Indian General Knowledge"
 ];
 
-// Utility Functions
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
-const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };
+// Utility: Generate Slugs for Categories
+const makeSlug = (str) => {
+    if (!str) return 'category';
+    return str.replace(/[^\w\u0900-\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, '');
+};
 
 const catMap = {};
 CATEGORY_LIST.forEach(cat => { catMap[makeSlug(cat)] = cat; });
 
 const catMapScript = `const catMap = ${JSON.stringify(catMap)};
 const decodeText = (str) => { if(!str) return ''; try { return decodeURIComponent(escape(str)); } catch(e) { return str; } };
-const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };
-const createSlug = (str) => { if (!str) return 'question'; let s = str.replace(/<[^>]*>?/gm, '').replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); return s.substring(0, 100).replace(/-+$/, '') || 'question'; };`;
+const makeSlug = (str) => { if (!str) return 'category'; return str.replace(/[^\\w\\u0900-\\u097F]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''); };`;
 
 // ==========================================
 // ADVERTISEMENT & AFFILIATE UI COMPONENTS
@@ -895,7 +896,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                         <thead class="table-light"><tr><th>ID</th><th>Category</th><th>Question</th><th>Feature</th><th>Actions</th></tr></thead>
                         <tbody id="mcq-tbody"><tr><td colspan="5" class="text-center py-4">Loading...</td></tr></tbody>
                     </table>
-                   <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light flex-wrap gap-2">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light flex-wrap gap-2">
                         <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="prevMcqPage()"><i class="bi bi-chevron-left me-1"></i>Previous</button>
                         <div class="d-flex align-items-center gap-2">
                             <span class="small fw-bold text-muted" id="mcq-page-indicator">Page 1</span>
@@ -1162,8 +1163,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const catFilter = document.getElementById('filter-cat').value;
             const sortVal = document.getElementById('sort-mcq').value.split('.');
             
-            // Added { count: 'exact' } to get total records
-            let query = supabaseClient.from('questions').select('id, qcategory, question, created_at', { count: 'exact' })
+            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured, created_at', { count: 'exact' })
                 .order(sortVal[0], {ascending: sortVal[1] === 'asc'})
                 .range(currentMcqOffset, currentMcqOffset + MCQ_LIMIT - 1); 
             
@@ -1174,7 +1174,6 @@ function getAdminTemplate(pluginAdminHTML = "") {
             if(error || !data) { tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-danger fw-bold">Error loading questions.</td></tr>\`; return; }
             if(data.length === 0) { tb.innerHTML = \`<tr><td colspan="5" class="text-center py-4 text-muted">No questions found.</td></tr>\`; return; }
 
-            // Logic for Total Pages calculation
             totalMcqPages = Math.ceil((count || 0) / MCQ_LIMIT);
             const currentPage = Math.floor(currentMcqOffset / MCQ_LIMIT) + 1;
 
@@ -1182,12 +1181,17 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td>#\${String(q.id).substring(0,6)}</td>
                 <td>\${decodeText(q.qcategory)}</td>
                 <td>\${decodeText(q.question).substring(0,50)}</td>
-                <td><button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="alert('Is feature ke liye Supabase me is_featured column banayein!')"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join(''); 
             
             document.getElementById('mcq-page-indicator').innerText = \`Page \${currentPage} of \${totalMcqPages}\`;
         }
+
+        async function toggleFeature(id, currentStatus) {
+            await supabaseClient.from('questions').update({ is_featured: !currentStatus }).eq('id', id);
+            loadMcqs();
+        }            
 
         function nextMcqPage() { 
             if (currentMcqOffset + MCQ_LIMIT < totalMcqPages * MCQ_LIMIT) {
@@ -1199,7 +1203,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 currentMcqOffset -= MCQ_LIMIT; loadMcqs(); 
             } 
         }
-        
+
         function jumpToMcqPage() {
             let p = parseInt(document.getElementById('jump-page-input').value);
             if(p && p >= 1 && p <= totalMcqPages) {
@@ -1220,7 +1224,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
             const tb = document.getElementById('mcq-tbody'); 
             tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>';
             
-            let query = supabaseClient.from('questions').select('id, qcategory, question').limit(50);
+            let query = supabaseClient.from('questions').select('id, qcategory, question, is_featured').limit(50);
             
             if (/^\\d+$/.test(val)) {
                 query = query.eq('id', val);
@@ -1239,7 +1243,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td>#\${String(q.id).substring(0,6)}</td>
                 <td>\${decodeText(q.qcategory)}</td>
                 <td>\${decodeText(q.question).substring(0,50)}</td>
-                <td><button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="alert('Is feature ke liye Supabase me is_featured column banayein!')"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join('');
             document.getElementById('mcq-page-indicator').innerText = 'Search Results';
@@ -1296,7 +1300,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
         async function loadGibberishMCQs() {
             const tb = document.getElementById('mcq-tbody');
             tb.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-warning"></div> Finding corrupted questions...</td></tr>';
-            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question').order('id',{ascending:false}).limit(1000);
+            const { data, error } = await supabaseClient.from('questions').select('id, qcategory, question, is_featured').order('id',{ascending:false}).limit(1000);
             if(error || !data) return;
             const badChars = ['Ã', 'â', '€', '™', 'Â', 'œ', '”', 'à'];
             const gibberish = data.filter(q => badChars.some(char => (q.question || '').includes(char)));
@@ -1309,7 +1313,7 @@ function getAdminTemplate(pluginAdminHTML = "") {
                 <td>#\${String(q.id).substring(0,6)}</td>
                 <td>\${decodeText(q.qcategory)}</td>
                 <td class="text-danger fw-medium">\${decodeText(q.question).substring(0,60)}...</td>
-                <td><button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="alert('Is feature ke liye Supabase me is_featured column banayein!')"><i class="bi bi-star-fill"></i></button></td>
+                <td><button class="btn btn-sm \${q.is_featured ? 'btn-warning' : 'btn-outline-secondary'} shadow-sm" onclick="toggleFeature('\${q.id}', \${q.is_featured})"><i class="bi bi-star-fill"></i></button></td>
                 <td><button class="btn btn-sm btn-primary shadow-sm me-1" onclick="editMcq('\${q.id}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-danger shadow-sm" onclick="deleteMcq('\${q.id}')"><i class="bi bi-trash"></i></button></td>
             </tr>\`).join('');
         }
@@ -1722,26 +1726,17 @@ async function buildCSRSite() {
                             }
                             document.getElementById('mcq-options').innerHTML = optHtml;
 
-                            // FETCH ADJACENT QUESTIONS FOR NEXT/PREV BUTTONS
                             const btnPrev = document.getElementById('btn-prev-mcq');
                             const btnNext = document.getElementById('btn-next-mcq');
                             
-                            // Get all IDs for this category to find exact Prev/Next positions (works for old & new questions)
-                            const { data: allCatQs } = await supabaseClient.from('questions')
-                                .select('id')
-                                .eq('qcategory', data.qcategory)
-                                .order('id', {ascending: false});
+                            const { data: allCatQs } = await supabaseClient.from('questions').select('id').eq('qcategory', data.qcategory).order('id', {ascending: false});
                             
                             if(allCatQs && allCatQs.length > 0) {
                                 const curIdx = allCatQs.findIndex(q => String(q.id) === String(data.id));
-                                
-                                // Previous Question (Above in list)
                                 if(curIdx > 0) {
                                     btnPrev.href = "/mcq.html?id=" + allCatQs[curIdx - 1].id;
                                     btnPrev.classList.remove('disabled');
                                 }
-                                
-                                // Next Question (Below in list)
                                 if(curIdx >= 0 && curIdx < allCatQs.length - 1) {
                                     btnNext.href = "/mcq.html?id=" + allCatQs[curIdx + 1].id;
                                     btnNext.classList.remove('disabled');

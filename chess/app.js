@@ -161,7 +161,7 @@ async function initSupabaseSession() {
   loadOpenLobby();
   loadLeaderboard();
   subscribeLobbyChanges();
-  checkUrlForMatch(); // Check if joining via link
+  checkUrlForMatch();
 }
 
 async function ensureUserProfile() {
@@ -182,7 +182,7 @@ async function ensureUserProfile() {
 async function createInviteLink() {
   if (!supabaseClient) return;
   document.getElementById('game-status').innerText = 'Creating invite link...';
-  const { data: created } = await supabaseClient.from('chess_matches').insert([{ 
+  const { data: created, error } = await supabaseClient.from('chess_matches').insert([{ 
     white_id: currentUser ? currentUser.id : null, 
     white_name: currentUser ? currentProfile.username : 'Guest (Host)', 
     white_rating: currentUser ? currentProfile.rating : 1500, 
@@ -190,12 +190,27 @@ async function createInviteLink() {
     status: 'waiting' 
   }]).select().single();
 
+  if (error) {
+    document.getElementById('game-status').innerHTML = '<span style="color:red;">Database Error: Ensure SQL policy is updated for public inserts.</span>';
+    return;
+  }
+
   if (created) {
     const inviteUrl = window.location.origin + window.location.pathname + '?match=' + created.id;
-    prompt("Copy and share this link with your friend:", inviteUrl);
+    document.getElementById('game-status').innerHTML = `
+      <strong>Share this link with your friend:</strong><br>
+      <input type="text" value="${inviteUrl}" readonly onclick="this.select()" style="width:100%; margin-top:5px; color:#000; padding:6px; border-radius:4px; border:1px solid #ccc;">
+    `;
     setupMatchRoom(created, 'w');
-    document.getElementById('game-status').innerText = 'Waiting for friend to join via link...';
   }
+}
+
+function joinFromInput() {
+  const val = document.getElementById('join-link-input').value.trim();
+  if(!val) return;
+  let matchId = val;
+  if(val.includes('?match=')) matchId = val.split('?match=')[1];
+  window.location.href = window.location.origin + window.location.pathname + '?match=' + matchId;
 }
 
 async function checkUrlForMatch() {
@@ -214,8 +229,10 @@ async function checkUrlForMatch() {
         setupMatchRoom(joined, 'b');
         gameChannel.send({ type: 'broadcast', event: 'match_started', payload: { match: joined } });
       }
+    } else if (waiting && waiting.status !== 'waiting') {
+      document.getElementById('game-status').innerText = "Match already started or finished.";
     } else {
-      alert("Match already started or invalid link.");
+      document.getElementById('game-status').innerText = "Invalid match link.";
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   }
@@ -223,7 +240,7 @@ async function checkUrlForMatch() {
 
 async function findOrCreateMatch(seconds) {
   if (!supabaseClient || !currentUser) {
-    alert('Please Login first for public matchmaking, or use Invite Link!');
+    alert('Please Login first for public matchmaking, or use Invite Link to play as Guest!');
     openAuthModal();
     return;
   }
@@ -273,7 +290,11 @@ function setupMatchRoom(matchObj, assignedColor) {
     .on('broadcast', { event: 'match_started' }, ({ payload }) => {
       currentMatch = payload.match;
       updatePlayerHeaders(currentMatch);
-      document.getElementById('game-status').innerText = 'Connected! White to move.';
+      if (document.getElementById('game-status').innerText.includes('Share this link')) {
+          document.getElementById('game-status').innerText = 'Friend connected! White to move.';
+      } else {
+          document.getElementById('game-status').innerText = 'Connected! White to move.';
+      }
       startClock();
     })
     .on('broadcast', { event: 'move' }, ({ payload }) => {
@@ -369,7 +390,7 @@ function subscribeLobbyChanges() {
 }
 
 function sendChat() {
-  if (!currentUser) return; // Guests can't send
+  if (!currentUser) return; 
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;

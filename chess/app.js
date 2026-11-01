@@ -6,78 +6,8 @@ const game = new Chess();
 let board = null, currentUser = null, currentProfile = { username: 'Guest', rating: 1500 };
 let currentMatch = null, gameChannel = null, myColor = 'w', isMultiplayer = false;
 let timeWhite = 600, timeBlack = 600, timerInterval = null;
-let selectedSquare = null; // Stores clicked square
-
 const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 };
 const PIECE_ICONS = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' };
-
-// --- CLICK TO MOVE LOGIC ---
-function removeHighlights() {
-  $('#myBoard .square-55d63').removeClass('highlight-sq');
-}
-
-function highlightSquare(square) {
-  removeHighlights();
-  $('#myBoard .square-' + square).addClass('highlight-sq');
-}
-
-$(document).on('click', '#myBoard .square-55d63', function () {
-  if (game.game_over()) return;
-  
-  const square = $(this).attr('data-square');
-  const pieceObj = game.get(square);
-  
-  // Turn Check for Multiplayer
-  if (isMultiplayer) {
-    if (game.turn() !== myColor) return;
-  }
-
-  if (selectedSquare === null) {
-    // 1st Click: Select own piece
-    if (pieceObj && pieceObj.color === game.turn()) {
-      selectedSquare = square;
-      highlightSquare(square);
-    }
-  } else {
-    // 2nd Click: Change piece OR move
-    if (selectedSquare === square) {
-      // Clicked same square, deselect
-      selectedSquare = null;
-      removeHighlights();
-      return;
-    }
-
-    if (pieceObj && pieceObj.color === game.turn()) {
-      // Clicked another own piece, change selection
-      selectedSquare = square;
-      highlightSquare(square);
-      return;
-    }
-
-    // Try Move
-    const move = game.move({
-      from: selectedSquare,
-      to: square,
-      promotion: 'q' // Hamesha queen banti hai end par (basic logic)
-    });
-
-    if (move === null) {
-      // Invalid move, clear selection
-      selectedSquare = null;
-      removeHighlights();
-    } else {
-      // Valid move!
-      selectedSquare = null;
-      removeHighlights();
-      
-      if (isMultiplayer && gameChannel) {
-        gameChannel.send({ type: 'broadcast', event: 'move', payload: { move, timeWhite, timeBlack, fen: game.fen(), pgn: game.pgn() } });
-      }
-      afterMove();
-    }
-  }
-});
-// --------------------------
 
 function updateLichessMaterial() {
   const b = game.board();
@@ -109,6 +39,25 @@ function updateLichessMaterial() {
     document.getElementById('bottom-material').innerHTML = bHtml;
     document.getElementById('top-material').innerHTML = wHtml;
   }
+}
+
+function onDragStart(source, piece) {
+  if (game.game_over()) return false;
+  if (isMultiplayer) {
+    if (game.turn() !== myColor) return false;
+    if ((myColor === 'w' && piece.startsWith('b')) || (myColor === 'b' && piece.startsWith('w'))) return false;
+  } else {
+    if ((game.turn() === 'w' && piece.startsWith('b')) || (game.turn() === 'b' && piece.startsWith('w'))) return false;
+  }
+}
+
+function onDrop(source, target) {
+  const move = game.move({ from: source, to: target, promotion: 'q' });
+  if (move === null) return 'snapback';
+  if (isMultiplayer && gameChannel) {
+    gameChannel.send({ type: 'broadcast', event: 'move', payload: { move, timeWhite, timeBlack, fen: game.fen(), pgn: game.pgn() } });
+  }
+  afterMove();
 }
 
 function afterMove() {
@@ -212,7 +161,7 @@ async function initSupabaseSession() {
   loadOpenLobby();
   loadLeaderboard();
   subscribeLobbyChanges();
-  checkUrlForMatch();
+  checkUrlForMatch(); // Check if joining via link
 }
 
 async function ensureUserProfile() {
@@ -233,7 +182,7 @@ async function ensureUserProfile() {
 async function createInviteLink() {
   if (!supabaseClient) return;
   document.getElementById('game-status').innerText = 'Creating invite link...';
-  const { data: created, error } = await supabaseClient.from('chess_matches').insert([{ 
+  const { data: created } = await supabaseClient.from('chess_matches').insert([{ 
     white_id: currentUser ? currentUser.id : null, 
     white_name: currentUser ? currentProfile.username : 'Guest (Host)', 
     white_rating: currentUser ? currentProfile.rating : 1500, 
@@ -241,27 +190,12 @@ async function createInviteLink() {
     status: 'waiting' 
   }]).select().single();
 
-  if (error) {
-    document.getElementById('game-status').innerHTML = '<span style="color:red;">Database Error: Please ensure permissions are completely open in Supabase.</span>';
-    return;
-  }
-
   if (created) {
     const inviteUrl = window.location.origin + window.location.pathname + '?match=' + created.id;
-    document.getElementById('game-status').innerHTML = `
-      <strong>Share this link with your friend:</strong><br>
-      <input type="text" value="${inviteUrl}" readonly onclick="this.select()" style="width:100%; margin-top:5px; color:#000; padding:6px; border-radius:4px; border:1px solid #ccc;">
-    `;
+    prompt("Copy and share this link with your friend:", inviteUrl);
     setupMatchRoom(created, 'w');
+    document.getElementById('game-status').innerText = 'Waiting for friend to join via link...';
   }
-}
-
-function joinFromInput() {
-  const val = document.getElementById('join-link-input').value.trim();
-  if(!val) return;
-  let matchId = val;
-  if(val.includes('?match=')) matchId = val.split('?match=')[1];
-  window.location.href = window.location.origin + window.location.pathname + '?match=' + matchId;
 }
 
 async function checkUrlForMatch() {
@@ -280,10 +214,8 @@ async function checkUrlForMatch() {
         setupMatchRoom(joined, 'b');
         gameChannel.send({ type: 'broadcast', event: 'match_started', payload: { match: joined } });
       }
-    } else if (waiting && waiting.status !== 'waiting') {
-      document.getElementById('game-status').innerText = "Match already started or finished.";
     } else {
-      document.getElementById('game-status').innerText = "Invalid match link.";
+      alert("Match already started or invalid link.");
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   }
@@ -291,7 +223,7 @@ async function checkUrlForMatch() {
 
 async function findOrCreateMatch(seconds) {
   if (!supabaseClient || !currentUser) {
-    alert('Please Login first for public matchmaking, or use Invite Link to play as Guest!');
+    alert('Please Login first for public matchmaking, or use Invite Link!');
     openAuthModal();
     return;
   }
@@ -323,11 +255,6 @@ function setupMatchRoom(matchObj, assignedColor) {
   myColor = assignedColor;
   isMultiplayer = true;
   game.reset();
-  
-  // Clear any existing highlights when starting new game
-  selectedSquare = null;
-  removeHighlights();
-  
   timeWhite = matchObj.time_control;
   timeBlack = matchObj.time_control;
   board.orientation(myColor === 'w' ? 'white' : 'black');
@@ -346,11 +273,7 @@ function setupMatchRoom(matchObj, assignedColor) {
     .on('broadcast', { event: 'match_started' }, ({ payload }) => {
       currentMatch = payload.match;
       updatePlayerHeaders(currentMatch);
-      if (document.getElementById('game-status').innerText.includes('Share this link')) {
-          document.getElementById('game-status').innerText = 'Friend connected! White to move.';
-      } else {
-          document.getElementById('game-status').innerText = 'Connected! White to move.';
-      }
+      document.getElementById('game-status').innerText = 'Connected! White to move.';
       startClock();
     })
     .on('broadcast', { event: 'move' }, ({ payload }) => {
@@ -446,7 +369,7 @@ function subscribeLobbyChanges() {
 }
 
 function sendChat() {
-  if (!currentUser) return; 
+  if (!currentUser) return; // Guests can't send
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
@@ -481,11 +404,6 @@ function offerDraw() {
 function playVsComputer() {
   isMultiplayer = false;
   game.reset();
-  
-  // Clear any existing highlights
-  selectedSquare = null;
-  removeHighlights();
-  
   timeWhite = 600;
   timeBlack = 600;
   board.start();
@@ -524,9 +442,12 @@ async function handleSignup() {
 }
 
 board = Chessboard('myBoard', {
-  draggable: false, // <-- Dragging band hai, ab sirf click chalega
+  draggable: true,
   position: 'start',
-  pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+  pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+  onDragStart,
+  onDrop,
+  onSnapEnd: () => board.position(game.fen())
 });
 
 updateLichessMaterial();

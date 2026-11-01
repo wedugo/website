@@ -56,7 +56,7 @@ input:disabled { opacity: 0.5; cursor: not-allowed; }
   gap: 8px !important;
   margin-bottom: 8px;
 }
-.list-item > div {
+.list-item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -66,6 +66,17 @@ input:disabled { opacity: 0.5; cursor: not-allowed; }
   max-height: 240px !important;
   overflow-y: auto;
 }
-.list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel-alt); padding: 6px 10px; border-radius: 4px; }
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: none; justify-content: center; align-items: center; z-index: 999; }
-.modal { background: var(--panel); border: 1px solid var(--border); padding: 22px; border-radius: 8px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
+.copy-id-input {
+  background: #111;
+  border: 1px solid #333;
+  color: #aaa;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  width: 150px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.copy-id-input:hover {
+  border-color: var(--accent);
+  color: var(--light);
+}

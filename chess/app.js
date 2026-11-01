@@ -334,6 +334,11 @@ async function concludeMultiplayerMatch(winnerId, reason) {
   loadLeaderboard();
 }
 
+function copyMatchId(id) {
+  navigator.clipboard.writeText(id);
+  document.getElementById('game-status').innerText = 'Match ID copied to clipboard: ' + id.substring(0, 8) + '...';
+}
+
 async function loadOpenLobby() {
   if (!supabaseClient) return;
   const { data } = await supabaseClient.from('chess_matches').select('*').eq('status', 'waiting').order('created_at', { ascending: false }).limit(6);
@@ -356,19 +361,20 @@ async function loadOpenLobby() {
       const name = m.white_name || 'Guest';
       const fullId = m.id;
       
-      let actionBtn = `<button style="background:var(--accent);" onclick="joinWaitingMatch('${m.id}', ${inc})">Play</button>`;
+      let actionBtn = `<button style="background:var(--accent); padding:4px 8px; font-size:0.8rem;" onclick="joinWaitingMatch('${m.id}', ${inc})">Play</button>`;
       if(isMyLobby) {
-          actionBtn = `<button class="danger" onclick="cancelLobby('${m.id}')">Cancel</button>`;
+          actionBtn = `<button class="danger" style="padding:4px 8px; font-size:0.8rem;" onclick="cancelLobby('${m.id}')">Cancel</button>`;
       }
       
       return `
         <li class="list-item">
-          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+          <div class="list-item-row">
             <span><strong>${name}</strong> • ${tcStr}</span>
             ${actionBtn}
           </div>
-          <div style="font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; width: 100%; align-items: center;">
-            <span>ID: <input type="text" value="${fullId}" readonly style="background:#111; border:1px solid #333; color:#aaa; padding:2px 6px; font-size:0.75rem; width:150px; border-radius:3px;" onclick="this.select()"></span>
+          <div class="list-item-row" style="font-size: 0.75rem; color: #888;">
+            <span>ID (Click to copy):</span>
+            <input type="text" class="copy-id-input" value="${fullId}" readonly title="Click to copy ID" onclick="copyMatchId('${fullId}')">
             ${isMyLobby ? '<span style="color:#629924;">Your lobby</span>' : ''}
           </div>
         </li>
@@ -391,13 +397,13 @@ async function loadLiveMatches() {
       const fullId = m.id;
       return `
         <li class="list-item">
-          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+          <div class="list-item-row">
             <span>⚔️ <strong>${m.white_name || 'Guest'}</strong> vs <strong>${m.black_name || 'Guest'}</strong></span>
-            <button class="secondary" onclick="spectateMatch('${m.id}')">Watch</button>
+            <button class="secondary" style="padding:4px 8px; font-size:0.8rem;" onclick="spectateMatch('${m.id}')">Watch</button>
           </div>
-          <div style="font-size: 0.75rem; color: #888; display: flex; align-items: center; gap: 4px; width: 100%;">
-            <span>ID:</span>
-            <input type="text" value="${fullId}" readonly style="background:#111; border:1px solid #333; color:#aaa; padding:2px 6px; font-size:0.75rem; width:170px; border-radius:3px;" onclick="this.select()">
+          <div class="list-item-row" style="font-size: 0.75rem; color: #888;">
+            <span>ID (Click to copy):</span>
+            <input type="text" class="copy-id-input" value="${fullId}" readonly title="Click to copy ID" onclick="copyMatchId('${fullId}')">
           </div>
         </li>
       `;

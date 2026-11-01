@@ -5,6 +5,9 @@ on:
     branches:
       - main  # Jab bhi aap main branch par code push karenge, yeh chalega
 
+permissions:
+  contents: write # This fixes the 403 Permission Denied error shown in your image
+
 jobs:
   build-chess:
     runs-on: ubuntu-latest
@@ -120,7 +123,7 @@ jobs:
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Wedugo Chess Arena • Real-Time Lichess Engine</title>
+            <title>Wedugo Chess Arena • Real-Time Engine</title>
             <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
             <link rel="stylesheet" href="./style.css">
           </head>
@@ -136,7 +139,7 @@ jobs:
             <div class="main-grid">
               <div style="display:flex; flex-direction:column; gap:16px;">
                 <div class="card">
-                  <div class="card-title">⚡ Quick Pairing (Lichess Lobby)</div>
+                  <div class="card-title">⚡ Quick Pairing</div>
                   <div class="time-grid">
                     <div class="time-btn" onclick="findOrCreateMatch(60)"><strong>1 + 0</strong><small>Bullet</small></div>
                     <div class="time-btn" onclick="findOrCreateMatch(180)"><strong>3 + 0</strong><small>Blitz</small></div>
@@ -146,7 +149,7 @@ jobs:
                   <button class="secondary" onclick="playVsComputer()">🤖 Practice Offline / Solo</button>
                 </div>
                 <div class="card">
-                  <div class="card-title">🟢 Waiting Matches (Click to Join)</div>
+                  <div class="card-title">🟢 Waiting Matches</div>
                   <ul class="list-box" id="open-lobby-list"><li class="list-item">No open games right now</li></ul>
                 </div>
                 <div class="card">
@@ -178,7 +181,7 @@ jobs:
                 </div>
                 <div class="card">
                   <div class="card-title">💬 Live Match Chat</div>
-                  <div class="chat-log" id="chat-log"><div><em>System: Connect to a match to chat in real time.</em></div></div>
+                  <div class="chat-log" id="chat-log"><div><em>System: Connect to a match to chat.</em></div></div>
                   <div class="chat-input-row">
                     <input type="text" id="chat-input" placeholder="Say good luck..." onkeydown="if(event.key==='Enter') sendChat()">
                     <button onclick="sendChat()">Send</button>
@@ -188,7 +191,7 @@ jobs:
             </div>
             <div class="modal-backdrop" id="auth-modal">
               <div class="modal">
-                <div class="card-title">Login / Register (Wedugo Account)</div>
+                <div class="card-title">Login / Register</div>
                 <input type="email" id="auth-email" placeholder="Email address">
                 <input type="password" id="auth-pass" placeholder="Password">
                 <input type="text" id="auth-username" placeholder="Chess Username (if registering)">
@@ -210,8 +213,9 @@ jobs:
 
           # 4. app.js
           cat << 'EOF' > chess/app.js
-          const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-          const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+          const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // <--- REPLACE THIS
+          const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // <--- REPLACE THIS
+          
           const supabaseClient = (SUPABASE_URL.startsWith('http')) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
           const game = new Chess();
           let board = null, currentUser = null, currentProfile = { username: 'Guest', rating: 1500 };
@@ -241,8 +245,8 @@ jobs:
               if (diff < 0) bIcons += PIECE_ICONS[t].repeat(Math.abs(diff));
             });
             const net = wScore - bScore;
-            const wHtml = \`\${wIcons} \${net > 0 ? \`<span class="score-pill">+\${net}</span>\` : ''}\`;
-            const bHtml = \`\${bIcons} \${net < 0 ? \`<span class="score-pill">+\${Math.abs(net)}</span>\` : ''}\`;
+            const wHtml = `${wIcons} ${net > 0 ? `<span class="score-pill">+${net}</span>` : ''}`;
+            const bHtml = `${bIcons} ${net < 0 ? `<span class="score-pill">+${Math.abs(net)}</span>` : ''}`;
             if (board.orientation() === 'white') {
               document.getElementById('bottom-material').innerHTML = wHtml;
               document.getElementById('top-material').innerHTML = bHtml;
@@ -290,8 +294,8 @@ jobs:
 
           function updateStatus() {
             const turnName = game.turn() === 'w' ? 'White' : 'Black';
-            let text = \`\${turnName} to move\`;
-            if (game.in_checkmate()) text = \`Checkmate! \${turnName === 'White' ? 'Black' : 'White'} wins!\`;
+            let text = `${turnName} to move`;
+            if (game.in_checkmate()) text = `Checkmate! ${turnName === 'White' ? 'Black' : 'White'} wins!`;
             else if (game.in_draw()) text = 'Game Over • Draw!';
             else if (game.in_check()) text += ' (Check!)';
             document.getElementById('game-status').innerText = text;
@@ -300,10 +304,11 @@ jobs:
           function formatSec(s) {
             const m = Math.floor(s / 60).toString().padStart(2, '0');
             const sec = (s % 60).toString().padStart(2, '0');
-            return \`\${m}:\${sec}\`;
+            return `${m}:${sec}`;
           }
 
           function renderClocks() {
+            if(!board) return;
             const whiteBottom = board.orientation() === 'white';
             const bEl = document.getElementById('bottom-clock');
             const tEl = document.getElementById('top-clock');
@@ -337,7 +342,7 @@ jobs:
           function handleFlagFall(winnerColor) {
             clearInterval(timerInterval);
             const wName = winnerColor === 'w' ? 'White' : 'Black';
-            document.getElementById('game-status').innerText = \`Time out! \${wName} wins on time.\`;
+            document.getElementById('game-status').innerText = `Time out! ${wName} wins on time.`;
             if (isMultiplayer && currentMatch) {
               const winnerId = winnerColor === 'w' ? currentMatch.white_id : currentMatch.black_id;
               concludeMultiplayerMatch(winnerId, 'Time forfeit');
@@ -362,6 +367,7 @@ jobs:
           }
 
           async function ensureUserProfile() {
+            if(!supabaseClient) return;
             let { data: prof } = await supabaseClient.from('chess_profiles').select('*').eq('id', currentUser.id).single();
             if (!prof) {
               const defaultName = currentUser.email ? currentUser.email.split('@')[0] : 'Player';
@@ -370,7 +376,7 @@ jobs:
             }
             currentProfile = prof;
             document.getElementById('user-display').innerText = prof.username;
-            document.getElementById('user-rating').innerText = \`\${prof.rating}\`;
+            document.getElementById('user-rating').innerText = `${prof.rating}`;
             document.getElementById('auth-btn').innerText = 'Logout';
             document.getElementById('auth-btn').onclick = async () => { await supabaseClient.auth.signOut(); location.reload(); };
           }
@@ -396,6 +402,7 @@ jobs:
 
           async function joinWaitingMatch(matchId) {
             if (!currentUser) return openAuthModal();
+            if (!supabaseClient) return;
             const { data: joined } = await supabaseClient.from('chess_matches').update({ black_id: currentUser.id, black_name: currentProfile.username, black_rating: currentProfile.rating, status: 'playing' }).eq('id', matchId).select().single();
             if (joined) {
               setupMatchRoom(joined, 'b');
@@ -417,8 +424,11 @@ jobs:
             document.getElementById('btn-resign').disabled = false;
             document.getElementById('btn-draw').disabled = false;
             updatePlayerHeaders(matchObj);
+            
+            if (!supabaseClient) return;
             if (gameChannel) supabaseClient.removeChannel(gameChannel);
-            gameChannel = supabaseClient.channel(\`room_\${matchObj.id}\`, { config: { broadcast: { self: false } } });
+            
+            gameChannel = supabaseClient.channel(`room_${matchObj.id}`, { config: { broadcast: { self: false } } });
             gameChannel
               .on('broadcast', { event: 'match_started' }, ({ payload }) => {
                 currentMatch = payload.match;
@@ -436,9 +446,9 @@ jobs:
               .on('broadcast', { event: 'game_action' }, ({ payload }) => {
                 if (payload.action === 'resign') {
                   clearInterval(timerInterval);
-                  document.getElementById('game-status').innerText = \`\${payload.user} resigned! You win!\`;
+                  document.getElementById('game-status').innerText = `${payload.user} resigned! You win!`;
                 } else if (payload.action === 'draw_offer') {
-                  if (confirm(\`\${payload.user} offered a draw. Accept?\`)) {
+                  if (confirm(`${payload.user} offered a draw. Accept?`)) {
                     gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_accepted' } });
                     concludeMultiplayerMatch(null, 'Mutual Draw');
                   }
@@ -450,8 +460,8 @@ jobs:
           }
 
           function updatePlayerHeaders(m) {
-            const wLabel = \`\${m.white_name || 'White'} (\${m.white_rating || 1500})\`;
-            const bLabel = \`\${m.black_name || 'Waiting...'} (\${m.black_rating || '?'})\`;
+            const wLabel = `${m.white_name || 'White'} (${m.white_rating || 1500})`;
+            const bLabel = `${m.black_name || 'Waiting...'} (${m.black_rating || '?'})`;
             if (myColor === 'w') {
               document.getElementById('bottom-name').innerText = wLabel;
               document.getElementById('top-name').innerText = bLabel;
@@ -466,9 +476,10 @@ jobs:
             isMultiplayer = false;
             document.getElementById('btn-resign').disabled = true;
             document.getElementById('btn-draw').disabled = true;
-            document.getElementById('game-status').innerText = \`Game Over (\${reason})\`;
+            document.getElementById('game-status').innerText = `Game Over (${reason})`;
             if (!supabaseClient || !currentMatch) return;
             await supabaseClient.from('chess_matches').update({ status: 'finished', winner_id: winnerId, result_reason: reason, pgn: game.pgn(), fen: game.fen() }).eq('id', currentMatch.id);
+            
             if (winnerId && currentUser.id === winnerId) {
               const newRating = currentProfile.rating + 12;
               await supabaseClient.from('chess_profiles').update({ rating: newRating, wins: (currentProfile.wins || 0) + 1 }).eq('id', currentUser.id);
@@ -491,12 +502,12 @@ jobs:
               ul.innerHTML = '<li class="list-item">No waiting challenges.</li>';
               return;
             }
-            ul.innerHTML = data.map(m => \`
+            ul.innerHTML = data.map(m => `
               <li class="list-item">
-                <span><strong>\${m.white_name}</strong> (\${m.white_rating}) • \${m.time_control / 60}+0</span>
-                \${currentUser && m.white_id === currentUser.id ? '<small>Your lobby</small>' : \`<button onclick="joinWaitingMatch('\${m.id}')">Accept</button>\`}
+                <span><strong>${m.white_name}</strong> (${m.white_rating}) • ${m.time_control / 60}+0</span>
+                ${currentUser && m.white_id === currentUser.id ? '<small>Your lobby</small>' : `<button onclick="joinWaitingMatch('${m.id}')">Accept</button>`}
               </li>
-            \`).join('');
+            `).join('');
           }
 
           async function loadLeaderboard() {
@@ -504,12 +515,12 @@ jobs:
             const { data } = await supabaseClient.from('chess_profiles').select('username, rating, wins').order('rating', { ascending: false }).limit(10);
             const ul = document.getElementById('leaderboard-list');
             if (!data || data.length === 0) return;
-            ul.innerHTML = data.map((p, idx) => \`
+            ul.innerHTML = data.map((p, idx) => `
               <li class="list-item">
-                <span>#\${idx + 1} <strong>\${p.username}</strong></span>
-                <span class="badge-rating">\${p.rating}</span>
+                <span>#${idx + 1} <strong>${p.username}</strong></span>
+                <span class="badge-rating">${p.rating}</span>
               </li>
-            \`).join('');
+            `).join('');
           }
 
           function subscribeLobbyChanges() {
@@ -530,7 +541,7 @@ jobs:
           function appendChat(sender, text) {
             const box = document.getElementById('chat-log');
             const d = document.createElement('div');
-            d.innerHTML = \`<strong>\${sender}:</strong> \${text}\`;
+            d.innerHTML = `<strong>${sender}:</strong> ${text}`;
             box.appendChild(d);
             box.scrollTop = box.scrollHeight;
           }
@@ -567,6 +578,7 @@ jobs:
           async function handleLogin() {
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-pass').value.trim();
+            if (!supabaseClient) return alert('Supabase not configured');
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) return alert(error.message);
             closeAuthModal();
@@ -577,6 +589,7 @@ jobs:
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-pass').value.trim();
             const username = document.getElementById('auth-username').value.trim() || email.split('@')[0];
+            if (!supabaseClient) return alert('Supabase not configured');
             const { data, error } = await supabaseClient.auth.signUp({ email, password });
             if (error) return alert(error.message);
             if (data?.user) {

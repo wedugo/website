@@ -63,9 +63,12 @@ jobs:
           create policy "Users insert own profile" on public.chess_profiles for insert with check (auth.uid() = id);
           create policy "Users update profiles" on public.chess_profiles for update using (true);
 
+          -- Allow everyone (including guests) to create and join matches via link
+          drop policy if exists "Auth users create matches" on public.chess_matches;
+          drop policy if exists "Auth users update matches" on public.chess_matches;
           create policy "Public read matches" on public.chess_matches for select using (true);
-          create policy "Auth users create matches" on public.chess_matches for insert with check (auth.role() = 'authenticated');
-          create policy "Auth users update matches" on public.chess_matches for update using (auth.role() = 'authenticated');
+          create policy "Public create matches" on public.chess_matches for insert with check (true);
+          create policy "Public update matches" on public.chess_matches for update using (true);
 
           alter publication supabase_realtime add table public.chess_matches;
           EOF
@@ -118,6 +121,7 @@ jobs:
           .chat-log { background: var(--panel-alt); height: 140px; overflow-y: auto; padding: 8px; border-radius: 4px; border: 1px solid var(--border); font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; }
           .chat-input-row { display: flex; gap: 6px; }
           input { background: var(--panel-alt); border: 1px solid var(--border); color: var(--light); padding: 8px 10px; border-radius: 4px; flex: 1; }
+          input:disabled { opacity: 0.5; cursor: not-allowed; }
           .list-box { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; font-size: 0.88rem; }
           .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel-alt); padding: 6px 10px; border-radius: 4px; }
           .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: none; justify-content: center; align-items: center; z-index: 999; }
@@ -147,7 +151,8 @@ jobs:
             <div class="main-grid">
               <div style="display:flex; flex-direction:column; gap:16px;">
                 <div class="card">
-                  <div class="card-title">⚡ Quick Pairing</div>
+                  <div class="card-title">⚡ Quick Pairing & Play</div>
+                  <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">🔗 Create Invite Link (No Login Req.)</button>
                   <div class="time-grid">
                     <div class="time-btn" onclick="findOrCreateMatch(60)"><strong>1 + 0</strong><small>Bullet</small></div>
                     <div class="time-btn" onclick="findOrCreateMatch(180)"><strong>3 + 0</strong><small>Blitz</small></div>
@@ -179,7 +184,7 @@ jobs:
               <div style="display:flex; flex-direction:column; gap:16px;">
                 <div class="card">
                   <div class="card-title">♟ Match Console</div>
-                  <div class="status-box" id="game-status">Select a time control on the left to start!</div>
+                  <div class="status-box" id="game-status">Select a time control or create a link to start!</div>
                   <div class="pgn-box" id="pgn-log">1. Move history will appear here...</div>
                   <div class="action-row">
                     <button class="secondary" style="flex:1" onclick="flipBoard()">Flip</button>
@@ -192,7 +197,7 @@ jobs:
                   <div class="chat-log" id="chat-log"><div><em>System: Connect to a match to chat.</em></div></div>
                   <div class="chat-input-row">
                     <input type="text" id="chat-input" placeholder="Say good luck..." onkeydown="if(event.key==='Enter') sendChat()">
-                    <button onclick="sendChat()">Send</button>
+                    <button id="chat-send-btn" onclick="sendChat()">Send</button>
                   </div>
                 </div>
               </div>
@@ -221,8 +226,8 @@ jobs:
 
           # 4. app.js
           cat << 'EOF' > chess/app.js
-          const SUPABASE_URL = 'https://cncahdezxttujjzihozt.supabase.co'; // <--- REPLACE THIS
-          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0'; // <--- REPLACE THIS
+          const SUPABASE_URL = 'https://cncahdezxttujjzihozt.supabase.co';
+          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0';
           
           const supabaseClient = (SUPABASE_URL.startsWith('http')) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
           const game = new Chess();
@@ -357,25 +362,38 @@ jobs:
             }
           }
 
-          async function initSupabaseSession() {
-            if (!supabaseClient) {
-              document.getElementById('user-display').innerText = 'Offline Demo Mode (Add Supabase Keys)';
-              return;
+          function applyChatPermissions() {
+            const chatInput = document.getElementById('chat-input');
+            const chatSendBtn = document.getElementById('chat-send-btn');
+            if (!currentUser) {
+              chatInput.disabled = true;
+              chatInput.placeholder = "Login required to chat...";
+              chatSendBtn.disabled = true;
+            } else {
+              chatInput.disabled = false;
+              chatInput.placeholder = "Say good luck...";
+              chatSendBtn.disabled = false;
             }
+          }
+
+          async function initSupabaseSession() {
+            if (!supabaseClient) return;
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session?.user) {
               currentUser = session.user;
               await ensureUserProfile();
             } else {
-              document.getElementById('user-display').innerText = 'Guest (Login to play rated)';
+              document.getElementById('user-display').innerText = 'Guest (Unranked)';
             }
+            applyChatPermissions();
             loadOpenLobby();
             loadLeaderboard();
             subscribeLobbyChanges();
+            checkUrlForMatch(); // Check if joining via link
           }
 
           async function ensureUserProfile() {
-            if(!supabaseClient) return;
+            if(!supabaseClient || !currentUser) return;
             let { data: prof } = await supabaseClient.from('chess_profiles').select('*').eq('id', currentUser.id).single();
             if (!prof) {
               const defaultName = currentUser.email ? currentUser.email.split('@')[0] : 'Player';
@@ -389,9 +407,51 @@ jobs:
             document.getElementById('auth-btn').onclick = async () => { await supabaseClient.auth.signOut(); location.reload(); };
           }
 
+          async function createInviteLink() {
+            if (!supabaseClient) return;
+            document.getElementById('game-status').innerText = 'Creating invite link...';
+            const { data: created } = await supabaseClient.from('chess_matches').insert([{ 
+              white_id: currentUser ? currentUser.id : null, 
+              white_name: currentUser ? currentProfile.username : 'Guest (Host)', 
+              white_rating: currentUser ? currentProfile.rating : 1500, 
+              time_control: 600, 
+              status: 'waiting' 
+            }]).select().single();
+
+            if (created) {
+              const inviteUrl = window.location.origin + window.location.pathname + '?match=' + created.id;
+              prompt("Copy and share this link with your friend:", inviteUrl);
+              setupMatchRoom(created, 'w');
+              document.getElementById('game-status').innerText = 'Waiting for friend to join via link...';
+            }
+          }
+
+          async function checkUrlForMatch() {
+            const params = new URLSearchParams(window.location.search);
+            const matchId = params.get('match');
+            if (matchId && supabaseClient) {
+              const { data: waiting } = await supabaseClient.from('chess_matches').select('*').eq('id', matchId).single();
+              if (waiting && waiting.status === 'waiting') {
+                const { data: joined } = await supabaseClient.from('chess_matches').update({ 
+                  black_id: currentUser ? currentUser.id : null, 
+                  black_name: currentUser ? currentProfile.username : 'Guest (Joiner)', 
+                  black_rating: currentUser ? currentProfile.rating : 1500, 
+                  status: 'playing' 
+                }).eq('id', matchId).select().single();
+                if (joined) {
+                  setupMatchRoom(joined, 'b');
+                  gameChannel.send({ type: 'broadcast', event: 'match_started', payload: { match: joined } });
+                }
+              } else {
+                alert("Match already started or invalid link.");
+              }
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          }
+
           async function findOrCreateMatch(seconds) {
             if (!supabaseClient || !currentUser) {
-              alert('Please Login first!');
+              alert('Please Login first for public matchmaking, or use Invite Link!');
               openAuthModal();
               return;
             }
@@ -468,7 +528,7 @@ jobs:
           }
 
           function updatePlayerHeaders(m) {
-            const wLabel = `${m.white_name || 'White'} (${m.white_rating || 1500})`;
+            const wLabel = `${m.white_name || 'Guest'} (${m.white_rating || 1500})`;
             const bLabel = `${m.black_name || 'Waiting...'} (${m.black_rating || '?'})`;
             if (myColor === 'w') {
               document.getElementById('bottom-name').innerText = wLabel;
@@ -488,12 +548,12 @@ jobs:
             if (!supabaseClient || !currentMatch) return;
             await supabaseClient.from('chess_matches').update({ status: 'finished', winner_id: winnerId, result_reason: reason, pgn: game.pgn(), fen: game.fen() }).eq('id', currentMatch.id);
             
-            if (winnerId && currentUser.id === winnerId) {
+            if (winnerId && currentUser && currentUser.id === winnerId) {
               const newRating = currentProfile.rating + 12;
               await supabaseClient.from('chess_profiles').update({ rating: newRating, wins: (currentProfile.wins || 0) + 1 }).eq('id', currentUser.id);
               currentProfile.rating = newRating;
               document.getElementById('user-rating').innerText = newRating;
-            } else if (winnerId && currentUser.id !== winnerId) {
+            } else if (winnerId && currentUser && currentUser.id !== winnerId) {
               const newRating = Math.max(800, currentProfile.rating - 12);
               await supabaseClient.from('chess_profiles').update({ rating: newRating, losses: (currentProfile.losses || 0) + 1 }).eq('id', currentUser.id);
               currentProfile.rating = newRating;
@@ -512,7 +572,7 @@ jobs:
             }
             ul.innerHTML = data.map(m => `
               <li class="list-item">
-                <span><strong>${m.white_name}</strong> (${m.white_rating}) • ${m.time_control / 60}+0</span>
+                <span><strong>${m.white_name || 'Guest'}</strong> (${m.white_rating || 1500}) • ${m.time_control / 60}+0</span>
                 ${currentUser && m.white_id === currentUser.id ? '<small>Your lobby</small>' : `<button onclick="joinWaitingMatch('${m.id}')">Accept</button>`}
               </li>
             `).join('');
@@ -537,6 +597,7 @@ jobs:
           }
 
           function sendChat() {
+            if (!currentUser) return; // Guests can't send
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text) return;
@@ -557,14 +618,14 @@ jobs:
           function resignGame() {
             if (!isMultiplayer || !currentMatch) return;
             if (!confirm('Are you sure you want to resign?')) return;
-            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'resign', user: currentProfile.username } });
+            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'resign', user: currentProfile.username || 'Guest' } });
             const winnerId = myColor === 'w' ? currentMatch.black_id : currentMatch.white_id;
             concludeMultiplayerMatch(winnerId, 'Resignation');
           }
 
           function offerDraw() {
             if (!isMultiplayer || !gameChannel) return;
-            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_offer', user: currentProfile.username } });
+            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_offer', user: currentProfile.username || 'Guest' } });
             appendChat('System', 'Draw offer sent.');
           }
 
@@ -626,9 +687,10 @@ jobs:
       - name: Commit and Push Generated Chess Files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-generate /chess directory via GitHub Actions"
+          commit_message: "Auto-generate /chess directory via GitHub Actions (Invite Link Added)"
           branch: main
-          # Yeh command action ko strict karti hai ki sirf aur sirf chess folder ko commit kare
+          # MAIN WEBSITE PROTECTION: Yeh line sirf 'chess' folder ke changes ko hi commit karti hai.
+          # build.js se generated baki sabhi files completely safe rahengi.
           file_pattern: 'chess/' 
           commit_options: '--no-verify'
           push_options: '--force-with-lease'

@@ -204,18 +204,11 @@ async function checkUrlForMatch() {
   if (matchId && supabaseClient) {
     const { data: waiting } = await supabaseClient.from('chess_matches').select('*').eq('id', matchId).single();
     if (waiting && waiting.status === 'waiting') {
-      const { data: joined } = await supabaseClient.from('chess_matches').update({ 
-        black_id: currentUser ? currentUser.id : null, 
-        black_name: currentUser ? currentProfile.username : 'Guest (Joiner)', 
-        black_rating: currentUser ? currentProfile.rating : 1500, 
-        status: 'playing' 
-      }).eq('id', matchId).select().single();
-      if (joined) {
-        setupMatchRoom(joined, 'b');
-        gameChannel.send({ type: 'broadcast', event: 'match_started', payload: { match: joined } });
-      }
+      joinWaitingMatch(matchId, 0);
+    } else if (waiting && waiting.status === 'playing') {
+      spectateMatch(matchId);
     } else {
-      alert("Match already started or invalid link.");
+      document.getElementById('game-status').innerText = "Match already started or invalid link.";
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   }
@@ -240,10 +233,28 @@ async function findOrCreateMatch(seconds) {
   }
 }
 
-async function joinWaitingMatch(matchId) {
-  if (!currentUser) return openAuthModal();
+async function joinWaitingMatch(matchId, incrementSeconds = 0) {
   if (!supabaseClient) return;
-  const { data: joined } = await supabaseClient.from('chess_matches').update({ black_id: currentUser.id, black_name: currentProfile.username, black_rating: currentProfile.rating, status: 'playing' }).eq('id', matchId).select().single();
+  currentIncrement = incrementSeconds;
+  
+  const myName = currentUser ? currentProfile.username : 'Guest (Player)';
+  const myRating = currentUser ? currentProfile.rating : 1500;
+  const myId = currentUser ? currentUser.id : null;
+
+  const { data: joined, error } = await supabaseClient.from('chess_matches').update({ 
+      black_id: myId, 
+      black_name: myName, 
+      black_rating: myRating, 
+      status: 'playing',
+      result_reason: null
+  }).eq('id', matchId).select().single();
+  
+  if (error) {
+    alert('Match already started or taken.');
+    loadOpenLobby();
+    return;
+  }
+
   if (joined) {
     setupMatchRoom(joined, 'b');
     gameChannel.send({ type: 'broadcast', event: 'match_started', payload: { match: joined } });

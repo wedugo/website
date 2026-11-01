@@ -1,4 +1,13 @@
-:root { --bg: #161512; --panel: #262421; --panel-alt: #1c1a17; --border: #363431; --text: #bababa; --light: #ffffff; --accent: #629924; --danger: #cc3333; }
+:root {
+  --bg: #161512;
+  --panel: #262421;
+  --panel-alt: #1c1a17;
+  --border: #363431;
+  --text: #bababa;
+  --light: #ffffff;
+  --accent: #629924;
+  --danger: #cc3333;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 .navbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
@@ -37,9 +46,6 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 input { background: var(--panel-alt); border: 1px solid var(--border); color: var(--light); padding: 8px 10px; border-radius: 4px; flex: 1; }
 input:disabled { opacity: 0.5; cursor: not-allowed; }
 .list-box { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; font-size: 0.88rem; }
-.list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel-alt); padding: 8px 10px; border-radius: 4px; gap: 8px; }
-.list-item span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list-item button { padding: 4px 10px; font-size: 0.8rem; }
+.list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel-alt); padding: 6px 10px; border-radius: 4px; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: none; justify-content: center; align-items: center; z-index: 999; }
 .modal { background: var(--panel); border: 1px solid var(--border); padding: 22px; border-radius: 8px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
-.highlight-sq { box-shadow: inset 0 0 0 4px rgba(220, 240, 40, 0.8) !important; background-color: rgba(220, 240, 40, 0.4) !important; cursor: pointer; }

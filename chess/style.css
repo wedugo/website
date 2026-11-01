@@ -49,3 +49,17 @@ input:disabled { opacity: 0.5; cursor: not-allowed; }
 .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel-alt); padding: 6px 10px; border-radius: 4px; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: none; justify-content: center; align-items: center; z-index: 999; }
 .modal { background: var(--panel); border: 1px solid var(--border); padding: 22px; border-radius: 8px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
+.list-item {
+  display: flex;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  background: var(--panel-alt);
+  padding: 10px !important;
+  border-radius: 4px;
+  gap: 6px !important;
+  margin-bottom: 6px;
+}
+.list-box {
+  max-height: 250px !important;
+  overflow-y: auto;
+}

@@ -336,18 +336,72 @@ async function concludeMultiplayerMatch(winnerId, reason) {
 
 async function loadOpenLobby() {
   if (!supabaseClient) return;
-  const { data } = await supabaseClient.from('chess_matches').select('*').eq('status', 'waiting').order('created_at', { ascending: false }).limit(8);
+  const { data } = await supabaseClient.from('chess_matches').select('*').eq('status', 'waiting').order('created_at', { ascending: false }).limit(6);
   const ul = document.getElementById('open-lobby-list');
+  if (!ul) return;
+  
   if (!data || data.length === 0) {
     ul.innerHTML = '<li class="list-item">No waiting challenges.</li>';
     return;
   }
-  ul.innerHTML = data.map(m => `
-    <li class="list-item">
-      <span><strong>${m.white_name || 'Guest'}</strong> (${m.white_rating || 1500}) • ${m.time_control / 60}+0</span>
-      ${currentUser && m.white_id === currentUser.id ? '<small>Your lobby</small>' : `<button onclick="joinWaitingMatch('${m.id}')">Accept</button>`}
-    </li>
-  `).join('');
+  
+  ul.innerHTML = data.map(m => {
+      const isMyLobby = (currentUser && m.white_id === currentUser.id) || (!currentUser && m.white_id === null);
+      let inc = 0;
+      if(m.result_reason && m.result_reason.startsWith('inc:')) {
+          inc = parseInt(m.result_reason.split(':')[1]);
+      }
+      
+      const tcStr = `${m.time_control / 60}+${inc}`;
+      const name = m.white_name || 'Guest';
+      const fullId = m.id;
+      
+      let actionBtn = `<button style="background:var(--accent);" onclick="joinWaitingMatch('${m.id}', ${inc})">Play</button>`;
+      if(isMyLobby) {
+          actionBtn = `<button class="danger" onclick="cancelLobby('${m.id}')">Cancel</button>`;
+      }
+      
+      return `
+        <li class="list-item">
+          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <span><strong>${name}</strong> • ${tcStr}</span>
+            ${actionBtn}
+          </div>
+          <div style="font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <span>ID: <input type="text" value="${fullId}" readonly style="background:#111; border:1px solid #333; color:#aaa; padding:2px 6px; font-size:0.75rem; width:150px; border-radius:3px;" onclick="this.select()"></span>
+            ${isMyLobby ? '<span style="color:#629924;">Your lobby</span>' : ''}
+          </div>
+        </li>
+      `;
+  }).join('');
+}
+
+async function loadLiveMatches() {
+  if (!supabaseClient) return;
+  const { data } = await supabaseClient.from('chess_matches').select('*').eq('status', 'playing').order('created_at', { ascending: false }).limit(6);
+  const ul = document.getElementById('live-matches-list');
+  if (!ul) return;
+  
+  if (!data || data.length === 0) {
+    ul.innerHTML = '<li class="list-item">No live matches running.</li>';
+    return;
+  }
+  
+  ul.innerHTML = data.map(m => {
+      const fullId = m.id;
+      return `
+        <li class="list-item">
+          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <span>⚔️ <strong>${m.white_name || 'Guest'}</strong> vs <strong>${m.black_name || 'Guest'}</strong></span>
+            <button class="secondary" onclick="spectateMatch('${m.id}')">Watch</button>
+          </div>
+          <div style="font-size: 0.75rem; color: #888; display: flex; align-items: center; gap: 4px; width: 100%;">
+            <span>ID:</span>
+            <input type="text" value="${fullId}" readonly style="background:#111; border:1px solid #333; color:#aaa; padding:2px 6px; font-size:0.75rem; width:170px; border-radius:3px;" onclick="this.select()">
+          </div>
+        </li>
+      `;
+  }).join('');
 }
 
 async function loadLeaderboard() {

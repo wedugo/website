@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // <--- REPLACE THIS
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // <--- REPLACE THIS
+const SUPABASE_URL = 'https://cncahdezxttujjzihozt.supabase.co'; // <--- REPLACE THIS
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0'; // <--- REPLACE THIS
 
 const supabaseClient = (SUPABASE_URL.startsWith('http')) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const game = new Chess();

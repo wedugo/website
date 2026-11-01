@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wedugo Chess Arena</title>
+  <title>Wedugo Chess Arena • Real-Time Engine</title>
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -19,23 +19,23 @@
   <div class="main-grid">
     <div style="display:flex; flex-direction:column; gap:16px;">
       <div class="card">
-        <div class="card-title">🔗 Play with Friend (No Login)</div>
-        <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">1. Create Invite Link</button>
-        <input type="text" id="join-link-input" placeholder="Paste Link or Match ID here..." style="margin-bottom: 8px;">
-        <button class="secondary" onclick="joinFromInput()">2. Join Match</button>
-      </div>
-      <div class="card">
-        <div class="card-title">⚡ Quick Public Pairing</div>
+        <div class="card-title">⚡ Quick Pairing & Play</div>
+        <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">🔗 Create Invite Link (No Login Req.)</button>
         <div class="time-grid">
           <div class="time-btn" onclick="findOrCreateMatch(60)"><strong>1 + 0</strong><small>Bullet</small></div>
           <div class="time-btn" onclick="findOrCreateMatch(180)"><strong>3 + 0</strong><small>Blitz</small></div>
+          <div class="time-btn" onclick="findOrCreateMatch(300)"><strong>5 + 0</strong><small>Blitz</small></div>
           <div class="time-btn" onclick="findOrCreateMatch(600)"><strong>10 + 0</strong><small>Rapid</small></div>
-          <button class="secondary" style="grid-column: span 2;" onclick="playVsComputer()">🤖 Practice Offline</button>
         </div>
+        <button class="secondary" onclick="playVsComputer()">🤖 Practice Offline / Solo</button>
       </div>
       <div class="card">
         <div class="card-title">🟢 Waiting Matches</div>
         <ul class="list-box" id="open-lobby-list"><li class="list-item">No open games right now</li></ul>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 Top Leaderboard</div>
+        <ul class="list-box" id="leaderboard-list"><li class="list-item">Loading rankings...</li></ul>
       </div>
     </div>
     <div class="board-wrap">
@@ -52,7 +52,7 @@
     <div style="display:flex; flex-direction:column; gap:16px;">
       <div class="card">
         <div class="card-title">♟ Match Console</div>
-        <div class="status-box" id="game-status">Welcome! Create a link or select time control.</div>
+        <div class="status-box" id="game-status">Select a time control or create a link to start!</div>
         <div class="pgn-box" id="pgn-log">1. Move history will appear here...</div>
         <div class="action-row">
           <button class="secondary" style="flex:1" onclick="flipBoard()">Flip</button>

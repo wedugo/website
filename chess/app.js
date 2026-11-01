@@ -426,34 +426,6 @@ async function handleLogin() {
   location.reload();
 }
 
-async function loadLiveMatches() {
-  if (!supabaseClient) return;
-  const { data } = await supabaseClient.from('chess_matches').select('*').eq('status', 'playing').order('created_at', { ascending: false }).limit(6);
-  const ul = document.getElementById('live-matches-list');
-  if (!ul) return;
-  if (!data || data.length === 0) {
-    ul.innerHTML = '<li class="list-item">No live matches running.</li>';
-    return;
-  }
-  ul.innerHTML = data.map(m => {
-      const shortId = m.id.substring(0, 6);
-      return `
-        <li class="list-item">
-          <span>⚔️ #${shortId} <strong>${m.white_name || 'Guest'}</strong> vs <strong>${m.black_name || 'Guest'}</strong></span>
-          <button class="secondary" onclick="spectateMatch('${m.id}')">Watch</button>
-        </li>
-      `;
-  }).join('');
-}
-
-async function spectateMatch(matchId) {
-  if (!supabaseClient) return;
-  const { data: match } = await supabaseClient.from('chess_matches').select('*').eq('id', matchId).single();
-  if (match) {
-    setupMatchRoom(match, 'spectator');
-  }
-}
-
 async function handleSignup() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-pass').value.trim();

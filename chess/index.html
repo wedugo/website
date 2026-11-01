@@ -18,6 +18,15 @@
   </nav>
   <div class="main-grid">
     <div style="display:flex; flex-direction:column; gap:16px;">
+      <!-- PLAY WITH FRIEND -->
+      <div class="card">
+        <div class="card-title">🔗 Play with Friend (Enter ID)</div>
+        <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">Create Invite Link</button>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="join-link-input" placeholder="Enter Match ID here..." style="flex:1;">
+            <button class="secondary" onclick="joinFromInput()">Join Match</button>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">⚡ Quick Pairing & Play</div>
         <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">🔗 Create Invite Link (No Login Req.)</button>

@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://cncahdezxttujjzihozt.supabase.co'; // <--- REPLACE THIS
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0'; // <--- REPLACE THIS
+const SUPABASE_URL = 'https://cncahdezxttujjzihozt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0';
 
 const supabaseClient = (SUPABASE_URL.startsWith('http')) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const game = new Chess();
@@ -134,25 +134,38 @@ function handleFlagFall(winnerColor) {
   }
 }
 
-async function initSupabaseSession() {
-  if (!supabaseClient) {
-    document.getElementById('user-display').innerText = 'Offline Demo Mode (Add Supabase Keys)';
-    return;
+function applyChatPermissions() {
+  const chatInput = document.getElementById('chat-input');
+  const chatSendBtn = document.getElementById('chat-send-btn');
+  if (!currentUser) {
+    chatInput.disabled = true;
+    chatInput.placeholder = "Login required to chat...";
+    chatSendBtn.disabled = true;
+  } else {
+    chatInput.disabled = false;
+    chatInput.placeholder = "Say good luck...";
+    chatSendBtn.disabled = false;
   }
+}
+
+async function initSupabaseSession() {
+  if (!supabaseClient) return;
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
     await ensureUserProfile();
   } else {
-    document.getElementById('user-display').innerText = 'Guest (Login to play rated)';
+    document.getElementById('user-display').innerText = 'Guest (Unranked)';
   }
+  applyChatPermissions();
   loadOpenLobby();
   loadLeaderboard();
   subscribeLobbyChanges();
+  checkUrlForMatch(); // Check if joining via link
 }
 
 async function ensureUserProfile() {
-  if(!supabaseClient) return;
+  if(!supabaseClient || !currentUser) return;
   let { data: prof } = await supabaseClient.from('chess_profiles').select('*').eq('id', currentUser.id).single();
   if (!prof) {
     const defaultName = currentUser.email ? currentUser.email.split('@')[0] : 'Player';
@@ -166,9 +179,51 @@ async function ensureUserProfile() {
   document.getElementById('auth-btn').onclick = async () => { await supabaseClient.auth.signOut(); location.reload(); };
 }
 
+async function createInviteLink() {
+  if (!supabaseClient) return;
+  document.getElementById('game-status').innerText = 'Creating invite link...';
+  const { data: created } = await supabaseClient.from('chess_matches').insert([{ 
+    white_id: currentUser ? currentUser.id : null, 
+    white_name: currentUser ? currentProfile.username : 'Guest (Host)', 
+    white_rating: currentUser ? currentProfile.rating : 1500, 
+    time_control: 600, 
+    status: 'waiting' 
+  }]).select().single();
+
+  if (created) {
+    const inviteUrl = window.location.origin + window.location.pathname + '?match=' + created.id;
+    prompt("Copy and share this link with your friend:", inviteUrl);
+    setupMatchRoom(created, 'w');
+    document.getElementById('game-status').innerText = 'Waiting for friend to join via link...';
+  }
+}
+
+async function checkUrlForMatch() {
+  const params = new URLSearchParams(window.location.search);
+  const matchId = params.get('match');
+  if (matchId && supabaseClient) {
+    const { data: waiting } = await supabaseClient.from('chess_matches').select('*').eq('id', matchId).single();
+    if (waiting && waiting.status === 'waiting') {
+      const { data: joined } = await supabaseClient.from('chess_matches').update({ 
+        black_id: currentUser ? currentUser.id : null, 
+        black_name: currentUser ? currentProfile.username : 'Guest (Joiner)', 
+        black_rating: currentUser ? currentProfile.rating : 1500, 
+        status: 'playing' 
+      }).eq('id', matchId).select().single();
+      if (joined) {
+        setupMatchRoom(joined, 'b');
+        gameChannel.send({ type: 'broadcast', event: 'match_started', payload: { match: joined } });
+      }
+    } else {
+      alert("Match already started or invalid link.");
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
 async function findOrCreateMatch(seconds) {
   if (!supabaseClient || !currentUser) {
-    alert('Please Login first!');
+    alert('Please Login first for public matchmaking, or use Invite Link!');
     openAuthModal();
     return;
   }
@@ -245,7 +300,7 @@ function setupMatchRoom(matchObj, assignedColor) {
 }
 
 function updatePlayerHeaders(m) {
-  const wLabel = `${m.white_name || 'White'} (${m.white_rating || 1500})`;
+  const wLabel = `${m.white_name || 'Guest'} (${m.white_rating || 1500})`;
   const bLabel = `${m.black_name || 'Waiting...'} (${m.black_rating || '?'})`;
   if (myColor === 'w') {
     document.getElementById('bottom-name').innerText = wLabel;
@@ -265,12 +320,12 @@ async function concludeMultiplayerMatch(winnerId, reason) {
   if (!supabaseClient || !currentMatch) return;
   await supabaseClient.from('chess_matches').update({ status: 'finished', winner_id: winnerId, result_reason: reason, pgn: game.pgn(), fen: game.fen() }).eq('id', currentMatch.id);
   
-  if (winnerId && currentUser.id === winnerId) {
+  if (winnerId && currentUser && currentUser.id === winnerId) {
     const newRating = currentProfile.rating + 12;
     await supabaseClient.from('chess_profiles').update({ rating: newRating, wins: (currentProfile.wins || 0) + 1 }).eq('id', currentUser.id);
     currentProfile.rating = newRating;
     document.getElementById('user-rating').innerText = newRating;
-  } else if (winnerId && currentUser.id !== winnerId) {
+  } else if (winnerId && currentUser && currentUser.id !== winnerId) {
     const newRating = Math.max(800, currentProfile.rating - 12);
     await supabaseClient.from('chess_profiles').update({ rating: newRating, losses: (currentProfile.losses || 0) + 1 }).eq('id', currentUser.id);
     currentProfile.rating = newRating;
@@ -289,7 +344,7 @@ async function loadOpenLobby() {
   }
   ul.innerHTML = data.map(m => `
     <li class="list-item">
-      <span><strong>${m.white_name}</strong> (${m.white_rating}) • ${m.time_control / 60}+0</span>
+      <span><strong>${m.white_name || 'Guest'}</strong> (${m.white_rating || 1500}) • ${m.time_control / 60}+0</span>
       ${currentUser && m.white_id === currentUser.id ? '<small>Your lobby</small>' : `<button onclick="joinWaitingMatch('${m.id}')">Accept</button>`}
     </li>
   `).join('');
@@ -314,6 +369,7 @@ function subscribeLobbyChanges() {
 }
 
 function sendChat() {
+  if (!currentUser) return; // Guests can't send
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
@@ -334,14 +390,14 @@ function appendChat(sender, text) {
 function resignGame() {
   if (!isMultiplayer || !currentMatch) return;
   if (!confirm('Are you sure you want to resign?')) return;
-  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'resign', user: currentProfile.username } });
+  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'resign', user: currentProfile.username || 'Guest' } });
   const winnerId = myColor === 'w' ? currentMatch.black_id : currentMatch.white_id;
   concludeMultiplayerMatch(winnerId, 'Resignation');
 }
 
 function offerDraw() {
   if (!isMultiplayer || !gameChannel) return;
-  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_offer', user: currentProfile.username } });
+  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_offer', user: currentProfile.username || 'Guest' } });
   appendChat('System', 'Draw offer sent.');
 }
 

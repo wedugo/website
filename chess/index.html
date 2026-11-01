@@ -19,7 +19,8 @@
   <div class="main-grid">
     <div style="display:flex; flex-direction:column; gap:16px;">
       <div class="card">
-        <div class="card-title">⚡ Quick Pairing</div>
+        <div class="card-title">⚡ Quick Pairing & Play</div>
+        <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">🔗 Create Invite Link (No Login Req.)</button>
         <div class="time-grid">
           <div class="time-btn" onclick="findOrCreateMatch(60)"><strong>1 + 0</strong><small>Bullet</small></div>
           <div class="time-btn" onclick="findOrCreateMatch(180)"><strong>3 + 0</strong><small>Blitz</small></div>
@@ -51,7 +52,7 @@
     <div style="display:flex; flex-direction:column; gap:16px;">
       <div class="card">
         <div class="card-title">♟ Match Console</div>
-        <div class="status-box" id="game-status">Select a time control on the left to start!</div>
+        <div class="status-box" id="game-status">Select a time control or create a link to start!</div>
         <div class="pgn-box" id="pgn-log">1. Move history will appear here...</div>
         <div class="action-row">
           <button class="secondary" style="flex:1" onclick="flipBoard()">Flip</button>
@@ -64,7 +65,7 @@
         <div class="chat-log" id="chat-log"><div><em>System: Connect to a match to chat.</em></div></div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="Say good luck..." onkeydown="if(event.key==='Enter') sendChat()">
-          <button onclick="sendChat()">Send</button>
+          <button id="chat-send-btn" onclick="sendChat()">Send</button>
         </div>
       </div>
     </div>

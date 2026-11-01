@@ -32,8 +32,11 @@ create policy "Public read profiles" on public.chess_profiles for select using (
 create policy "Users insert own profile" on public.chess_profiles for insert with check (auth.uid() = id);
 create policy "Users update profiles" on public.chess_profiles for update using (true);
 
+-- Allow everyone (including guests) to create and join matches via link
+drop policy if exists "Auth users create matches" on public.chess_matches;
+drop policy if exists "Auth users update matches" on public.chess_matches;
 create policy "Public read matches" on public.chess_matches for select using (true);
-create policy "Auth users create matches" on public.chess_matches for insert with check (auth.role() = 'authenticated');
-create policy "Auth users update matches" on public.chess_matches for update using (auth.role() = 'authenticated');
+create policy "Public create matches" on public.chess_matches for insert with check (true);
+create policy "Public update matches" on public.chess_matches for update using (true);
 
 alter publication supabase_realtime add table public.chess_matches;

@@ -1,0 +1,804 @@
+/**
+ * setup-chess.js
+ * Is script ko `node setup-chess.js` se run karein.
+ * Yeh aapke purane build.js ya kisi bhi file ko chhed-chhad kiye bina
+ * ek naya `/chess` folder aur uski saari files generate kar degi.
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const chessDir = path.join(__dirname, 'chess');
+
+if (!fs.existsSync(chessDir)) {
+  fs.mkdirSync(chessDir, { recursive: true });
+  console.log('✅ Created /chess directory');
+}
+
+// ==========================================
+// 1. SUPABASE SQL SCHEMA (chess/supabase-schema.sql)
+// ==========================================
+const sqlSchema = `-- Apne Supabase Dashboard -> SQL Editor mein jaakar yeh run karein:
+
+create table if not exists public.chess_profiles (
+  id uuid references auth.users on delete cascade primary key,
+  username text,
+  rating int default 1500,
+  wins int default 0,
+  losses int default 0,
+  draws int default 0,
+  updated_at timestamp with time zone default now()
+);
+
+create table if not exists public.chess_matches (
+  id uuid default gen_random_uuid() primary key,
+  white_id uuid references public.chess_profiles(id),
+  white_name text,
+  white_rating int,
+  black_id uuid references public.chess_profiles(id),
+  black_name text,
+  black_rating int,
+  time_control int default 600,
+  fen text default 'start',
+  pgn text default '',
+  status text default 'waiting', -- 'waiting', 'playing', 'finished'
+  winner_id uuid,
+  result_reason text,
+  created_at timestamp with time zone default now()
+);
+
+alter table public.chess_profiles enable row level security;
+alter table public.chess_matches enable row level security;
+
+create policy "Public read profiles" on public.chess_profiles for select using (true);
+create policy "Users insert own profile" on public.chess_profiles for insert with check (auth.uid() = id);
+create policy "Users update profiles" on public.chess_profiles for update using (true);
+
+create policy "Public read matches" on public.chess_matches for select using (true);
+create policy "Auth users create matches" on public.chess_matches for insert with check (auth.role() = 'authenticated');
+create policy "Auth users update matches" on public.chess_matches for update using (auth.role() = 'authenticated');
+
+alter publication supabase_realtime add table public.chess_matches;
+`;
+
+// ==========================================
+// 2. STYLESHEET (chess/style.css)
+// ==========================================
+const cssCode = `:root {
+  --bg: #161512;
+  --panel: #262421;
+  --panel-alt: #1c1a17;
+  --border: #363431;
+  --text: #bababa;
+  --light: #ffffff;
+  --accent: #629924;
+  --danger: #cc3333;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Top Navbar */
+.navbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+.brand { color: var(--light); font-size: 1.35rem; font-weight: 700; text-decoration: none; }
+.brand span { color: var(--accent); }
+.user-panel { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+.badge-rating { background: var(--panel-alt); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-weight: 700; border: 1px solid var(--border); }
+
+/* Layout Grid */
+.main-grid { display: grid; grid-template-columns: 280px 1fr 320px; gap: 20px; max-width: 1320px; width: 100%; margin: 20px auto; padding: 0 16px; flex: 1; }
+@media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.card-title { color: var(--light); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-weight: 700; }
+
+/* Time Control Pool Buttons (Lichess Style) */
+.time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.time-btn { background: var(--panel-alt); border: 1px solid var(--border); color: var(--light); padding: 12px 8px; border-radius: 5px; cursor: pointer; text-align: center; transition: 0.15s; }
+.time-btn:hover { border-color: var(--accent); background: #2c3523; }
+.time-btn strong { display: block; font-size: 1.15rem; }
+.time-btn small { color: var(--text); font-size: 0.78rem; }
+
+/* Center Board Area */
+.board-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#myBoard { width: 100%; max-width: 500px; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 28px rgba(0,0,0,0.6); }
+
+.player-bar { width: 100%; max-width: 500px; background: var(--panel); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; min-height: 50px; }
+.player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.player-name { color: var(--light); font-weight: 600; font-size: 0.95rem; }
+.material-strip { display: flex; align-items: center; gap: 2px; font-size: 1.1rem; color: #e0e0e0; }
+.score-pill { background: #363431; color: var(--light); font-size: 0.78rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+
+.clock { font-family: monospace; font-size: 1.4rem; font-weight: 700; background: var(--panel-alt); color: var(--text); padding: 4px 12px; border-radius: 4px; border: 1px solid var(--border); }
+.clock.active { background: #2e4419; color: var(--light); border-color: var(--accent); }
+.clock.low { background: #5a1e1e; color: #ff9999; border-color: var(--danger); }
+
+/* Right Panel: Status, Moves, Chat */
+.status-box { background: var(--panel-alt); border-left: 4px solid var(--accent); padding: 10px 12px; color: var(--light); font-size: 0.92rem; border-radius: 4px; }
+.pgn-box { background: var(--panel-alt); height: 150px; overflow-y: auto; padding: 10px; font-family: monospace; font-size: 0.88rem; line-height: 1.6; border-radius: 4px; border: 1px solid var(--border); }
+.action-row { display: flex; gap: 8px; }
+button { background: var(--accent); color: var(--light); border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; }
+button.secondary { background: var(--border); }
+button.danger { background: var(--danger); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.chat-log { background: var(--panel-alt); height: 140px; overflow-y: auto; padding: 8px; border-radius: 4px; border: 1px solid var(--border); font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; }
+.chat-input-row { display: flex; gap: 6px; }
+input { background: var(--panel-alt); border: 1px solid var(--border); color: var(--light); padding: 8px 10px; border-radius: 4px; flex: 1; }
+
+.list-box { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; font-size: 0.88rem; }
+.list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel-alt); padding: 6px 10px; border-radius: 4px; }
+
+/* Auth Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: none; justify-content: center; align-items: center; z-index: 999; }
+.modal { background: var(--panel); border: 1px solid var(--border); padding: 22px; border-radius: 8px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
+`;
+
+// ==========================================
+// 3. HTML PAGE (chess/index.html)
+// ==========================================
+const htmlCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wedugo Chess Arena • Real-Time Lichess Engine</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- Top Navigation (Safe link back to your main website) -->
+  <nav class="navbar">
+    <div>
+      <a href="/" class="brand">wedugo<span>.com</span> / chess</a>
+    </div>
+    <div class="user-panel">
+      <span id="user-display">Checking session...</span>
+      <span class="badge-rating" id="user-rating">1500</span>
+      <button id="auth-btn" class="secondary" onclick="openAuthModal()">Login</button>
+    </div>
+  </nav>
+
+  <div class="main-grid">
+    <!-- Left Column: Lichess Quick Pairing, Online Lobby & Leaderboard -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card">
+        <div class="card-title">⚡ Quick Pairing (Lichess Lobby)</div>
+        <div class="time-grid">
+          <div class="time-btn" onclick="findOrCreateMatch(60)"><strong>1 + 0</strong><small>Bullet</small></div>
+          <div class="time-btn" onclick="findOrCreateMatch(180)"><strong>3 + 0</strong><small>Blitz</small></div>
+          <div class="time-btn" onclick="findOrCreateMatch(300)"><strong>5 + 0</strong><small>Blitz</small></div>
+          <div class="time-btn" onclick="findOrCreateMatch(600)"><strong>10 + 0</strong><small>Rapid</small></div>
+        </div>
+        <button class="secondary" onclick="playVsComputer()">🤖 Practice Offline / Solo</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🟢 Waiting Matches (Click to Join)</div>
+        <ul class="list-box" id="open-lobby-list">
+          <li class="list-item">No open games right now</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏆 Top Leaderboard</div>
+        <ul class="list-box" id="leaderboard-list">
+          <li class="list-item">Loading rankings...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Center Column: Chessboard & Lichess Material Bars -->
+    <div class="board-wrap">
+      <div class="player-bar">
+        <div class="player-info">
+          <span class="player-name" id="top-name">Opponent</span>
+          <div class="material-strip" id="top-material"></div>
+        </div>
+        <div class="clock" id="top-clock">10:00</div>
+      </div>
+
+      <div id="myBoard"></div>
+
+      <div class="player-bar">
+        <div class="player-info">
+          <span class="player-name" id="bottom-name">You</span>
+          <div class="material-strip" id="bottom-material"></div>
+        </div>
+        <div class="clock" id="bottom-clock">10:00</div>
+      </div>
+    </div>
+
+    <!-- Right Column: Game Controls, PGN History & Live Chat -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card">
+        <div class="card-title">♟ Match Console</div>
+        <div class="status-box" id="game-status">Select a time control on the left to start!</div>
+        <div class="pgn-box" id="pgn-log">1. Move history will appear here...</div>
+        <div class="action-row">
+          <button class="secondary" style="flex:1" onclick="flipBoard()">Flip</button>
+          <button class="secondary" style="flex:1" id="btn-draw" onclick="offerDraw()" disabled>1/2 Draw</button>
+          <button class="danger" style="flex:1" id="btn-resign" onclick="resignGame()" disabled>🏳 Resign</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💬 Live Match Chat</div>
+        <div class="chat-log" id="chat-log">
+          <div><em>System: Connect to a match to chat in real time.</em></div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Say good luck..." onkeydown="if(event.key==='Enter') sendChat()">
+          <button onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase Auth Modal (Uses same Supabase Auth as your main site) -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal">
+      <div class="card-title">Login / Register (Wedugo Account)</div>
+      <input type="email" id="auth-email" placeholder="Email address">
+      <input type="password" id="auth-pass" placeholder="Password">
+      <input type="text" id="auth-username" placeholder="Chess Username (if registering)">
+      <div class="action-row">
+        <button style="flex:1" onclick="handleLogin()">Login</button>
+        <button class="secondary" style="flex:1" onclick="handleSignup()">Sign Up</button>
+      </div>
+      <button class="secondary" onclick="closeAuthModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
+`;
+
+// ==========================================
+// 4. APPLICATION LOGIC (chess/app.js)
+// ==========================================
+const appJsCode = `// ============================================================================
+// APNA SUPABASE URL AUR ANON KEY YAHAN PASTE KAREIN (Same as your main site)
+// ============================================================================
+const SUPABASE_URL = 'https://cncahdezxttujjzihozt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY2FoZGV6eHR0dWpqemlob3p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzOTI2MjgsImV4cCI6MjEwNDk2ODYyOH0.69WvQ73HHJvTiKlRkMdACgxMVLj4prcLMhRhRfTfW_0';
+
+const supabaseClient = (SUPABASE_URL.startsWith('http'))
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const game = new Chess();
+let board = null;
+let currentUser = null;
+let currentProfile = { username: 'Guest', rating: 1500 };
+
+let currentMatch = null;
+let gameChannel = null;
+let myColor = 'w';
+let isMultiplayer = false;
+
+let timeWhite = 600;
+let timeBlack = 600;
+let timerInterval = null;
+
+// Exact Lichess Piece Values & Unicode Icons
+const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+const PIECE_ICONS = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' };
+
+// ==========================================
+// 1. EXACT LICHESS MATERIAL IMBALANCE ENGINE
+// ==========================================
+function updateLichessMaterial() {
+  const b = game.board();
+  const counts = {
+    w: { p: 0, n: 0, b: 0, r: 0, q: 0 },
+    b: { p: 0, n: 0, b: 0, r: 0, q: 0 }
+  };
+  let wScore = 0, bScore = 0;
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = b[r][c];
+      if (sq && sq.type !== 'k') {
+        counts[sq.color][sq.type]++;
+        if (sq.color === 'w') wScore += PIECE_VALUES[sq.type];
+        else bScore += PIECE_VALUES[sq.type];
+      }
+    }
+  }
+
+  let wIcons = '', bIcons = '';
+  ['q', 'r', 'b', 'n', 'p'].forEach(t => {
+    const diff = counts.w[t] - counts.b[t];
+    if (diff > 0) wIcons += PIECE_ICONS[t].repeat(diff);
+    if (diff < 0) bIcons += PIECE_ICONS[t].repeat(Math.abs(diff));
+  });
+
+  const net = wScore - bScore;
+  const wHtml = \`\${wIcons} \${net > 0 ? \`<span class="score-pill">+\${net}</span>\` : ''}\`;
+  const bHtml = \`\${bIcons} \${net < 0 ? \`<span class="score-pill">+\${Math.abs(net)}</span>\` : ''}\`;
+
+  if (board.orientation() === 'white') {
+    document.getElementById('bottom-material').innerHTML = wHtml;
+    document.getElementById('top-material').innerHTML = bHtml;
+  } else {
+    document.getElementById('bottom-material').innerHTML = bHtml;
+    document.getElementById('top-material').innerHTML = wHtml;
+  }
+}
+
+// ==========================================
+// 2. BOARD MOVES & RULES
+// ==========================================
+function onDragStart(source, piece) {
+  if (game.game_over()) return false;
+  if (isMultiplayer) {
+    if (game.turn() !== myColor) return false;
+    if ((myColor === 'w' && piece.startsWith('b')) || (myColor === 'b' && piece.startsWith('w'))) return false;
+  } else {
+    if ((game.turn() === 'w' && piece.startsWith('b')) || (game.turn() === 'b' && piece.startsWith('w'))) return false;
+  }
+}
+
+function onDrop(source, target) {
+  const move = game.move({ from: source, to: target, promotion: 'q' });
+  if (move === null) return 'snapback';
+
+  if (isMultiplayer && gameChannel) {
+    gameChannel.send({
+      type: 'broadcast',
+      event: 'move',
+      payload: { move, timeWhite, timeBlack, fen: game.fen(), pgn: game.pgn() }
+    });
+  }
+  afterMove();
+}
+
+function afterMove() {
+  board.position(game.fen());
+  updateLichessMaterial();
+  updateStatus();
+  startClock();
+  document.getElementById('pgn-log').innerText = game.pgn() || 'No moves yet.';
+
+  if (game.game_over() && isMultiplayer) {
+    let winnerId = null;
+    let reason = 'Draw';
+    if (game.in_checkmate()) {
+      const winnerColor = game.turn() === 'w' ? 'b' : 'w';
+      winnerId = winnerColor === 'w' ? currentMatch.white_id : currentMatch.black_id;
+      reason = 'Checkmate';
+    }
+    concludeMultiplayerMatch(winnerId, reason);
+  }
+}
+
+function updateStatus() {
+  const turnName = game.turn() === 'w' ? 'White' : 'Black';
+  let text = \`\${turnName} to move\`;
+  if (game.in_checkmate()) text = \`Checkmate! \${turnName === 'White' ? 'Black' : 'White'} wins!\`;
+  else if (game.in_draw()) text = 'Game Over • Draw!';
+  else if (game.in_check()) text += ' (Check!)';
+  document.getElementById('game-status').innerText = text;
+}
+
+// ==========================================
+// 3. DUAL REAL-TIME CHESS CLOCKS
+// ==========================================
+function formatSec(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return \`\${m}:\${sec}\`;
+}
+
+function renderClocks() {
+  const whiteBottom = board.orientation() === 'white';
+  const bEl = document.getElementById('bottom-clock');
+  const tEl = document.getElementById('top-clock');
+
+  const bTime = whiteBottom ? timeWhite : timeBlack;
+  const tTime = whiteBottom ? timeBlack : timeWhite;
+
+  bEl.innerText = formatSec(bTime);
+  tEl.innerText = formatSec(tTime);
+
+  const wTurn = game.turn() === 'w';
+  bEl.classList.toggle('active', whiteBottom ? wTurn : !wTurn);
+  tEl.classList.toggle('active', whiteBottom ? !wTurn : wTurn);
+  bEl.classList.toggle('low', bTime < 30);
+  tEl.classList.toggle('low', tTime < 30);
+}
+
+function startClock() {
+  if (timerInterval) clearInterval(timerInterval);
+  renderClocks();
+  timerInterval = setInterval(() => {
+    if (game.game_over()) return clearInterval(timerInterval);
+    if (game.turn() === 'w') {
+      timeWhite = Math.max(0, timeWhite - 1);
+      if (timeWhite === 0) handleFlagFall('b');
+    } else {
+      timeBlack = Math.max(0, timeBlack - 1);
+      if (timeBlack === 0) handleFlagFall('w');
+    }
+    renderClocks();
+  }, 1000);
+}
+
+function handleFlagFall(winnerColor) {
+  clearInterval(timerInterval);
+  const wName = winnerColor === 'w' ? 'White' : 'Black';
+  document.getElementById('game-status').innerText = \`Time out! \${wName} wins on time.\`;
+  if (isMultiplayer && currentMatch) {
+    const winnerId = winnerColor === 'w' ? currentMatch.white_id : currentMatch.black_id;
+    concludeMultiplayerMatch(winnerId, 'Time forfeit');
+  }
+}
+
+// ==========================================
+// 4. SUPABASE AUTH, LOBBY & ELO RATING
+// ==========================================
+async function initSupabaseSession() {
+  if (!supabaseClient) {
+    document.getElementById('user-display').innerText = 'Offline Demo Mode (Add Supabase Keys in app.js)';
+    return;
+  }
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    await ensureUserProfile();
+  } else {
+    document.getElementById('user-display').innerText = 'Guest (Login to play rated)';
+  }
+  loadOpenLobby();
+  loadLeaderboard();
+  subscribeLobbyChanges();
+}
+
+async function ensureUserProfile() {
+  let { data: prof } = await supabaseClient
+    .from('chess_profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (!prof) {
+    const defaultName = currentUser.email ? currentUser.email.split('@')[0] : 'Player';
+    const { data: created } = await supabaseClient
+      .from('chess_profiles')
+      .insert([{ id: currentUser.id, username: defaultName, rating: 1500 }])
+      .select()
+      .single();
+    prof = created || { username: defaultName, rating: 1500 };
+  }
+  currentProfile = prof;
+  document.getElementById('user-display').innerText = prof.username;
+  document.getElementById('user-rating').innerText = \`\${prof.rating}\`;
+  document.getElementById('auth-btn').innerText = 'Logout';
+  document.getElementById('auth-btn').onclick = async () => {
+    await supabaseClient.auth.signOut();
+    location.reload();
+  };
+}
+
+async function findOrCreateMatch(seconds) {
+  if (!supabaseClient || !currentUser) {
+    alert('Please Login with your Wedugo account first to play online rated matches!');
+    openAuthModal();
+    return;
+  }
+
+  document.getElementById('game-status').innerText = 'Searching for opponent in lobby...';
+
+  const { data: waiting } = await supabaseClient
+    .from('chess_matches')
+    .select('*')
+    .eq('status', 'waiting')
+    .eq('time_control', seconds)
+    .neq('white_id', currentUser.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (waiting) {
+    joinWaitingMatch(waiting.id);
+  } else {
+    const { data: created } = await supabaseClient
+      .from('chess_matches')
+      .insert([{
+        white_id: currentUser.id,
+        white_name: currentProfile.username,
+        white_rating: currentProfile.rating,
+        time_control: seconds,
+        status: 'waiting'
+      }])
+      .select()
+      .single();
+
+    if (created) {
+      setupMatchRoom(created, 'w');
+      document.getElementById('game-status').innerText = 'Waiting for an opponent to accept your challenge...';
+    }
+  }
+}
+
+async function joinWaitingMatch(matchId) {
+  if (!currentUser) return openAuthModal();
+  const { data: joined } = await supabaseClient
+    .from('chess_matches')
+    .update({
+      black_id: currentUser.id,
+      black_name: currentProfile.username,
+      black_rating: currentProfile.rating,
+      status: 'playing'
+    })
+    .eq('id', matchId)
+    .select()
+    .single();
+
+  if (joined) {
+    setupMatchRoom(joined, 'b');
+    gameChannel.send({
+      type: 'broadcast',
+      event: 'match_started',
+      payload: { match: joined }
+    });
+  }
+}
+
+function setupMatchRoom(matchObj, assignedColor) {
+  currentMatch = matchObj;
+  myColor = assignedColor;
+  isMultiplayer = true;
+  game.reset();
+  timeWhite = matchObj.time_control;
+  timeBlack = matchObj.time_control;
+
+  board.orientation(myColor === 'w' ? 'white' : 'black');
+  board.start();
+  updateLichessMaterial();
+  renderClocks();
+
+  document.getElementById('btn-resign').disabled = false;
+  document.getElementById('btn-draw').disabled = false;
+
+  updatePlayerHeaders(matchObj);
+
+  if (gameChannel) supabaseClient.removeChannel(gameChannel);
+  gameChannel = supabaseClient.channel(\`room_\${matchObj.id}\`, {
+    config: { broadcast: { self: false } }
+  });
+
+  gameChannel
+    .on('broadcast', { event: 'match_started' }, ({ payload }) => {
+      currentMatch = payload.match;
+      updatePlayerHeaders(currentMatch);
+      document.getElementById('game-status').innerText = 'Opponent connected! White to move.';
+      startClock();
+    })
+    .on('broadcast', { event: 'move' }, ({ payload }) => {
+      game.move(payload.move);
+      timeWhite = payload.timeWhite;
+      timeBlack = payload.timeBlack;
+      afterMove();
+    })
+    .on('broadcast', { event: 'chat' }, ({ payload }) => {
+      appendChat(payload.sender, payload.text);
+    })
+    .on('broadcast', { event: 'game_action' }, ({ payload }) => {
+      if (payload.action === 'resign') {
+        clearInterval(timerInterval);
+        document.getElementById('game-status').innerText = \`\${payload.user} resigned! You win!\`;
+      } else if (payload.action === 'draw_offer') {
+        if (confirm(\`\${payload.user} offered a draw. Accept?\`)) {
+          gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_accepted' } });
+          concludeMultiplayerMatch(null, 'Mutual Draw');
+        }
+      } else if (payload.action === 'draw_accepted') {
+        concludeMultiplayerMatch(null, 'Mutual Draw');
+      }
+    })
+    .subscribe();
+}
+
+function updatePlayerHeaders(m) {
+  const wLabel = \`\${m.white_name || 'White'} (\${m.white_rating || 1500})\`;
+  const bLabel = \`\${m.black_name || 'Waiting...'} (\${m.black_rating || '?'})\`;
+  if (myColor === 'w') {
+    document.getElementById('bottom-name').innerText = wLabel;
+    document.getElementById('top-name').innerText = bLabel;
+  } else {
+    document.getElementById('bottom-name').innerText = bLabel;
+    document.getElementById('top-name').innerText = wLabel;
+  }
+}
+
+async function concludeMultiplayerMatch(winnerId, reason) {
+  clearInterval(timerInterval);
+  isMultiplayer = false;
+  document.getElementById('btn-resign').disabled = true;
+  document.getElementById('btn-draw').disabled = true;
+  document.getElementById('game-status').innerText = \`Game Over (\${reason})\`;
+
+  if (!supabaseClient || !currentMatch) return;
+  await supabaseClient
+    .from('chess_matches')
+    .update({ status: 'finished', winner_id: winnerId, result_reason: reason, pgn: game.pgn(), fen: game.fen() })
+    .eq('id', currentMatch.id);
+
+  if (winnerId && currentUser.id === winnerId) {
+    const newRating = currentProfile.rating + 12;
+    await supabaseClient.from('chess_profiles').update({ rating: newRating, wins: (currentProfile.wins || 0) + 1 }).eq('id', currentUser.id);
+    currentProfile.rating = newRating;
+    document.getElementById('user-rating').innerText = newRating;
+  } else if (winnerId && currentUser.id !== winnerId) {
+    const newRating = Math.max(800, currentProfile.rating - 12);
+    await supabaseClient.from('chess_profiles').update({ rating: newRating, losses: (currentProfile.losses || 0) + 1 }).eq('id', currentUser.id);
+    currentProfile.rating = newRating;
+    document.getElementById('user-rating').innerText = newRating;
+  }
+  loadLeaderboard();
+}
+
+// ==========================================
+// 5. LOBBY LIST, LEADERBOARD & CHAT
+// ==========================================
+async function loadOpenLobby() {
+  if (!supabaseClient) return;
+  const { data } = await supabaseClient
+    .from('chess_matches')
+    .select('*')
+    .eq('status', 'waiting')
+    .order('created_at', { ascending: false })
+    .limit(8);
+
+  const ul = document.getElementById('open-lobby-list');
+  if (!data || data.length === 0) {
+    ul.innerHTML = '<li class="list-item">No waiting challenges. Click a time control above!</li>';
+    return;
+  }
+  ul.innerHTML = data.map(m => \`
+    <li class="list-item">
+      <span><strong>\${m.white_name}</strong> (\${m.white_rating}) • \${m.time_control / 60}+0</span>
+      \${currentUser && m.white_id === currentUser.id
+        ? '<small>Your lobby</small>'
+        : \`<button onclick="joinWaitingMatch('\${m.id}')">Accept</button>\`}
+    </li>
+  \`).join('');
+}
+
+async function loadLeaderboard() {
+  if (!supabaseClient) return;
+  const { data } = await supabaseClient
+    .from('chess_profiles')
+    .select('username, rating, wins')
+    .order('rating', { ascending: false })
+    .limit(10);
+
+  const ul = document.getElementById('leaderboard-list');
+  if (!data || data.length === 0) return;
+  ul.innerHTML = data.map((p, idx) => \`
+    <li class="list-item">
+      <span>#\${idx + 1} <strong>\${p.username}</strong></span>
+      <span class="badge-rating">\${p.rating}</span>
+    </li>
+  \`).join('');
+}
+
+function subscribeLobbyChanges() {
+  if (!supabaseClient) return;
+  supabaseClient
+    .channel('public:chess_matches')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chess_matches' }, () => {
+      loadOpenLobby();
+    })
+    .subscribe();
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const sender = currentProfile.username || 'Player';
+  appendChat('You', text);
+  if (gameChannel) {
+    gameChannel.send({ type: 'broadcast', event: 'chat', payload: { sender, text } });
+  }
+}
+
+function appendChat(sender, text) {
+  const box = document.getElementById('chat-log');
+  const d = document.createElement('div');
+  d.innerHTML = \`<strong>\${sender}:</strong> \${text}\`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+function resignGame() {
+  if (!isMultiplayer || !currentMatch) return;
+  if (!confirm('Are you sure you want to resign?')) return;
+  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'resign', user: currentProfile.username } });
+  const winnerId = myColor === 'w' ? currentMatch.black_id : currentMatch.white_id;
+  concludeMultiplayerMatch(winnerId, 'Resignation');
+}
+
+function offerDraw() {
+  if (!isMultiplayer || !gameChannel) return;
+  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_offer', user: currentProfile.username } });
+  appendChat('System', 'Draw offer sent to opponent.');
+}
+
+function playVsComputer() {
+  isMultiplayer = false;
+  game.reset();
+  timeWhite = 600;
+  timeBlack = 600;
+  board.start();
+  updateLichessMaterial();
+  renderClocks();
+  document.getElementById('game-status').innerText = 'Solo / Pass & Play mode active.';
+}
+
+function flipBoard() {
+  board.flip();
+  updateLichessMaterial();
+  renderClocks();
+}
+
+// Auth Modal Helpers
+function openAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
+function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+
+async function handleLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-pass').value.trim();
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) return alert(error.message);
+  closeAuthModal();
+  location.reload();
+}
+
+async function handleSignup() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-pass').value.trim();
+  const username = document.getElementById('auth-username').value.trim() || email.split('@')[0];
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) return alert(error.message);
+  if (data?.user) {
+    await supabaseClient.from('chess_profiles').insert([{ id: data.user.id, username, rating: 1500 }]);
+  }
+  alert('Account ready!');
+  closeAuthModal();
+  location.reload();
+}
+
+// Boot Board
+board = Chessboard('myBoard', {
+  draggable: true,
+  position: 'start',
+  pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+  onDragStart,
+  onDrop,
+  onSnapEnd: () => board.position(game.fen())
+});
+
+updateLichessMaterial();
+renderClocks();
+initSupabaseSession();
+window.addEventListener('resize', () => board.resize());
+`;
+
+// Write all files into /chess
+fs.writeFileSync(path.join(chessDir, 'supabase-schema.sql'), sqlSchema, 'utf8');
+fs.writeFileSync(path.join(chessDir, 'style.css'), cssCode, 'utf8');
+fs.writeFileSync(path.join(chessDir, 'index.html'), htmlCode, 'utf8');
+fs.writeFileSync(path.join(chessDir, 'app.js'), appJsCode, 'utf8');
+
+console.log('✅ Generated chess/index.html, chess/style.css, chess/app.js, and chess/supabase-schema.sql');
+console.log('🚀 Your existing build.js and root pages were NOT touched!');

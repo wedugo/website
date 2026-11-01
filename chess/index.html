@@ -29,6 +29,15 @@
         </div>
         <button class="secondary" onclick="playVsComputer()">🤖 Practice Offline / Solo</button>
       </div>
+      <!-- PLAY WITH FRIEND -->
+      <div class="card">
+        <div class="card-title">🔗 Play with Friend</div>
+        <button style="background: #2a6881; margin-bottom: 8px;" onclick="createInviteLink()">Create Invite Link</button>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="join-link-input" placeholder="Paste Link / ID..." style="flex:1;">
+            <button class="secondary" onclick="joinFromInput()">Join</button>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">🟢 Waiting Matches</div>
         <ul class="list-box" id="open-lobby-list"><li class="list-item">No open games right now</li></ul>

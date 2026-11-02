@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Wedugo Chess Arena • International Standard</title>
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
   <link rel="stylesheet" href="./style.css">
@@ -95,6 +95,11 @@
 
     <!-- CENTER COLUMN: CHESSBOARD & CLOCKS -->
     <div class="board-wrap">
+      <!-- Lichess 30s First-Move Auto-Abort Banner -->
+      <div class="abort-banner" id="abort-banner">
+        ⏱️ First move must be played within <strong id="abort-seconds">30</strong>s or match will auto-cancel.
+      </div>
+
       <div class="player-bar">
         <div class="player-info">
           <span class="status-dot"></span>
@@ -104,7 +109,7 @@
         <div class="clock" id="top-clock">10:00</div>
       </div>
 
-      <div id="myBoard"></div>
+      <div id="myBoard" class="click-mode-only"></div>
 
       <div class="player-bar">
         <div class="player-info">
@@ -123,7 +128,7 @@
       <div class="card">
         <div class="card-title">⚙️ Lichess Board Settings</div>
         <div class="settings-grid">
-          <label class="checkbox-label" title="Click piece then click target square to move">
+          <label class="checkbox-label" title="Tap/Click piece then tap target square (Best for Mobile & PC)">
             <input type="checkbox" id="chk-click-move" checked onchange="toggleMoveMode()">
             <span>Click & Place</span>
           </label>
@@ -150,6 +155,15 @@
         </div>
 
         <div class="status-box" id="game-status">Welcome! Select a time control or click pieces to move.</div>
+
+        <!-- Incoming Draw / Takeback / Rematch Interactive Banner -->
+        <div class="offer-banner" id="offer-banner">
+          <span id="offer-text">Opponent sent an offer.</span>
+          <div class="action-row">
+            <button style="flex:1" id="offer-accept-btn">✅ Accept</button>
+            <button class="danger" style="flex:1" id="offer-decline-btn">❌ Decline</button>
+          </div>
+        </div>
 
         <!-- Lichess 2-Column Move History -->
         <div class="moves-table-wrap" id="moves-wrap">

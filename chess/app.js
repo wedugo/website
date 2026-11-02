@@ -28,6 +28,11 @@ let timeBlack = 600;
 let currentIncrement = 0;
 let timerInterval = null;
 
+// Lichess First-Move Auto-Abort Timer (30 seconds for White's 1st move, then 30 seconds for Black's 1st move)
+const FIRST_MOVE_LIMIT_SEC = 30;
+let firstMoveAbortCountdown = FIRST_MOVE_LIMIT_SEC;
+let firstMoveAbortInterval = null;
+
 // Lichess Move State
 let selectedSquare = null;
 let pendingPromotion = null;
@@ -36,8 +41,17 @@ let lastMoveSquares = [];
 const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 };
 const PIECE_ICONS = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' };
 
+// Prevent any native HTML5 image drag on chessboard pieces
+$(document).on('dragstart', '#myBoard img', function (e) {
+  const isClickMode = document.getElementById('chk-click-move')?.checked;
+  if (isClickMode) {
+    e.preventDefault();
+    return false;
+  }
+});
+
 // ==========================================
-// 1. SYNTHESIZED CHESS SOUND EFFECTS (Web Audio API)
+// 1. SYNTHESIZED CHESS SOUND EFFECTS
 // ==========================================
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
@@ -83,7 +97,82 @@ function playSound(type) {
 }
 
 // ==========================================
-// 2. LICHESS CLICK-TO-MOVE & LEGAL DOTS
+// 2. LICHESS 30-SEC FIRST MOVE AUTO-CANCEL TIMER
+// ==========================================
+function stopFirstMoveAbortTimer() {
+  if (firstMoveAbortInterval) {
+    clearInterval(firstMoveAbortInterval);
+    firstMoveAbortInterval = null;
+  }
+  const banner = document.getElementById('abort-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+function startOrResetFirstMoveAbortTimer() {
+  stopFirstMoveAbortTimer();
+  if (!isMultiplayer || game.game_over()) return;
+
+  // Only active for ply 0 (White's 1st move) and ply 1 (Black's 1st move)
+  const plyCount = game.history().length;
+  if (plyCount >= 2) return;
+
+  firstMoveAbortCountdown = FIRST_MOVE_LIMIT_SEC;
+  const sideToMove = plyCount === 0 ? 'White' : 'Black';
+  const banner = document.getElementById('abort-banner');
+
+  if (banner) {
+    banner.style.display = 'block';
+    banner.innerHTML = `⏱️ <strong>${sideToMove}</strong> must play first move within <strong>${firstMoveAbortCountdown}s</strong> or match auto-cancels.`;
+  }
+
+  firstMoveAbortInterval = setInterval(() => {
+    if (!isMultiplayer || game.game_over() || game.history().length >= 2) {
+      stopFirstMoveAbortTimer();
+      return;
+    }
+    firstMoveAbortCountdown--;
+    const currentSide = game.history().length === 0 ? 'White' : 'Black';
+    if (banner) {
+      banner.innerHTML = `⏱️ <strong>${currentSide}</strong> must play first move within <strong>${firstMoveAbortCountdown}s</strong> or match auto-cancels.`;
+    }
+    if (firstMoveAbortCountdown <= 0) {
+      stopFirstMoveAbortTimer();
+      if (!isSpectator) {
+        abortMatchDueToNoFirstMove(currentSide);
+      }
+    }
+  }, 1000);
+}
+
+async function abortMatchDueToNoFirstMove(inactiveSide) {
+  clearInterval(timerInterval);
+  stopFirstMoveAbortTimer();
+  playSound('end');
+
+  const reasonText = `Match Cancelled (${inactiveSide} did not play first move in 30s)`;
+  if (gameChannel) {
+    gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'aborted', reason: reasonText } });
+  }
+
+  isMultiplayer = false;
+  document.getElementById('btn-resign').disabled = true;
+  document.getElementById('btn-draw').disabled = true;
+  document.getElementById('btn-rematch').style.display = isSpectator ? 'none' : 'inline-block';
+  document.getElementById('game-status').innerText = `🚫 ${reasonText}. No rating changed.`;
+
+  if (supabaseClient && currentMatch && !isSpectator) {
+    await supabaseClient.from('chess_matches').update({
+      status: 'finished',
+      winner_id: null,
+      result_reason: 'Aborted (No 1st move)'
+    }).eq('id', currentMatch.id);
+    loadLiveMatches();
+    loadOpenLobby();
+  }
+}
+
+// ==========================================
+// 3. LICHESS CLICK-TO-MOVE & LEGAL DOTS
 // ==========================================
 function clearSelection() {
   selectedSquare = null;
@@ -93,12 +182,10 @@ function clearSelection() {
 function updateBoardHighlights() {
   $('#myBoard .square-55d63').removeClass('highlight-last highlight-check');
 
-  // Highlight Last Move
   lastMoveSquares.forEach(sq => {
     $('#myBoard .square-' + sq).addClass('highlight-last');
   });
 
-  // Highlight King in Check
   if (game.in_check()) {
     const turnColor = game.turn();
     const b = game.board();
@@ -143,7 +230,6 @@ function isPromotionMove(fromSq, toSq) {
 }
 
 function attemptMove(fromSq, toSq) {
-  // Verify move legality first
   const legalMoves = game.moves({ square: fromSq, verbose: true });
   const isLegal = legalMoves.some(m => m.to === toSq);
   if (!isLegal) return false;
@@ -173,7 +259,6 @@ function executeMove(fromSq, toSq, promoPiece = 'q') {
   clearSelection();
   lastMoveSquares = [move.from, move.to];
 
-  // Add FIDE Increment
   if (isMultiplayer) {
     if (myColor === 'w') timeWhite += currentIncrement;
     else if (myColor === 'b') timeBlack += currentIncrement;
@@ -185,7 +270,6 @@ function executeMove(fromSq, toSq, promoPiece = 'q') {
         payload: { move, timeWhite, timeBlack, fen: game.fen(), pgn: game.pgn() }
       });
     }
-    // Persist live state to Supabase so spectators joining mid-game see current board
     if (supabaseClient && currentMatch) {
       supabaseClient.from('chess_matches').update({ fen: game.fen(), pgn: game.pgn() }).eq('id', currentMatch.id).then();
     }
@@ -193,14 +277,13 @@ function executeMove(fromSq, toSq, promoPiece = 'q') {
 
   afterMove(move);
 
-  // If playing vs AI Bot
   if (!isMultiplayer && vsAiBot && !game.game_over() && game.turn() === 'b') {
     setTimeout(makeAiBotMove, 350);
   }
 }
 
-// Click-to-Move Event Handler
-$(document).on('click', '#myBoard .square-55d63', function () {
+// Unified Tap / Click Handler for Desktop & Mobile
+$(document).on('click', '#myBoard .square-55d63', function (e) {
   const clickEnabled = document.getElementById('chk-click-move')?.checked;
   if (!clickEnabled) return;
   if (game.game_over() || isSpectator) return;
@@ -220,10 +303,8 @@ $(document).on('click', '#myBoard .square-55d63', function () {
       clearSelection();
       return;
     }
-    // Try executing move to clicked square
     const moved = attemptMove(selectedSquare, clickedSq);
     if (!moved) {
-      // If clicked another friendly piece, switch selection immediately
       if (clickedPiece && clickedPiece.color === game.turn()) {
         showLegalMovesForSquare(clickedSq);
       } else {
@@ -233,8 +314,10 @@ $(document).on('click', '#myBoard .square-55d63', function () {
   }
 });
 
-// Drag-and-Drop Handlers (When user toggles Drag mode or drags directly)
+// Drag-and-Drop Handlers (Strictly blocked if Click & Place checkbox is ON)
 function onDragStart(source, piece) {
+  const isClickMode = document.getElementById('chk-click-move')?.checked;
+  if (isClickMode) return false;
   if (game.game_over() || isSpectator) return false;
   if (isMultiplayer) {
     if (game.turn() !== myColor) return false;
@@ -247,6 +330,8 @@ function onDragStart(source, piece) {
 }
 
 function onDrop(source, target) {
+  const isClickMode = document.getElementById('chk-click-move')?.checked;
+  if (isClickMode) return 'snapback';
   if (source === target) return 'snapback';
   const success = attemptMove(source, target);
   if (!success) return 'snapback';
@@ -254,6 +339,13 @@ function onDrop(source, target) {
 
 function toggleMoveMode() {
   const isClickMode = document.getElementById('chk-click-move').checked;
+  const boardEl = document.getElementById('myBoard');
+  if (isClickMode) {
+    boardEl.classList.add('click-mode-only');
+  } else {
+    boardEl.classList.remove('click-mode-only');
+  }
+
   const currentFen = game.fen();
   const currentOrient = board ? board.orientation() : 'white';
   clearSelection();
@@ -271,14 +363,13 @@ function toggleMoveMode() {
 }
 
 // ==========================================
-// 3. SMART AI BOT (FOR OFFLINE PRACTICE)
+// 4. SMART AI BOT (FOR OFFLINE PRACTICE)
 // ==========================================
 function makeAiBotMove() {
   if (game.game_over()) return;
   const moves = game.moves({ verbose: true });
   if (moves.length === 0) return;
 
-  // Prioritize captures & checks
   let bestMove = moves[Math.floor(Math.random() * moves.length)];
   let bestScore = -1;
   moves.forEach(m => {
@@ -299,7 +390,7 @@ function makeAiBotMove() {
 }
 
 // ==========================================
-// 4. MATERIAL, MOVE TABLE & CLOCKS
+// 5. MATERIAL, MOVE TABLE & CLOCKS
 // ==========================================
 function updateLichessMaterial() {
   const b = game.board();
@@ -363,7 +454,19 @@ function afterMove(moveObj) {
   updateLichessMaterial();
   renderMoveTable();
   updateStatus();
-  startClock();
+
+  // Check if White or Black still needs to complete their first move (ply 0 or ply 1)
+  const plyCount = game.history().length;
+  if (isMultiplayer) {
+    if (plyCount < 2) {
+      startOrResetFirstMoveAbortTimer();
+    } else {
+      stopFirstMoveAbortTimer();
+      startClock();
+    }
+  } else {
+    startClock();
+  }
 
   if (game.in_checkmate() || game.in_draw()) {
     playSound('end');
@@ -446,6 +549,7 @@ function startClock() {
 
 function handleFlagFall(winnerColor) {
   clearInterval(timerInterval);
+  stopFirstMoveAbortTimer();
   playSound('end');
   const wName = winnerColor === 'w' ? 'White' : 'Black';
   document.getElementById('game-status').innerText = `⏰ Time out! ${wName} wins on time.`;
@@ -456,7 +560,7 @@ function handleFlagFall(winnerColor) {
 }
 
 // ==========================================
-// 5. SUPABASE SESSION & 100% GUEST MULTIPLAYER
+// 6. SUPABASE SESSION & 100% GUEST MULTIPLAYER
 // ==========================================
 function encodeMatchMeta(inc) {
   return `inc:${inc}|gt:${guestToken}`;
@@ -515,7 +619,6 @@ async function ensureUserProfile() {
   };
 }
 
-// Create Invite Link (Works for both Guests & Logged in Users)
 async function createInviteLink() {
   if (!supabaseClient) return;
   document.getElementById('game-status').innerText = 'Creating invite link & Match ID...';
@@ -551,7 +654,6 @@ async function createInviteLink() {
   loadOpenLobby();
 }
 
-// Join Match by Pasting Full Link, Full UUID, or Short 6-char ID
 async function joinFromInput() {
   if (!supabaseClient) return;
   const val = document.getElementById('join-link-input').value.trim();
@@ -568,7 +670,6 @@ async function joinFromInput() {
 
   document.getElementById('game-status').innerText = `Connecting to match ${matchId.substring(0, 8)}...`;
 
-  // Support both full UUID and short prefix ID
   let query = supabaseClient.from('chess_matches').select('*');
   if (matchId.length === 36) {
     query = query.eq('id', matchId);
@@ -606,7 +707,6 @@ async function checkUrlForMatch() {
   }
 }
 
-// Quick Public Pairing (Guests & Logged In Users Can Pair Together Freely!)
 async function findOrCreateMatch(seconds, incrementSeconds) {
   if (!supabaseClient) return;
   currentIncrement = incrementSeconds;
@@ -616,7 +716,6 @@ async function findOrCreateMatch(seconds, incrementSeconds) {
   const myName = currentUser ? currentProfile.username : guestDisplayName;
   const myRating = currentUser ? currentProfile.rating : 1500;
 
-  // Fetch waiting matches with same time control
   const { data: waitingList } = await supabaseClient
     .from('chess_matches')
     .select('*')
@@ -624,7 +723,6 @@ async function findOrCreateMatch(seconds, incrementSeconds) {
     .eq('time_control', seconds)
     .order('created_at', { ascending: true });
 
-  // Find first opponent match that was NOT created by this same user/guest
   let opponentMatch = null;
   if (waitingList && waitingList.length > 0) {
     opponentMatch = waitingList.find(m => {
@@ -636,7 +734,6 @@ async function findOrCreateMatch(seconds, incrementSeconds) {
   if (opponentMatch) {
     await joinWaitingMatch(opponentMatch.id, incrementSeconds);
   } else {
-    // Check if I already have a waiting lobby open
     const myExisting = (waitingList || []).find(m => isMatchCreatedByMe(m));
     if (myExisting) {
       setupMatchRoom(myExisting, 'w');
@@ -644,7 +741,6 @@ async function findOrCreateMatch(seconds, incrementSeconds) {
       return;
     }
 
-    // Create a new public lobby
     const { data: created } = await supabaseClient.from('chess_matches').insert([{
       white_id: myId,
       white_name: myName,
@@ -662,7 +758,6 @@ async function findOrCreateMatch(seconds, incrementSeconds) {
   }
 }
 
-// Direct Play without any Login Popup!
 async function joinWaitingMatch(matchId, incrementSeconds = 0) {
   if (!supabaseClient) return;
   currentIncrement = incrementSeconds;
@@ -730,7 +825,35 @@ async function spectateMatch(matchId) {
 }
 
 // ==========================================
-// 6. REALTIME ROOM, TAKEBACK & REMATCH
+// 7. IN-CONSOLE OFFER BANNER (DRAW, TAKEBACK, REMATCH)
+// ==========================================
+function showOfferBanner(message, onAccept, onDecline) {
+  const banner = document.getElementById('offer-banner');
+  const textEl = document.getElementById('offer-text');
+  const acceptBtn = document.getElementById('offer-accept-btn');
+  const declineBtn = document.getElementById('offer-decline-btn');
+
+  textEl.innerText = message;
+  banner.style.display = 'flex';
+  playSound('check');
+
+  acceptBtn.onclick = () => {
+    banner.style.display = 'none';
+    if (onAccept) onAccept();
+  };
+  declineBtn.onclick = () => {
+    banner.style.display = 'none';
+    if (onDecline) onDecline();
+  };
+}
+
+function hideOfferBanner() {
+  const banner = document.getElementById('offer-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ==========================================
+// 8. REALTIME ROOM, RESIGN, DRAW, TAKEBACK & REMATCH
 // ==========================================
 function setupMatchRoom(matchObj, assignedColor, onSubscribedCallback = null) {
   currentMatch = matchObj;
@@ -738,6 +861,10 @@ function setupMatchRoom(matchObj, assignedColor, onSubscribedCallback = null) {
   isMultiplayer = true;
   isSpectator = (myColor === 'spectator');
   vsAiBot = false;
+
+  clearInterval(timerInterval);
+  stopFirstMoveAbortTimer();
+  hideOfferBanner();
 
   game.reset();
   clearSelection();
@@ -771,15 +898,21 @@ function setupMatchRoom(matchObj, assignedColor, onSubscribedCallback = null) {
     document.getElementById('btn-draw').disabled = true;
     document.getElementById('btn-takeback').disabled = true;
     document.getElementById('game-status').innerText = `👁️ Spectating #${matchObj.id.substring(0, 6)}: ${matchObj.white_name} vs ${matchObj.black_name}`;
-    if (matchObj.status === 'playing') startClock();
-  } else {
-    document.getElementById('btn-resign').disabled = false;
-    document.getElementById('btn-draw').disabled = false;
-    document.getElementById('btn-takeback').disabled = false;
     if (matchObj.status === 'playing') {
-      document.getElementById('game-status').innerText = `⚔️ Match Started! You play ${myColor === 'w' ? 'White' : 'Black'}. White to move.`;
+      if (game.history().length < 2) startOrResetFirstMoveAbortTimer();
+      else startClock();
+    }
+  } else {
+    // Enable Resign & Draw as soon as match room is active
+    const isPlaying = matchObj.status === 'playing';
+    document.getElementById('btn-resign').disabled = !isPlaying;
+    document.getElementById('btn-draw').disabled = !isPlaying;
+    document.getElementById('btn-takeback').disabled = !isPlaying;
+
+    if (isPlaying) {
+      document.getElementById('game-status').innerText = `⚔️ Match Started! You play ${myColor === 'w' ? 'White' : 'Black'}. White has 30s for 1st move.`;
       playSound('move');
-      startClock();
+      startOrResetFirstMoveAbortTimer();
     }
   }
 
@@ -796,10 +929,13 @@ function setupMatchRoom(matchObj, assignedColor, onSubscribedCallback = null) {
       loadOpenLobby();
       loadLiveMatches();
       if (!isSpectator) {
-        document.getElementById('game-status').innerText = `⚔️ Opponent Connected (${currentMatch.black_name})! White to move.`;
+        document.getElementById('btn-resign').disabled = false;
+        document.getElementById('btn-draw').disabled = false;
+        document.getElementById('btn-takeback').disabled = false;
+        document.getElementById('game-status').innerText = `⚔️ Opponent Connected (${currentMatch.black_name})! White has 30s for 1st move.`;
         playSound('move');
       }
-      startClock();
+      startOrResetFirstMoveAbortTimer();
     })
     .on('broadcast', { event: 'move' }, ({ payload }) => {
       const m = game.move(payload.move);
@@ -814,27 +950,58 @@ function setupMatchRoom(matchObj, assignedColor, onSubscribedCallback = null) {
     .on('broadcast', { event: 'game_action' }, ({ payload }) => {
       if (payload.action === 'resign') {
         clearInterval(timerInterval);
+        stopFirstMoveAbortTimer();
+        hideOfferBanner();
         playSound('end');
-        document.getElementById('game-status').innerText = `🏳 ${payload.user} resigned!`;
+        isMultiplayer = false;
+        document.getElementById('btn-resign').disabled = true;
+        document.getElementById('btn-draw').disabled = true;
+        document.getElementById('game-status').innerText = `🏳 ${payload.user} resigned! ${payload.winnerColor === 'w' ? 'White' : 'Black'} wins!`;
+        document.getElementById('btn-rematch').style.display = isSpectator ? 'none' : 'inline-block';
+      } else if (payload.action === 'aborted') {
+        clearInterval(timerInterval);
+        stopFirstMoveAbortTimer();
+        hideOfferBanner();
+        playSound('end');
+        isMultiplayer = false;
+        document.getElementById('btn-resign').disabled = true;
+        document.getElementById('btn-draw').disabled = true;
+        document.getElementById('game-status').innerText = `🚫 ${payload.reason}`;
         document.getElementById('btn-rematch').style.display = isSpectator ? 'none' : 'inline-block';
       } else if (payload.action === 'draw_offer' && !isSpectator) {
-        if (confirm(`${payload.user} offered a draw. Accept?`)) {
-          gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_accepted' } });
-          concludeMultiplayerMatch(null, 'Mutual Draw');
-        }
+        showOfferBanner(
+          `🤝 ${payload.user} offered a Draw. Do you accept?`,
+          () => {
+            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_accepted' } });
+            concludeMultiplayerMatch(null, 'Mutual Draw');
+          },
+          () => {
+            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_declined', user: currentUser ? currentProfile.username : guestDisplayName } });
+            document.getElementById('game-status').innerText = 'Draw offer declined.';
+          }
+        );
       } else if (payload.action === 'draw_accepted') {
+        hideOfferBanner();
         concludeMultiplayerMatch(null, 'Mutual Draw');
+      } else if (payload.action === 'draw_declined') {
+        document.getElementById('game-status').innerText = `❌ ${payload.user} declined the draw offer.`;
       } else if (payload.action === 'takeback_offer' && !isSpectator) {
-        if (confirm(`${payload.user} requested a takeback (undo last move). Allow?`)) {
-          game.undo();
-          lastMoveSquares = [];
-          board.position(game.fen());
-          updateBoardHighlights();
-          renderMoveTable();
-          updateLichessMaterial();
-          updateStatus();
-          gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'takeback_accepted' } });
-        }
+        showOfferBanner(
+          `⏪ ${payload.user} requested a Takeback (undo last move). Allow?`,
+          () => {
+            game.undo();
+            lastMoveSquares = [];
+            board.position(game.fen());
+            updateBoardHighlights();
+            renderMoveTable();
+            updateLichessMaterial();
+            updateStatus();
+            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'takeback_accepted' } });
+          },
+          () => {
+            gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'takeback_declined' } });
+          }
+        );
       } else if (payload.action === 'takeback_accepted') {
         game.undo();
         lastMoveSquares = [];
@@ -844,10 +1011,18 @@ function setupMatchRoom(matchObj, assignedColor, onSubscribedCallback = null) {
         updateLichessMaterial();
         updateStatus();
         document.getElementById('game-status').innerText = '⏪ Takeback accepted!';
+      } else if (payload.action === 'takeback_declined') {
+        document.getElementById('game-status').innerText = '❌ Takeback request declined.';
       } else if (payload.action === 'rematch_ready' && !isSpectator) {
-        if (confirm(`Opponent wants a Rematch! Join now?`)) {
-          joinWaitingMatch(payload.newMatchId, currentIncrement);
-        }
+        showOfferBanner(
+          `⚔️ ${payload.user || 'Opponent'} wants a Rematch! Accept?`,
+          () => {
+            joinWaitingMatch(payload.newMatchId, currentIncrement);
+          },
+          () => {
+            document.getElementById('game-status').innerText = 'Rematch declined.';
+          }
+        );
       }
     })
     .subscribe((status) => {
@@ -871,6 +1046,8 @@ function updatePlayerHeaders(m) {
 
 async function concludeMultiplayerMatch(winnerId, reason) {
   clearInterval(timerInterval);
+  stopFirstMoveAbortTimer();
+  hideOfferBanner();
   isMultiplayer = false;
   document.getElementById('btn-resign').disabled = true;
   document.getElementById('btn-draw').disabled = true;
@@ -904,7 +1081,7 @@ async function concludeMultiplayerMatch(winnerId, reason) {
 }
 
 // ==========================================
-// 7. LOBBY & LIVE MATCHES UI RENDERING
+// 9. LOBBY & LIVE MATCHES UI RENDERING
 // ==========================================
 function copyMatchId(text) {
   navigator.clipboard.writeText(text);
@@ -1022,7 +1199,7 @@ function subscribeLobbyChanges() {
 }
 
 // ==========================================
-// 8. INTERNATIONAL ACTIONS (TAKEBACK, REMATCH, PGN, FEN)
+// 10. INTERNATIONAL ACTIONS (TAKEBACK, REMATCH, RESIGN, DRAW)
 // ==========================================
 function requestTakeback() {
   if (isSpectator || game.history().length === 0) return;
@@ -1062,10 +1239,15 @@ async function offerRematch() {
 
   if (created) {
     if (gameChannel) {
-      gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'rematch_ready', newMatchId: created.id } });
+      gameChannel.send({
+        type: 'broadcast',
+        event: 'game_action',
+        payload: { action: 'rematch_ready', newMatchId: created.id, user: hostName }
+      });
     }
     setupMatchRoom(created, 'w');
-    document.getElementById('game-status').innerText = '⚔️ Rematch offer sent! Waiting for opponent...';
+    document.getElementById('game-status').innerText = '⚔️ Rematch challenge sent! Waiting for opponent to accept...';
+    loadOpenLobby();
   }
 }
 
@@ -1091,21 +1273,32 @@ function copyFEN() {
 
 function resignGame() {
   if (!isMultiplayer || !currentMatch || isSpectator) return;
-  if (!confirm('Are you sure you want to resign this match?')) return;
   const sender = currentUser ? currentProfile.username : guestDisplayName;
-  gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'resign', user: sender } });
+  const winnerColor = myColor === 'w' ? 'b' : 'w';
   const winnerId = myColor === 'w' ? currentMatch.black_id : currentMatch.white_id;
-  concludeMultiplayerMatch(winnerId, 'Resignation');
+
+  if (gameChannel) {
+    gameChannel.send({
+      type: 'broadcast',
+      event: 'game_action',
+      payload: { action: 'resign', user: sender, winnerColor }
+    });
+  }
+  playSound('end');
+  concludeMultiplayerMatch(winnerId, `Resignation (${sender} resigned)`);
 }
 
 function offerDraw() {
   if (!isMultiplayer || !gameChannel || isSpectator) return;
   const sender = currentUser ? currentProfile.username : guestDisplayName;
   gameChannel.send({ type: 'broadcast', event: 'game_action', payload: { action: 'draw_offer', user: sender } });
-  document.getElementById('game-status').innerText = '½ Draw offer sent to opponent.';
+  document.getElementById('game-status').innerText = '🤝 Draw offer sent to opponent. Waiting for response...';
 }
 
 function playVsComputer(enableAiBot = false) {
+  clearInterval(timerInterval);
+  stopFirstMoveAbortTimer();
+  hideOfferBanner();
   isMultiplayer = false;
   isSpectator = false;
   vsAiBot = enableAiBot;
@@ -1128,8 +1321,8 @@ function playVsComputer(enableAiBot = false) {
   document.getElementById('top-name').innerText = enableAiBot ? '🤖 Wedugo AI Bot (1600)' : 'Local Player 2';
   document.getElementById('active-match-badge').innerText = enableAiBot ? 'vs AI Bot' : 'Pass & Play';
   document.getElementById('game-status').innerText = enableAiBot
-    ? '🤖 Playing vs AI Bot! Click any White piece to move.'
-    : '♟ Solo / Pass & Play mode active. Click any White piece to move.';
+    ? '🤖 Playing vs AI Bot! Tap/Click any White piece to move.'
+    : '♟ Solo / Pass & Play mode active. Tap/Click any White piece to move.';
 }
 
 function flipBoard() {
@@ -1168,10 +1361,10 @@ async function handleSignup() {
 }
 
 // ==========================================
-// 9. INITIALIZE BOARD
+// 11. INITIALIZE BOARD (PURE CLICK-TO-MOVE DEFAULT)
 // ==========================================
 board = Chessboard('myBoard', {
-  draggable: false, // Default is Click-to-Move (controlled by #chk-click-move checkbox)
+  draggable: false,
   position: 'start',
   pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
   onDragStart: onDragStart,
